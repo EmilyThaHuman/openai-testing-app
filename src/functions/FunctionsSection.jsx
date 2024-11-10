@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
 import PropTypes from 'prop-types';
+import { useToast } from "../components/ui/use-toast";
 
 export const FunctionsSection = () => {
   const [functions, setFunctions] = useState([]);

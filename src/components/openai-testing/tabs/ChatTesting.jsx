@@ -32,7 +32,7 @@ import {
 import { Info, Trash2, Copy, Settings2, Paperclip } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useInView } from "react-intersection-observer";
-import { FileUploadProgress } from "@/components/chat/FileUploadProgress";
+import SystemInstructions from "@/components/shared/SystemInstructions";
 
 const SETTINGS_GROUPS = {
   model: {
@@ -269,7 +269,7 @@ export default function ChatTesting() {
   const handleSend = useCallback(
     async (message, files = []) => {
       if ((!message?.trim() && files.length === 0) || isLoading) return;
-      
+
       let currentChat = activeChat;
       if (!currentChat) {
         currentChat = createNewChat();
@@ -315,7 +315,6 @@ export default function ChatTesting() {
         setTimeout(() => {
           scrollRef.current?.scrollIntoView({ behavior: "smooth" });
         }, 100);
-
       } catch (error) {
         console.error("Chat error:", error);
         toast({
@@ -325,7 +324,16 @@ export default function ChatTesting() {
         });
       }
     },
-    [activeChat, isLoading, sendMessage, addMessage, toast, scrollRef, createNewChat, setActiveChatId]
+    [
+      activeChat,
+      isLoading,
+      sendMessage,
+      addMessage,
+      toast,
+      scrollRef,
+      createNewChat,
+      setActiveChatId,
+    ]
   );
 
   return (
@@ -352,8 +360,13 @@ export default function ChatTesting() {
             </Button>
           </div>
         </div>
-
-        <ScrollArea className="flex-1 pr-4">
+        <SystemInstructions
+          value={activeChat?.settings?.systemPrompt || ''}
+          onChange={(newInstructions) => 
+            handleSettingChange('systemPrompt', newInstructions)
+          }
+        />
+        <ScrollArea className="flex-1 pr-4 mt-4">
           <div className="space-y-4 mb-4">
             {activeChat?.messages?.map((message) => (
               <ChatMessage

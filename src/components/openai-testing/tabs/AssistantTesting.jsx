@@ -1,101 +1,196 @@
-import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { UnifiedOpenAIService } from '@/services/openai/unifiedOpenAIService';
-import { useOpenAI } from '@/context/OpenAIContext';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useOpenAI } from "@/context/OpenAIContext";
 import { useToast } from "@/components/ui/use-toast";
-
-const MODELS = {
-  'gpt-4-turbo-preview': 'GPT-4 Turbo',
-  'gpt-4': 'GPT-4',
-  'gpt-3.5-turbo': 'GPT-3.5 Turbo'
-};
-
-const TOOLS = {
-  code_interpreter: "Code Interpreter",
-  retrieval: "File Search & Retrieval",
-  function: "Function Calling"
-};
+import AssistantForm from "../../assistants/AssistantForm";
+import AssistantList from "../../assistants/AssistantList";
+import ThreadList from "../../assistants/ThreadList";
+import { Card } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AlertCircle, MessageSquare, Plus, Users } from "lucide-react";
+import { DEFAULT_ASSISTANT } from "../../../constants/assistantConstants";
+import { useAssistants } from "@/hooks/use-assistants";
+import { useThreads } from "@/hooks/use-threads";
+import ThreadMessages from "../../assistants/ThreadMessages";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import useRuns from "@/hooks/use-runs";
+import { useActiveRun } from "@/hooks/use-active-run";
+import { ChatDialog } from "@/components/chat/ChatDialog";
 
 export default function AssistantTesting() {
   const { apiKey } = useOpenAI();
-  const [assistants, setAssistants] = useState([]);
-  const [selectedAssistant, setSelectedAssistant] = useState(null);
-  const [threads, setThreads] = useState([]);
-  const [selectedThread, setSelectedThread] = useState(null);
-  const [newAssistant, setNewAssistant] = useState({
-    name: '',
-    instructions: '',
-    model: 'gpt-4-turbo-preview',
-    tools: [],
-    file_ids: [],
-    metadata: {},
-    temperature: 0.7,
-    top_p: 1,
-    presence_penalty: 0,
-    frequency_penalty: 0,
-    response_format: { type: "text" },
-  });
-  const [newMessage, setNewMessage] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [expandedThreads, setExpandedThreads] = useState(new Set());
-  const [threadMessages, setThreadMessages] = useState({});
-  const [streaming, setStreaming] = useState(false);
-  const [streamingMessages, setStreamingMessages] = useState({});
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (apiKey) {
-      UnifiedOpenAIService.initialize(apiKey);
-      fetchAssistants();
-    }
-  }, [apiKey]);
+  // State
+  const [newAssistant, setNewAssistant] = useState(DEFAULT_ASSISTANT);
+  const [newMessage, setNewMessage] = useState("");
+  const [streaming, setStreaming] = useState(false);
+  const [streamingMessages, setStreamingMessages] = useState({});
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState([]);
 
-  useEffect(() => {
-    if (selectedAssistant) {
-      fetchThreads();
-    }
-  }, [selectedAssistant]);
+  const [error, setError] = useState(null); // Add error state
 
-  const fetchAssistants = async () => {
+  // Custom hooks
+  const {
+    assistants,
+    loading: assistantsLoading,
+    error: assistantsError,
+    createAssistant,
+    fetchAssistants,
+    selectedAssistant,
+    setSelectedAssistant,
+  } = useAssistants(apiKey);
+
+  const {
+    threads,
+    threadMessages,
+    loading: threadsLoading,
+    expandedThreads,
+    createThread,
+    deleteThread,
+    toggleThread,
+    sendMessage,
+    fetchThreadMessages,
+    selectedThread,
+    setSelectedThread,
+  } = useThreads(selectedAssistant);
+
+  const {
+    submitMessage,
+    startNewRun,
+    cancelRun,
+    currentRun,
+    currentThread,
+    toolCalls,
+    status,
+    isRunning,
+    error: runError,
+  } = useActiveRun({
+    onToolExecution: async (toolCalls) => {
+      // Handle tool execution
+      return toolCalls.map((call) => ({
+        tool_call_id: call.id,
+        output: JSON.stringify({ result: "Tool executed successfully" }),
+      }));
+    },
+  });
+
+  // Combine loading states
+  const loading = threadsLoading || assistantsLoading;
+
+  const handleStartRun = useCallback(
+    async (assistant) => {
+      console.log("Starting run with assistant:", assistant);
+      try {
+        const { run, thread, messages } = await startNewRun(
+          assistant.id,
+          "Initial message" // Optional
+        );
+        console.log("Run:", run);
+        console.log("Thread:", thread);
+        console.log("Messages:", messages);
+        setChatMessages(messages);
+        setChatOpen(true);
+      } catch (error) {
+        // Handle error
+        setError(error);
+        toast({
+          title: "Error",
+          description: "Failed to start new run",
+          variant: "destructive",
+        });
+      }
+    },
+    [startNewRun]
+  );
+  const handleChatMessage = useCallback(
+    async (message, fileIds = []) => {
+      if (!currentThread?.id || !selectedAssistant?.id) {
+        throw new Error("No active conversation");
+      }
+      if (!message.trim()) return;
+
+      try {
+        const { run, thread, messages } = await submitMessage(message);
+        setSelectedThread(thread);
+        setChatMessages(messages);
+        console.log("Run:", run);
+      } catch (err) {
+        setError(err);
+        console.error("Failed to send message:", err);
+      }
+    },
+    [submitMessage, setSelectedThread]
+  );
+  // Combine error states
+  useEffect(() => {
+    setError(assistantsError);
+  }, [assistantsError]);
+
+  const filteredThreads = useMemo(() => {
+    const threadsArray = Array.isArray(threads) ? threads : [];
+    return selectedAssistant
+      ? threadsArray.filter(
+          (thread) => thread.metadata?.assistantId === selectedAssistant.id
+        )
+      : [];
+  }, [threads, selectedAssistant]);
+
+  const handleCreateEmptyThread = async () => {
     try {
-      const response = await UnifiedOpenAIService.assistants.list();
-      setAssistants(response.data);
-    } catch (error) {
-      console.error('Error fetching assistants:', error);
+      const thread = await createThread();
+      if (thread) {
+        setSelectedThread(thread);
+      }
+    } catch (err) {
+      setError(err);
     }
   };
 
-  const fetchThreads = async () => {
+  const handleCreateThread = useCallback(async () => {
+    if (!selectedAssistant) return;
+
     try {
-      const response = await UnifiedOpenAIService.threads.list();
-      setThreads(response.data);
-    } catch (error) {
-      console.error('Error fetching threads:', error);
+      const thread = await createThread();
+      const threads = JSON.parse(
+        localStorage.getItem("openai_threads") || "[]"
+      );
+      const updatedThreads = [...threads, thread];
+      localStorage.setItem("openai_threads", JSON.stringify(updatedThreads));
+      await startNewRun(selectedAssistant.id, {
+        threadId: thread.id,
+        initialMessage: "Hello!",
+      });
+    } catch (err) {
+      setError(err);
+      console.error("Failed to create thread:", err);
     }
+  }, [selectedAssistant, createThread, startNewRun]);
+
+  const handleFileUpload = useCallback(async (file) => {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("purpose", "assistants");
+
+      const response = await UnifiedOpenAIService.files.create(formData);
+      return response;
+    } catch (error) {
+      setError(error);
+      throw error;
+    }
+  }, []);
+  const handleThreadExpand = (threadId) => {
+    toggleThread(new Set([threadId]));
+  };
+  // Handlers
+  const handleAssistantSelect = async (assistant) => {
+    setSelectedAssistant(assistant);
   };
 
-  const createAssistant = async () => {
+  const handleCreateAssistant = async () => {
     if (!newAssistant.name || !newAssistant.model) {
       toast({
         title: "Error",
@@ -105,347 +200,229 @@ export default function AssistantTesting() {
       return;
     }
 
-    setLoading(true);
-    try {
-      const formattedTools = newAssistant.tools.map(tool => ({ type: tool }));
+    const formattedTools = newAssistant.tools.map((tool) => ({ type: tool }));
+    const assistantData = {
+      name: newAssistant.name.trim(),
+      instructions: newAssistant.instructions.trim(),
+      model: newAssistant.model,
+      tools: formattedTools,
+      file_ids: newAssistant.file_ids,
+      metadata: newAssistant.metadata,
+      ...(newAssistant.temperature !== 0.7 && {
+        temperature: newAssistant.temperature,
+      }),
+      ...(newAssistant.top_p !== 1 && { top_p: newAssistant.top_p }),
+      ...(newAssistant.presence_penalty !== 0 && {
+        presence_penalty: newAssistant.presence_penalty,
+      }),
+      ...(newAssistant.frequency_penalty !== 0 && {
+        frequency_penalty: newAssistant.frequency_penalty,
+      }),
+      ...(newAssistant.response_format.type !== "text" && {
+        response_format: newAssistant.response_format,
+      }),
+    };
 
-      const assistantData = {
-        name: newAssistant.name.trim(),
-        instructions: newAssistant.instructions.trim(),
-        model: newAssistant.model,
-        tools: formattedTools,
-        file_ids: newAssistant.file_ids,
-        metadata: newAssistant.metadata,
-      };
-
-      if (newAssistant.temperature !== 0.7) {
-        assistantData.temperature = newAssistant.temperature;
-      }
-      if (newAssistant.top_p !== 1) {
-        assistantData.top_p = newAssistant.top_p;
-      }
-      if (newAssistant.presence_penalty !== 0) {
-        assistantData.presence_penalty = newAssistant.presence_penalty;
-      }
-      if (newAssistant.frequency_penalty !== 0) {
-        assistantData.frequency_penalty = newAssistant.frequency_penalty;
-      }
-      if (newAssistant.response_format.type !== "text") {
-        assistantData.response_format = newAssistant.response_format;
-      }
-
-      const assistant = await UnifiedOpenAIService.assistants.create(assistantData);
-      
-      setAssistants(prev => [...prev, assistant]);
-      setNewAssistant({
-        name: '',
-        instructions: '',
-        model: 'gpt-4-turbo-preview',
-        tools: [],
-        file_ids: [],
-        metadata: {},
-        temperature: 0.7,
-        top_p: 1,
-        presence_penalty: 0,
-        frequency_penalty: 0,
-        response_format: { type: "text" },
-      });
-
-      toast({
-        title: "Success",
-        description: "Assistant created successfully",
-      });
-
-    } catch (error) {
-      console.error('Error creating assistant:', error);
-      toast({
-        title: "Error",
-        description: error.response?.data?.error?.message || error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+    await createAssistant(assistantData);
+    setNewAssistant(DEFAULT_ASSISTANT);
   };
 
-  const createThread = async () => {
-    if (!selectedAssistant) return;
-    setLoading(true);
+  const handleSendMessage = async (threadId) => {
+    if (!newMessage.trim() || threadsLoading) return;
+
     try {
-      const thread = await UnifiedOpenAIService.threads.create();
-      setThreads([...threads, thread]);
-    } catch (error) {
-      console.error('Error creating thread:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const toggleThread = async (threadId) => {
-    const newExpanded = new Set(expandedThreads);
-    
-    if (expandedThreads.has(threadId)) {
-      newExpanded.delete(threadId);
-    } else {
-      newExpanded.add(threadId);
-      // Fetch messages if not already loaded
-      if (!threadMessages[threadId]) {
-        await fetchThreadMessages(threadId);
-      }
-    }
-    
-    setExpandedThreads(newExpanded);
-  };
-
-  const fetchThreadMessages = async (threadId) => {
-    try {
-      const messages = await UnifiedOpenAIService.threads.messages.list(threadId);
-      setThreadMessages(prev => ({
-        ...prev,
-        [threadId]: messages.data
-      }));
-    } catch (error) {
-      console.error('Error fetching thread messages:', error);
-    }
-  };
-
-  const sendMessage = async (threadId) => {
-    if (!newMessage.trim() || loading) return;
-    setLoading(true);
-    
-    try {
-      const messageResponse = await UnifiedOpenAIService.threads.messages.create(
-        threadId, 
-        newMessage
-      );
-      console.log(messageResponse);
-      
-      const run = await UnifiedOpenAIService.threads.runs.create(
-        threadId, 
-        selectedAssistant.id,
-        { stream: streaming }
-      );
-
       if (streaming) {
-        const stream = await UnifiedOpenAIService.threads.runs.getStream(
-          threadId,
-          run.id
-        );
-
+        const stream = await sendMessage(threadId, newMessage, {
+          stream: true,
+        });
         for await (const chunk of stream) {
           if (chunk.choices?.[0]?.delta?.content) {
-            setStreamingMessages(prev => ({
+            setStreamingMessages((prev) => ({
               ...prev,
-              [threadId]: (prev[threadId] || '') + chunk.choices[0].delta.content
+              [threadId]:
+                (prev[threadId] || "") + chunk.choices[0].delta.content,
             }));
           }
         }
+      } else {
+        await sendMessage(threadId, newMessage);
       }
-
-      setNewMessage('');
-      await fetchThreadMessages(threadId);
+      setNewMessage("");
     } catch (error) {
-      console.error('Error sending message:', error);
-    } finally {
-      setLoading(false);
+      toast({
+        title: "Error",
+        description: "Failed to send message",
+        variant: "destructive",
+      });
     }
   };
 
   const toggleTool = (tool) => {
-    setNewAssistant(prev => ({
+    setNewAssistant((prev) => ({
       ...prev,
       tools: prev.tools.includes(tool)
-        ? prev.tools.filter(t => t !== tool)
-        : [...prev.tools, tool]
+        ? prev.tools.filter((t) => t !== tool)
+        : [...prev.tools, tool],
     }));
   };
 
+  // Handle error states
+  const renderError = (error) => {
+    if (!error) return null;
+    return typeof error === "string"
+      ? error
+      : error.message || "An error occurred";
+  };
+
   return (
-    <div className="grid grid-cols-3 gap-4 p-4">
-      <Card className="p-4">
-        <h2 className="text-xl font-bold mb-4">Create Assistant</h2>
-        <div className="space-y-4">
-          <Input
-            placeholder="Assistant Name"
-            value={newAssistant.name}
-            onChange={(e) => setNewAssistant(prev => ({ ...prev, name: e.target.value }))}
-          />
-          
-          <Textarea
-            placeholder="Instructions"
-            value={newAssistant.instructions}
-            onChange={(e) => setNewAssistant(prev => ({ ...prev, instructions: e.target.value }))}
-          />
-
-          <div className="space-y-2">
-            <Label>Model</Label>
-            <Select 
-              value={newAssistant.model}
-              onValueChange={(value) => setNewAssistant(prev => ({ ...prev, model: value }))}
+    <div className="flex h-[calc(100vh-4rem)]">
+      <Tabs
+        defaultValue="assistants"
+        orientation="vertical"
+        className="flex w-full"
+        onValueChange={(value) => {
+          document.querySelector(`[data-tab-value="${value}"]`)?.click();
+        }}
+      >
+        {/* Sidebar */}
+        <div className="w-64 border-r bg-muted/30">
+          <TabsList className="flex h-full w-full flex-col items-stretch justify-start space-y-2 bg-transparent p-2">
+            <TabsTrigger
+              value="create"
+              className="w-full justify-start gap-2 px-4 py-2"
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Select model" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(MODELS).map(([id, name]) => (
-                  <SelectItem key={id} value={id}>{name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+              <Plus className="h-5 w-5" />
+              Create Assistant
+            </TabsTrigger>
+            <TabsTrigger
+              value="assistants"
+              className="w-full justify-start gap-2 px-4 py-2"
+            >
+              <Users className="h-5 w-5" />
+              Assistant List
+            </TabsTrigger>
+            <TabsTrigger
+              value="threads"
+              className="w-full justify-start gap-2 px-4 py-2"
+            >
+              <MessageSquare className="h-5 w-5" />
+              Thread List
+            </TabsTrigger>
+            <TabsTrigger
+              value="messages"
+              className="w-full justify-start gap-2 px-4 py-2"
+            >
+              <MessageSquare className="h-5 w-5" />
+              Thread Messages
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
-          <div className="space-y-2">
-            <Label>Tools</Label>
-            <div className="flex flex-wrap gap-2">
-              {Object.entries(TOOLS).map(([id, name]) => (
-                <Badge
-                  key={id}
-                  variant={newAssistant.tools.includes(id) ? "default" : "outline"}
-                  className="cursor-pointer"
-                  onClick={() => toggleTool(id)}
-                >
-                  {name}
-                </Badge>
-              ))}
+        {/* Main Content */}
+        <div className="flex-1 overflow-hidden">
+          <ScrollArea className="h-full">
+            <div className="p-6">
+              {error && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Error</AlertTitle>
+                  <AlertDescription>
+                    {typeof error === "string"
+                      ? error
+                      : error.message || "An error occurred"}
+                  </AlertDescription>
+                </Alert>
+              )}
+              <TabsContent value="create" className="mt-0 border-0">
+                <Card className="p-6">
+                  <h2 className="text-2xl font-bold mb-6">
+                    Create New Assistant
+                  </h2>
+                  <AssistantForm
+                    newAssistant={newAssistant}
+                    setNewAssistant={setNewAssistant}
+                    createAssistant={handleCreateAssistant}
+                    loading={assistantsLoading}
+                    toggleTool={toggleTool}
+                    selectedAssistant={selectedAssistant}
+                    setSelectedAssistant={setSelectedAssistant}
+                    handleAssistantSelect={handleAssistantSelect}
+                  />
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="assistants" className="mt-0 border-0">
+                <Card className="p-6">
+                  <h2 className="text-2xl font-bold mb-6">Assistants</h2>
+                  <AssistantList
+                    assistants={assistants}
+                    selectedAssistant={selectedAssistant}
+                    onAssistantSelect={handleAssistantSelect}
+                    onStartRun={handleStartRun}
+                    isRunning={isRunning}
+                    loading={loading}
+                  />
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="threads" className="mt-0 border-0">
+                <Card className="p-6">
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-2xl font-bold">Threads</h2>
+                    <Button
+                      onClick={handleCreateThread}
+                      disabled={!selectedAssistant || loading}
+                    >
+                      Create Thread
+                    </Button>
+                  </div>
+                  <ThreadList
+                    threads={filteredThreads}
+                    expandedThreads={expandedThreads}
+                    toggleThread={toggleThread}
+                    threadMessages={threadMessages}
+                    fetchThreadMessages={fetchThreadMessages}
+                    newMessage={newMessage}
+                    setNewMessage={setNewMessage}
+                    sendMessage={handleSendMessage}
+                    createThread={createThread}
+                    deleteThread={deleteThread}
+                    selectedAssistant={selectedAssistant}
+                    loading={loading}
+                    streaming={streaming}
+                    setStreaming={setStreaming}
+                    streamingMessages={streamingMessages}
+                    onThreadExpand={handleThreadExpand}
+                  />
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="messages" className="mt-0 border-0">
+                <Card className="p-6">
+                  <h2 className="text-2xl font-bold mb-6">Thread Messages</h2>
+                  <ThreadMessages
+                    threadMessages={threadMessages}
+                    loading={threadsLoading}
+                    selectedAssistant={selectedAssistant}
+                    streamingMessages={streamingMessages}
+                  />
+                </Card>
+              </TabsContent>
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Temperature: {newAssistant.temperature}</Label>
-            <Slider
-              value={[newAssistant.temperature]}
-              min={0}
-              max={2}
-              step={0.1}
-              onValueChange={([value]) => setNewAssistant(prev => ({ ...prev, temperature: value }))}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Top P: {newAssistant.top_p}</Label>
-            <Slider
-              value={[newAssistant.top_p]}
-              min={0}
-              max={1}
-              step={0.1}
-              onValueChange={([value]) => setNewAssistant(prev => ({ ...prev, top_p: value }))}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Response Format</Label>
-            <Select 
-              value={newAssistant.response_format.type}
-              onValueChange={(value) => setNewAssistant(prev => ({ 
-                ...prev, 
-                response_format: { type: value } 
-              }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select format" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="text">Text</SelectItem>
-                <SelectItem value="json_object">JSON</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Button 
-            onClick={createAssistant} 
-            disabled={loading}
-            className="w-full"
-          >
-            {loading ? 'Creating...' : 'Create Assistant'}
-          </Button>
+          </ScrollArea>
         </div>
-      </Card>
-
-      <Card className="p-4">
-        <h2 className="text-xl font-bold mb-4">Assistants List</h2>
-        <ScrollArea className="h-[400px]">
-          <div className="space-y-2">
-            {assistants.map((assistant) => (
-              <Card 
-                key={assistant.id} 
-                className={`p-2 cursor-pointer hover:bg-gray-100 ${
-                  selectedAssistant?.id === assistant.id ? 'bg-gray-100' : ''
-                }`}
-                onClick={() => setSelectedAssistant(assistant)}
-              >
-                <h3 className="font-medium">{assistant.name}</h3>
-                <p className="text-sm text-gray-500">{assistant.id}</p>
-              </Card>
-            ))}
-          </div>
-        </ScrollArea>
-      </Card>
-
-      <Card className="p-4">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">Threads</h2>
-          <Button 
-            onClick={createThread} 
-            disabled={!selectedAssistant || loading}
-            size="sm"
-          >
-            New Thread
-          </Button>
-        </div>
-        <ScrollArea className="h-[600px]">
-          <Accordion
-            type="multiple"
-            value={Array.from(expandedThreads)}
-            onValueChange={(value) => setExpandedThreads(new Set(value))}
-          >
-            {threads.map((thread) => (
-              <AccordionItem key={thread.id} value={thread.id}>
-                <AccordionTrigger className="hover:bg-accent hover:no-underline">
-                  <div className="flex flex-col items-start">
-                    <p className="text-sm">{thread.id}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(thread.created_at).toLocaleString()}
-                    </p>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent>
-                  <div className="space-y-4">
-                    <ScrollArea className="h-[200px] w-full">
-                      <div className="space-y-2 p-2">
-                        {threadMessages[thread.id]?.map((message) => (
-                          <Card key={message.id} className="p-2">
-                            <p className="text-sm font-medium">{message.role}</p>
-                            <p className="text-sm whitespace-pre-wrap">
-                              {message.content[0]?.text?.value}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {new Date(message.created_at).toLocaleString()}
-                            </p>
-                          </Card>
-                        ))}
-                      </div>
-                    </ScrollArea>
-                    <div className="flex gap-2">
-                      <Input
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        placeholder="Type your message..."
-                        disabled={loading}
-                      />
-                      <Button 
-                        onClick={() => sendMessage(thread.id)} 
-                        disabled={loading || !newMessage.trim()}
-                      >
-                        Send
-                      </Button>
-                    </div>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        </ScrollArea>
-      </Card>
+      </Tabs>
+      {error && <div className="text-red-500 p-4">{renderError(error)}</div>}
+      <ChatDialog
+        open={chatOpen}
+        onOpenChange={setChatOpen}
+        messages={chatMessages}
+        onSendMessage={handleSendMessage}
+        onFileUpload={handleFileUpload}
+        isLoading={status === "polling"}
+        assistant={selectedAssistant}
+        error={error}
+      />
     </div>
   );
-} 
+}

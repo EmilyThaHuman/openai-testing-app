@@ -131,6 +131,11 @@ export const UnifiedOpenAIService = {
       return { ...thread, messages: messages.data.reverse() };
     },
 
+    update: async (threadId, params) => {
+      const openai = checkInitialization();
+      return await openai.beta.threads.update(threadId, params);
+    },
+
     delete: async (threadId) => {
       const openai = checkInitialization();
       await openai.beta.threads.del(threadId);
@@ -156,6 +161,20 @@ export const UnifiedOpenAIService = {
         const response = await openai.beta.threads.messages.list(threadId);
         return { data: response.data };
       },
+
+      get: async (threadId, messageId) => {
+        const openai = checkInitialization();
+        return await openai.beta.threads.messages.retrieve(threadId, messageId);
+      },
+
+      update: async (threadId, messageId, params) => {
+        const openai = checkInitialization();
+        return await openai.beta.threads.messages.update(
+          threadId,
+          messageId,
+          params
+        );
+      },
     },
 
     runs: {
@@ -176,6 +195,87 @@ export const UnifiedOpenAIService = {
 
         return runStatus;
       },
+
+      get: async (threadId, runId) => {
+        const openai = checkInitialization();
+        return await openai.beta.threads.runs.retrieve(threadId, runId);
+      },
+
+      update: async (threadId, runId, params) => {
+        const openai = checkInitialization();
+        return await openai.beta.threads.runs.update(threadId, runId, params);
+      },
+
+      list: async (threadId) => {
+        const openai = checkInitialization();
+        const response = await openai.beta.threads.runs.list(threadId);
+        return { data: response.data };
+      },
+
+      submitToolOutputs: async (threadId, runId, params) => {
+        const openai = checkInitialization();
+        return await openai.beta.threads.runs.submitToolOutputs(
+          threadId,
+          runId,
+          params
+        );
+      },
+
+      cancel: async (threadId, runId) => {
+        const openai = checkInitialization();
+        return await openai.beta.threads.runs.cancel(threadId, runId);
+      },
+
+      steps: {
+        list: async (threadId, runId) => {
+          const openai = checkInitialization();
+          const response = await openai.beta.threads.runs.steps.list(
+            threadId,
+            runId
+          );
+          return { data: response.data };
+        },
+
+        get: async (threadId, runId, stepId) => {
+          const openai = checkInitialization();
+          return await openai.beta.threads.runs.steps.retrieve(
+            threadId,
+            runId,
+            stepId
+          );
+        },
+      },
+    },
+  },
+
+  // Messages
+  messages: {
+    create: async (threadId, content) => {
+      const openai = checkInitialization();
+      return await openai.beta.threads.messages.create(threadId, {
+        role: "user",
+        content,
+      });
+    },
+
+    list: async (threadId) => {
+      const openai = checkInitialization();
+      const response = await openai.beta.threads.messages.list(threadId);
+      return { data: response.data };
+    },
+
+    get: async (threadId, messageId) => {
+      const openai = checkInitialization();
+      return await openai.beta.threads.messages.retrieve(threadId, messageId);
+    },
+
+    update: async (threadId, messageId, params) => {
+      const openai = checkInitialization();
+      return await openai.beta.threads.messages.update(
+        threadId,
+        messageId,
+        params
+      );
     },
   },
 

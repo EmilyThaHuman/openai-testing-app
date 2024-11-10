@@ -12,12 +12,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/use-toast";
 import { Wand2, Loader2 } from "lucide-react";
-import {
-  generateInstructions,
-  GENERATOR_TYPES,
-} from "@/utils/instructionGenerator";
+import { generateInstructions, GENERATOR_TYPES } from "../../utils/instructionsGenerator";
 
-const InstructionsGenerator = ({
+export const InstructionsGenerator = ({
   type = GENERATOR_TYPES.SYSTEM,
   value,
   onChange,
