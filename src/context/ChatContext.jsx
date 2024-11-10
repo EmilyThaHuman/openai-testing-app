@@ -243,6 +243,8 @@ export function ChatProvider({ children }) {
         throw new Error("No messages to send");
       }
 
+      const isStreaming = Boolean(options.settings?.stream ?? chat.settings.streaming ?? false);
+
       // Make API request
       const response = await UnifiedOpenAIService.chat.create({
         model: options.settings?.model || chat.settings.model || "gpt-4-turbo-preview",
@@ -252,27 +254,71 @@ export function ChatProvider({ children }) {
         top_p: Number(options.settings?.topP ?? chat.settings.topP ?? 1),
         frequency_penalty: Number(options.settings?.frequencyPenalty ?? chat.settings.frequencyPenalty ?? 0),
         presence_penalty: Number(options.settings?.presencePenalty ?? chat.settings.presencePenalty ?? 0),
-        stream: Boolean(options.settings?.stream ?? chat.settings.streaming ?? false),
+        stream: isStreaming,
       });
 
-      // Create and add assistant message
-      const assistantMessage = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: response.choices[0].message.content,
-        timestamp: new Date().toISOString(),
-      };
+      if (isStreaming) {
+        // Handle streaming response
+        let streamContent = '';
+        const assistantMessage = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: '',
+          timestamp: new Date().toISOString(),
+        };
 
-      // Update chat with assistant response
-      setChats(prevChats => 
-        prevChats.map(c => 
-          c.id === chat.id 
-            ? { ...c, messages: [...updatedMessages, assistantMessage] }
-            : c
-        )
-      );
+        // Add initial empty message
+        setChats(prevChats => 
+          prevChats.map(c => 
+            c.id === chat.id 
+              ? { ...c, messages: [...updatedMessages, assistantMessage] }
+              : c
+          )
+        );
 
-      return assistantMessage;
+        // Process the stream
+        for await (const chunk of response) {
+          const content = chunk.choices[0]?.delta?.content || '';
+          streamContent += content;
+          
+          // Update the message content
+          setChats(prevChats => 
+            prevChats.map(c => 
+              c.id === chat.id 
+                ? {
+                    ...c,
+                    messages: c.messages.map(m => 
+                      m.id === assistantMessage.id 
+                        ? { ...m, content: streamContent }
+                        : m
+                    )
+                  }
+                  : c
+            )
+          );
+        }
+
+        return { ...assistantMessage, content: streamContent };
+      } else {
+        // Handle non-streaming response
+        const assistantMessage = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: response.choices[0].message.content,
+          timestamp: new Date().toISOString(),
+        };
+
+        // Update chat with assistant response
+        setChats(prevChats => 
+          prevChats.map(c => 
+            c.id === chat.id 
+              ? { ...c, messages: [...updatedMessages, assistantMessage] }
+              : c
+          )
+        );
+
+        return assistantMessage;
+      }
 
     } catch (err) {
       console.error("Chat error:", err);
