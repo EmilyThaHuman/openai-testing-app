@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import useRuns from "@/hooks/use-runs";
 import { useActiveRun } from "@/hooks/use-active-run";
 import { ChatDialog } from "@/components/chat/ChatDialog";
+import { UnifiedOpenAIService } from "@/services/openai/unifiedOpenAIService";
 
 export default function AssistantTesting() {
   const { apiKey } = useOpenAI();
@@ -171,11 +172,11 @@ export default function AssistantTesting() {
 
   const handleFileUpload = useCallback(async (file) => {
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("purpose", "assistants");
+      // const formData = new FormData();
+      // formData.append("file", file);
+      // formData.append("purpose", "assistants");
 
-      const response = await UnifiedOpenAIService.files.create(formData);
+      const response = await UnifiedOpenAIService.files.upload(file, "assistants");
       return response;
     } catch (error) {
       setError(error);
@@ -256,6 +257,93 @@ export default function AssistantTesting() {
       });
     }
   };
+
+  const handleRegenerate = useCallback(
+    async (message) => {
+      if (!currentThread?.id || !selectedAssistant?.id) {
+        toast({
+          title: "Error",
+          description: "No active conversation",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      try {
+        // First, we'll create a new run that starts from this message
+        const run = await UnifiedOpenAIService.threads.runs.create(
+          currentThread.id,
+          selectedAssistant.id,
+          {
+            instructions: `Please regenerate your response to the user's message: "${message.content}"`,
+          }
+        );
+
+        // Wait for the run to complete and get updated messages
+        const updatedMessages =
+          await UnifiedOpenAIService.threads.messages.list(currentThread.id);
+
+        setChatMessages(updatedMessages.data);
+        return run;
+      } catch (error) {
+        setError(error);
+        toast({
+          title: "Error",
+          description: "Failed to regenerate response",
+          variant: "destructive",
+        });
+      }
+    },
+    [currentThread?.id, selectedAssistant?.id, toast]
+  );
+
+  const handleFeedback = useCallback(
+    async (message, type) => {
+      if (!currentThread?.id || !message?.id) {
+        toast({
+          title: "Error",
+          description: "Invalid message or thread",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      try {
+        // Create feedback for the message
+        await UnifiedOpenAIService.threads.messages.feedback.create(
+          currentThread.id,
+          message.id,
+          {
+            rating: type === "positive" ? "good" : "poor",
+            feedback_text:
+              type === "positive"
+                ? "This response was helpful"
+                : "This response needs improvement",
+          }
+        );
+
+        toast({
+          title: "Success",
+          description: "Feedback submitted successfully",
+        });
+
+        // Optionally, you can update the UI to show the feedback has been recorded
+        setChatMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === message.id ? { ...msg, feedback: type } : msg
+          )
+        );
+      } catch (error) {
+        setError(error);
+        toast({
+          title: "Error",
+          description: "Failed to submit feedback",
+          variant: "destructive",
+        });
+      }
+    },
+    [currentThread?.id, toast]
+  );
 
   const toggleTool = (tool) => {
     setNewAssistant((prev) => ({
@@ -417,8 +505,10 @@ export default function AssistantTesting() {
         open={chatOpen}
         onOpenChange={setChatOpen}
         messages={chatMessages}
-        onSendMessage={handleSendMessage}
+        onSendMessage={handleChatMessage}
         onFileUpload={handleFileUpload}
+        onRegenerate={handleRegenerate}
+        onFeedback={handleFeedback}
         isLoading={status === "polling"}
         assistant={selectedAssistant}
         error={error}

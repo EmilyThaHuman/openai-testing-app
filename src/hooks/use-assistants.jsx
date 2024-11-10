@@ -55,16 +55,19 @@ export function useAssistants(apiKey) {
       );
 
       const threads = assistantThreads[assistantId] || [];
-      await Promise.all(
-        threads?.map((thread) =>
-          fetchThreadMessages(
-            thread.id,
-            setAssistantThreadMessages,
-            CACHE_KEYS.MESSAGES,
-            toast
+
+      if (threads?.length > 0) {
+        await Promise.all(
+          threads?.map((thread) =>
+            fetchThreadMessages(
+              thread.id,
+              setAssistantThreadMessages,
+              CACHE_KEYS.MESSAGES,
+              toast
+            )
           )
-        )
-      );
+        );
+      }
     } catch (error) {
       setError(error);
       toast({

@@ -22,6 +22,8 @@ export function ChatDialog({
   isLoading,
   assistant,
   error,
+  onRegenerate,
+  onFeedback,
 }) {
   const scrollRef = useRef(null);
 
@@ -73,21 +75,50 @@ export function ChatDialog({
   };
 
   const formatMessages = (messages) => {
-    return messages.map((msg) => ({
-      ...msg,
-      content: Array.isArray(msg.content)
-        ? msg.content
-            .map((c) => (typeof c === "string" ? c : c.text))
-            .join("\n")
-        : typeof msg.content === "string"
-          ? msg.content
-          : JSON.stringify(msg.content),
-    }));
+    return messages.map((msg) => {
+      let formattedContent = msg.content;
+
+      // Handle different content formats
+      if (Array.isArray(msg.content)) {
+        formattedContent = msg.content
+          .map((item) => {
+            if (typeof item === "string") return item;
+            if (item.type === "text") return item.text.value;
+            if (typeof item.content === "string") return item.content;
+            return "";
+          })
+          .filter(Boolean)
+          .join("\n");
+      } else if (typeof msg.content === "object") {
+        if (msg.content.type === "text") {
+          formattedContent = msg.content.text;
+        } else if (msg.content.content) {
+          formattedContent = msg.content.content;
+        } else {
+          formattedContent = JSON.stringify(msg.content, null, 2);
+        }
+      }
+
+      return {
+        ...msg,
+        content: formattedContent,
+      };
+    });
   };
+
+  // Debug logging
+  console.log(
+    "Formatted messages:",
+    messages.map((msg) => ({
+      original: msg.content,
+      formatted: formatMessages([msg])[0].content,
+    }))
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] h-[80vh] flex flex-col">
+        <DialogTitle>{assistant?.id}</DialogTitle>
         <DialogHeader className="space-y-4">
           {renderAssistantDetails()}
           <Separator />

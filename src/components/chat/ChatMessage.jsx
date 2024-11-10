@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import ReactMarkdown from "react-markdown";
@@ -22,19 +22,44 @@ export const ChatMessage = memo(
         ? message.content
         : JSON.stringify(message.content);
 
-    // Handle content that might be in different formats
-    const getMessageContent = () => {
+    // Process message content with proper type handling
+    const processedContent = useMemo(() => {
+      if (!message.content) return "";
+
+      // Handle array of content
       if (Array.isArray(message.content)) {
         return message.content
           .map((item) => {
             if (typeof item === "string") return item;
-            if (item.text) return item.text;
+            if (item.type === "text") return item.text;
+            if (typeof item.content === "string") return item.content;
             return "";
           })
+          .filter(Boolean)
           .join("\n");
       }
-      return messageContent;
-    };
+
+      // Handle object content
+      if (typeof message.content === "object") {
+        if (message.content.type === "text") return message.content.text;
+        if (message.content.content) return message.content.content;
+        return JSON.stringify(message.content, null, 2);
+      }
+
+      // Handle string content
+      if (typeof message.content === "string") {
+        return message.content;
+      }
+
+      // Fallback
+      return JSON.stringify(message.content, null, 2);
+    }, [message.content]);
+
+    // Debug logging
+    console.log("Processed content:", {
+      original: message.content,
+      processed: processedContent,
+    });
 
     return (
       <Card
@@ -60,13 +85,13 @@ export const ChatMessage = memo(
         </div>
 
         <div className="prose prose-sm dark:prose-invert max-w-none">
-          {messageContent && (
+          {processedContent && (
             <ReactMarkdown
               remarkPlugins={[remarkGfm, remarkMath]}
               rehypePlugins={[rehypeKatex]}
               components={markdownComponents}
             >
-              {getMessageContent()}
+              {processedContent}
             </ReactMarkdown>
           )}
         </div>

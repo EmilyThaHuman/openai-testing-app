@@ -46,6 +46,7 @@
     "@tabler/icons-react": "^3.21.0",
     "axios": "^1.7.7",
     "class-variance-authority": "^0.7.0",
+    "date-fns": "^4.1.0",
     "katex": "^0.16.11",
     "lucide-react": "^0.456.0",
     "openai": "^4.71.1",
