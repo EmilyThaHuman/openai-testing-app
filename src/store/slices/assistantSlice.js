@@ -1,6 +1,36 @@
 import { toast } from "@/components/ui/use-toast";
 import { CACHE_KEYS, cacheService } from "@/services/cache/CacheService";
 import { UnifiedOpenAIService } from "@/services/openai/unifiedOpenAIService";
+
+export const MODELS = {
+  "gpt-4-turbo-preview": "GPT-4 Turbo",
+  "gpt-4": "GPT-4",
+  "gpt-3.5-turbo": "GPT-3.5 Turbo",
+};
+
+export const TOOLS = {
+  code_interpreter: "Code Interpreter",
+  retrieval: "File Search & Retrieval",
+  function: "Function Calling",
+};
+
+export const DEFAULT_ASSISTANT = {
+  name: "",
+  instructions: "",
+  model: "gpt-4-turbo-preview",
+  tools: [],
+  file_ids: [],
+  metadata: {},
+  temperature: 0.7,
+  top_p: 1,
+  presence_penalty: 0,
+  frequency_penalty: 0,
+  response_format: { type: "text" },
+  file_search_enabled: false,
+  code_interpreter_enabled: false,
+  function_calling_enabled: false,
+};
+
 export const createAssistantSlice = (set, get) => ({
   // Extended State
   assistants: [],
@@ -9,6 +39,8 @@ export const createAssistantSlice = (set, get) => ({
   threads: {},
   threadMessages: {},
   expandedThreads: new Set(),
+  runningThreads: new Set(),
+
   streamingChatMessages: [],
   streaming: false,
   loading: false,
@@ -50,13 +82,60 @@ export const createAssistantSlice = (set, get) => ({
 
       // Pre-fetch threads for each assistant
       await Promise.all(
-        assistants.map((assistant) => state.fetchthreads(assistant.id))
+        assistants.map((assistant) =>
+          state.fetchThreadsForAssistant(assistant.id)
+        )
       );
 
       return assistants;
     } catch (error) {
       state.setError(error.message);
       throw error;
+    } finally {
+      state.setLoading(false);
+    }
+  },
+
+  fetchThreadsForAssistant: async (assistantId, force = false) => {
+    const state = get();
+    if (!assistantId) return;
+
+    state.setLoading(true);
+    state.setError(null);
+
+    try {
+      const cachedThreads =
+        !force && cacheService.get(CACHE_KEYS.THREADS, assistantId);
+      if (cachedThreads) {
+        set((prevState) => ({
+          threads: {
+            ...prevState.threads,
+            [assistantId]: Array.isArray(cachedThreads) ? cachedThreads : [],
+          },
+        }));
+        return;
+      }
+
+      const response = await UnifiedOpenAIService.threads.list(assistantId);
+      const threadsData = response?.data || [];
+
+      set((prevState) => ({
+        threads: {
+          ...prevState.threads,
+          [assistantId]: threadsData,
+        },
+      }));
+
+      cacheService.set(CACHE_KEYS.THREADS, threadsData, assistantId);
+
+      // Prefetch messages for expanded threads
+      const visibleThreads = Array.from(state.expandedThreads);
+      await Promise.all(
+        visibleThreads.map((threadId) => state.fetchMessagesForThread(threadId))
+      );
+    } catch (error) {
+      state.setError(error.message);
+      console.error("Error fetching threads:", error);
     } finally {
       state.setLoading(false);
     }
@@ -144,64 +223,6 @@ export const createAssistantSlice = (set, get) => ({
   },
 
   // Thread operations
-  fetchThreadsForAssistant: async (force = false) => {
-    const state = get();
-    const selectedAssistant = state.selectedAssistant;
-
-    if (!selectedAssistant?.id) {
-      set((state) => ({
-        threads: {
-          ...state.threads,
-          [selectedAssistant?.id]: [],
-        },
-      }));
-      return;
-    }
-
-    state.setLoading(true);
-    state.setError(null);
-
-    try {
-      const cachedThreads =
-        !force && cacheService.get(CACHE_KEYS.THREADS, selectedAssistant.id);
-      if (cachedThreads) {
-        set((state) => ({
-          threads: {
-            ...state.threads,
-            [selectedAssistant.id]: Array.isArray(cachedThreads)
-              ? cachedThreads
-              : [],
-          },
-        }));
-        return;
-      }
-
-      const response = await UnifiedOpenAIService.threads.list(
-        selectedAssistant.id
-      );
-      const threadsData = response?.data || [];
-
-      set((state) => ({
-        threads: {
-          ...state.threads,
-          [selectedAssistant.id]: threadsData,
-        },
-      }));
-
-      cacheService.set(CACHE_KEYS.THREADS, threadsData, selectedAssistant.id);
-
-      // Prefetch messages for visible threads
-      const visibleThreads = Array.from(state.expandedThreads);
-      await Promise.all(
-        visibleThreads.map((threadId) => state.fetchMessagesForThread(threadId))
-      );
-    } catch (error) {
-      state.setError(error);
-      console.error("Error fetching threads:", error);
-    } finally {
-      state.setLoading(false);
-    }
-  },
 
   fetchMessagesForThread: async (threadId, force = false) => {
     const state = get();
@@ -282,6 +303,23 @@ export const createAssistantSlice = (set, get) => ({
     } finally {
       state.setLoading(false);
     }
+  },
+
+  createAndRun: async (assistantId, params) => {
+    const state = get();
+    return await UnifiedOpenAIService.threads.runs.createAndRun(
+      assistantId,
+      params
+    );
+  },
+
+  createAndStreamRun: async (assistantId, params) => {
+    const state = get();
+    const stream = await UnifiedOpenAIService.threads.runs.createAndStreamRun(
+      assistantId,
+      params
+    );
+    return stream;
   },
 
   toggleThread: (threadIds) => {
@@ -449,7 +487,7 @@ export const createAssistantSlice = (set, get) => ({
   },
 
   // Computed values / Selectors
-  getthreads: (assistantId) => {
+  getThreads: (assistantId) => {
     const state = get();
     return state.threads[assistantId] || [];
   },

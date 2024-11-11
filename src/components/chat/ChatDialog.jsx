@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useCallback, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { ChatMessage } from "./ChatMessage";
 import { ChatInput } from "./ChatInput";
 import { formatDate } from "@/lib/utils";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 export function ChatDialog({
   open,
@@ -26,10 +27,21 @@ export function ChatDialog({
   onFeedback,
 }) {
   const scrollRef = useRef(null);
+  const isNearBottomRef = useRef(true);
+  const [detailsOpen, setDetailsOpen] = useState(true);
+
+  // Check if user is near the bottom
+  const handleScroll = () => {
+    if (scrollRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+      const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+      isNearBottomRef.current = distanceFromBottom < 100;
+    }
+  };
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    if (scrollRef.current) {
+    if (scrollRef.current && isNearBottomRef.current) {
       scrollRef.current.scrollTo({
         top: scrollRef.current.scrollHeight,
         behavior: "smooth",
@@ -37,7 +49,7 @@ export function ChatDialog({
     }
   }, [messages]);
 
-  const renderAssistantDetails = () => {
+  const renderAssistantDetails = useCallback(() => {
     if (!assistant) return null;
 
     return (
@@ -51,46 +63,64 @@ export function ChatDialog({
           </Badge>
         </div>
 
-        <DialogDescription className="text-sm text-muted-foreground">
-          {assistant.description || "No description provided"}
-        </DialogDescription>
+        {assistant.description && (
+          <DialogDescription className="text-sm text-muted-foreground">
+            {assistant.description}
+          </DialogDescription>
+        )}
 
-        <div className="flex flex-wrap gap-2">
-          {assistant.tools?.map((tool, index) => (
-            <Badge key={index} variant="outline">
-              {tool.type}
-            </Badge>
-          ))}
-        </div>
+        {assistant.instructions && (
+          <div className="bg-muted/10 p-2 rounded-md">
+            <p className="font-semibold mb-1">Instructions:</p>
+            <p className="text-sm">{assistant.instructions}</p>
+          </div>
+        )}
+
+        {assistant.tools?.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {assistant.tools.map((tool, index) => (
+              <Badge key={index} variant="outline">
+                {tool.type}
+              </Badge>
+            ))}
+          </div>
+        )}
 
         <div className="text-xs text-muted-foreground space-y-1">
-          <p>Model: {assistant.model}</p>
-          <p>Created: {formatDate(assistant.created_at)}</p>
+          {assistant.model && <p>Model: {assistant.model}</p>}
+          {assistant.created_at && (
+            <p>Created: {formatDate(assistant.created_at)}</p>
+          )}
           {assistant.file_ids?.length > 0 && (
             <p>Files attached: {assistant.file_ids.length}</p>
           )}
         </div>
       </div>
     );
-  };
+  }, [assistant]);
 
-  const formatMessages = (messages) => {
-    return messages.map((msg) => {
-      let formattedContent = msg.content;
+  const formatMessages = useCallback((messagesList) => {
+    return messagesList.map((msg) => {
+      let formattedContent = "";
 
-      // Handle different content formats
-      if (Array.isArray(msg.content)) {
+      if (typeof msg.content === "string") {
+        formattedContent = msg.content;
+      } else if (Array.isArray(msg.content)) {
         formattedContent = msg.content
           .map((item) => {
-            if (typeof item === "string") return item;
-            if (item.type === "text") return item.text.value;
-            if (typeof item.content === "string") return item.content;
+            if (typeof item === "string") {
+              return item;
+            } else if (item.text) {
+              return item.text.value;
+            } else if (item.content) {
+              return item.content;
+            }
             return "";
           })
           .filter(Boolean)
           .join("\n");
-      } else if (typeof msg.content === "object") {
-        if (msg.content.type === "text") {
+      } else if (msg.content && typeof msg.content === "object") {
+        if (msg.content.text) {
           formattedContent = msg.content.text;
         } else if (msg.content.content) {
           formattedContent = msg.content.content;
@@ -104,29 +134,40 @@ export function ChatDialog({
         content: formattedContent,
       };
     });
-  };
-
-  // Debug logging
-  console.log(
-    "Formatted messages:",
-    messages.map((msg) => ({
-      original: msg.content,
-      formatted: formatMessages([msg])[0].content,
-    }))
-  );
+  }, []);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] h-[80vh] flex flex-col">
-        <DialogTitle>{assistant?.id}</DialogTitle>
-        <DialogHeader className="space-y-4">
-          {renderAssistantDetails()}
+      <DialogContent
+        className="sm:max-w-2xl w-full max-h-screen h-full flex flex-col"
+        aria-label="Chat Dialog"
+      >
+        <DialogHeader className="space-y-2">
+          <div className="flex items-center justify-between">
+            <DialogTitle>{assistant?.name || "Chat"}</DialogTitle>
+            <button
+              onClick={() => setDetailsOpen(!detailsOpen)}
+              className="text-muted-foreground hover:text-primary focus:outline-none"
+              aria-label="Toggle Assistant Details"
+            >
+              {detailsOpen ? (
+                <ChevronUp className="w-5 h-5" />
+              ) : (
+                <ChevronDown className="w-5 h-5" />
+              )}
+            </button>
+          </div>
+          {detailsOpen && renderAssistantDetails()}
           <Separator />
         </DialogHeader>
 
         <div className="flex-1 flex flex-col min-h-0">
-          <ScrollArea ref={scrollRef} className="flex-1 pr-4">
-            <div className="space-y-4 pb-4">
+          <ScrollArea
+            ref={scrollRef}
+            className="flex-1 p-4"
+            onScroll={handleScroll}
+          >
+            <div className="space-y-6 pb-4">
               {formatMessages(messages).map((message, i) => (
                 <ChatMessage
                   key={`${message.id || i}-${message.timestamp}`}
@@ -154,7 +195,7 @@ export function ChatDialog({
             </div>
           </ScrollArea>
 
-          <div className="pt-4">
+          <div className="p-4 bg-background">
             <ChatInput
               onSend={onSendMessage}
               onFileUpload={onFileUpload}
@@ -174,4 +215,4 @@ export function ChatDialog({
 
 ChatDialog.displayName = "ChatDialog";
 
-export default { ChatDialog };
+export default React.memo(ChatDialog);

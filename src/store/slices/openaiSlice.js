@@ -1,54 +1,79 @@
+import { toast } from "@/components/ui/use-toast";
 import { UnifiedOpenAIService } from "@/services/openai/unifiedOpenAIService";
 
 export const createOpenAISlice = (set, get) => ({
   messages: [],
   data: null,
   result: "",
-  apiKey: localStorage.getItem("openai_api_key") || "",
+  isInitialized: false,
+  error: null,
+  loading: false,
+  apiKey: "",
+
+  initialize: () => {
+    const apiKey = get().apiKey;
+    if (apiKey && !get().isInitialized) {
+      UnifiedOpenAIService.initialize(apiKey);
+      set({ isInitialized: true });
+    }
+  },
 
   setApiKey: (newApiKey) => {
-    localStorage.setItem("openai_api_key", newApiKey);
-    UnifiedOpenAIService.initialize(newApiKey);
-    set({ apiKey: newApiKey });
+    try {
+      UnifiedOpenAIService.initialize(newApiKey);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("openai_api_key", newApiKey);
+      }
+
+      set({
+        apiKey: newApiKey,
+        isInitialized: true,
+        error: null,
+      });
+      toast({
+        title: "API Key Updated",
+        description: "Your OpenAI API key has been successfully updated.",
+      });
+    } catch (error) {
+      set({ error: error.message });
+      toast({
+        variant: "destructive",
+        title: "API Key Error",
+        description: error.message,
+      });
+    }
   },
 
   sendMessage: async (content, options = {}) => {
     const userMessage = { role: "user", content };
+
     set((state) => ({
-      messages: [...state.messages, userMessage]
+      messages: [...state.messages, userMessage],
     }));
 
     try {
       const response = await UnifiedOpenAIService.chat.create({
         model: options.model || "gpt-4",
-        messages: [...get().messages, userMessage],
+        messages: get().messages,
         ...options,
       });
-      
+
       const assistantMessage = response.choices[0].message;
       set((state) => ({
-        messages: [...state.messages, assistantMessage]
+        messages: [...state.messages, assistantMessage],
       }));
       return assistantMessage;
     } catch (error) {
       console.error("Error in sendMessage:", error);
-      throw error;
-    }
-  },
-
-  generateImage: async (prompt, options = {}) => {
-    try {
-      const response = await UnifiedOpenAIService.createImage({
-        prompt,
-        ...options,
+      set({ error: error.message });
+      toast({
+        variant: "destructive",
+        title: "Message Error",
+        description: error.message,
       });
-      set({ data: response.data });
-      return response.data;
-    } catch (error) {
-      console.error("Error in generateImage:", error);
       throw error;
     }
   },
 
   clearMessages: () => set({ messages: [] }),
-}); 
+});

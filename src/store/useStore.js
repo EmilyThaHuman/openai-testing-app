@@ -3,28 +3,26 @@ import { createWithEqualityFn } from "zustand/traditional";
 import { shallow } from "zustand/shallow";
 import { persist } from "zustand/middleware";
 import { createChatSlice } from "./slices/chatSlice";
-import { createAssistantChatSlice } from "./slices/assistantChatSlice";
 import { createAssistantSlice } from "./slices/assistantSlice";
 import { createFileSlice } from "./slices/fileSlice";
 import { createUISlice } from "./slices/uiSlice";
 import { createVectorStoreSlice } from "./slices/vectorStoreSlice";
 import { createToolsSlice } from "./slices/toolsSlice";
 import { createOpenAISlice } from "./slices/openaiSlice";
+import { UnifiedOpenAIService } from "@/services/openai/unifiedOpenAIService";
 
 export const useStore = createWithEqualityFn(
   persist(
     (...args) => ({
+      ...createOpenAISlice(...args),
       ...createChatSlice(...args),
-      ...createAssistantChatSlice(...args),
       ...createAssistantSlice(...args),
       ...createFileSlice(...args),
       ...createUISlice(...args),
       ...createVectorStoreSlice(...args),
       ...createToolsSlice(...args),
-      ...createOpenAISlice(...args),
       // Global state
-      apiKey: null,
-      setApiKey: (key) => args[0]({ apiKey: key }),
+      // apiKey: localStorage.getItem("openai_api_key") || "",
 
       // Helper to get all chats (both regular and assistant)
       getAllChats: () => {
@@ -49,8 +47,7 @@ export const useStore = createWithEqualityFn(
         assistantChats: state.assistantChats,
         threads: state.threads,
         threadMessages: state.threadMessages,
-        assistantThreads: state.assistantThreads,
-        assistantThreadMessages: state.assistantThreadMessages,
+        expandedThreads: Array.from(state.expandedThreads),
         assistants: state.assistants,
         selectedAssistant: state.selectedAssistant,
         vectorStores: state.vectorStores,

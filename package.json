@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",
+    "@codesandbox/sandpack-react": "^2.19.9",
     "@hookform/resolvers": "^3.9.1",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.11",
     "@radix-ui/react-accordion": "^1.2.1",
@@ -87,6 +88,7 @@
     "vite-plugin-compression": "^0.5.1",
     "vite-plugin-pwa": "^0.17.4",
     "web-vitals": "^3.5.0",
+    "yup": "^1.4.0",
     "zod": "^3.23.8",
     "zustand": "^5.0.1"
   },

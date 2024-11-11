@@ -2,11 +2,13 @@ import { UnifiedOpenAIService } from "@/services/openai/unifiedOpenAIService";
 
 export const createVectorStoreSlice = (set, get) => ({
   vectorStores: [],
+  vectorStoreFiles: [],
   selectedVectorStore: null,
   loading: false,
   error: null,
 
   setVectorStores: (vectorStores) => set({ vectorStores }),
+  setVectorStoreFiles: (vectorStoreFiles) => set({ vectorStoreFiles }),
   setSelectedVectorStore: (store) => set({ selectedVectorStore: store }),
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
@@ -50,4 +52,12 @@ export const createVectorStoreSlice = (set, get) => ({
       throw error;
     }
   },
+
+  addVectorStoreFile: (file) =>
+    set((state) => ({ vectorStoreFiles: [...state.vectorStoreFiles, file] })),
+  removeVectorStoreFile: (fileId) =>
+    set((state) => ({
+      vectorStoreFiles: state.vectorStoreFiles.filter((f) => f.id !== fileId),
+    })),
+  clearVectorStoreFiles: () => set({ vectorStoreFiles: [] }),
 });

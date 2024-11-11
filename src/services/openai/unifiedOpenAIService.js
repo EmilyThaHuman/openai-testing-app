@@ -81,29 +81,34 @@ export const UnifiedOpenAIService = {
    */
   assistants: {
     create: async (params) => {
-      const openai = checkInitialization();
-      console.log("Creating assistant...");
+      try {
+        const openai = checkInitialization();
+        console.log("Creating assistant...");
 
-      // Log the assistant details and file IDs
-      console.log("(create)-> Assistant Name:", params.name);
-      console.log("(create)-> Assistant Model:", params.model);
-      console.log("(create)-> Assistant Description:", params.description);
-      console.log("(create)-> Assistant Instructions:", params.instructions);
-      console.log("(create)-> File IDs:", params.fileIds);
-      const requestBody = {
-        model: params.model,
-        name: params.name,
-        instructions: params.instructions,
-        tools: params.tools || [],
-        metadata: params.metadata || {},
-      };
-      return await openai.beta.assistants.create(requestBody);
+        // Log the assistant details and file IDs
+        console.log("(create)-> Assistant Name:", params.name);
+        console.log("(create)-> Assistant Model:", params.model);
+        console.log("(create)-> Assistant Description:", params.description);
+        console.log("(create)-> Assistant Instructions:", params.instructions);
+        console.log("(create)-> File IDs:", params.fileIds);
+        return await openai.beta.assistants.create(params);
+      } catch (error) {
+        console.error("OpenAI API Error:", error);
+        throw error;
+      }
     },
 
     list: async () => {
-      const openai = checkInitialization();
-      const response = await openai.beta.assistants.list();
-      return { data: response.data };
+      try {
+        const openai = checkInitialization();
+        console.log("Listing assistants...");
+        const response = await openai.beta.assistants.list();
+        console.log("response", response);
+        return { data: response.data };
+      } catch (error) {
+        console.error("OpenAI API Error:", error);
+        throw error;
+      }
     },
 
     get: async (assistantId) => {
@@ -171,6 +176,7 @@ export const UnifiedOpenAIService = {
       const threads = JSON.parse(
         localStorage.getItem("openai_threads") || "[]"
       );
+      console.log("THREADS RETREIVED FROM LOCAL STORAGE", threads);
       return { data: threads };
     },
 
@@ -261,6 +267,74 @@ export const UnifiedOpenAIService = {
         }
 
         return runStatus;
+      },
+
+      createAndRun: async (assistantId, params) => {
+        try {
+          const openai = checkInitialization();
+          const run = await openai.beta.threads.createAndRun({
+            assistant_id: assistantId,
+            thread: {
+              messages: [
+                {
+                  role: "user",
+                  content: params.content,
+                },
+              ],
+            },
+          });
+          return run;
+        } catch (error) {
+          console.error("Error creating and running:", error);
+          throw error;
+        }
+      },
+
+      createAndStreamRun: async (assistantId, params) => {
+        try {
+          const openai = checkInitialization();
+          const stream = await openai.beta.threads.createAndRun({
+            assistant_id: assistantId,
+            thread: {
+              messages: [
+                {
+                  role: "user",
+                  content: params.content,
+                },
+              ],
+            },
+          });
+          return stream;
+        } catch (error) {
+          console.error("Error creating and streaming run:", error);
+          throw error;
+        }
+      },
+
+      createAndStreamRunWithFunctionCalling: async (assistantId, params) => {
+        try {
+          const openai = checkInitialization();
+          const stream = await openai.beta.threads.createAndRun({
+            assistant_id: assistantId,
+            thread: {
+              messages: [
+                {
+                  role: "user",
+                  content: params.content,
+                },
+              ],
+            },
+            tools: params.tools,
+            stream: true,
+          });
+          return stream;
+        } catch (error) {
+          console.error(
+            "Error creating and streaming run with function calling:",
+            error
+          );
+          throw error;
+        }
       },
 
       get: async (threadId, runId) => {

@@ -165,7 +165,7 @@ export default function ChatTesting() {
   } = useChat();
 
   useEffect(() => {
-    if (!inView && activeChat?.messages.length) {
+    if (!inView && activeChat?.messages?.length) {
       scrollRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [activeChat?.messages, inView]);

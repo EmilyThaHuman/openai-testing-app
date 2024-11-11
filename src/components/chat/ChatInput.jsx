@@ -17,13 +17,8 @@ export function ChatInput({
   const [isUploading, setIsUploading] = React.useState(false);
   const fileInputRef = useRef(null);
 
-  const {
-    files,
-    setFiles,
-    uploadProgress,
-    handleFileSelect,
-    removeFile,
-  } = useFileHandler();
+  const { files, setFiles, uploadProgress, handleFileSelect, removeFile } =
+    useFileHandler();
 
   const handleSubmit = async (e) => {
     e?.preventDefault();
@@ -45,7 +40,7 @@ export function ChatInput({
 
       const successfulUploads = uploadedFileIds.filter(Boolean);
       await onSend?.(input, successfulUploads);
-      
+
       setInput("");
       setFiles([]);
     } catch (error) {
@@ -147,3 +142,5 @@ export function ChatInput({
     </form>
   );
 }
+
+export default { ChatInput };
