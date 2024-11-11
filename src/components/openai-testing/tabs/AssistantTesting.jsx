@@ -20,65 +20,117 @@ import {
 } from "lucide-react";
 import { DEFAULT_ASSISTANT } from "../../../constants/assistantConstants";
 import { useAssistants } from "@/hooks/use-assistants";
-import { useThreads } from "@/hooks/use-threads";
 import ThreadMessages from "../../assistants/ThreadMessages";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import useRuns from "@/hooks/use-runs";
 import { useActiveRun } from "@/hooks/use-active-run";
 import { ChatDialog } from "@/components/chat/ChatDialog";
 import { UnifiedOpenAIService } from "@/services/openai/unifiedOpenAIService";
 import { FileUploadDialog } from "@/components/shared/FileUploadDialog";
-import ErrorBoundary from "@/components/shared/ErrorBoundary";
-import { LoadingState } from "@/components/shared/LoadingState";
 import { ErrorDisplay } from "@/components/shared/ErrorDisplay";
 import { motion, AnimatePresence } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
-import AssistantToolsManager from "@/components/assistants/AssistantToolsManager";
-import VectorStoreManagement from "@/components/vector-store/VectorStoreManagement";
-import FileManagement from "@/components/shared/FileManagement";
-import { useVectorStore } from "@/hooks/use-vector-store";
+import { AssistantToolsManager } from "@/components/assistants/AssistantToolsManager";
+import { VectorStoreManagement } from "@/components/vector-store/VectorStoreManagement";
+import { FileManagement } from "@/components/shared/FileManagement";
+import { useStore, useStoreShallow } from "@/store/useStore";
 
 export default function AssistantTesting() {
   const { apiKey } = useOpenAI();
   const { toast } = useToast();
-
+  const store = useStoreShallow((state) => ({
+    vectorStores: state.vectorStores,
+    loading: state.loading,
+    error: state.error,
+    fetchVectorStores: state.fetchVectorStores,
+    createVectorStore: state.createVectorStore,
+    deleteVectorStore: state.deleteVectorStore,
+    selectedVectorStore: state.selectedVectorStore,
+    setSelectedVectorStore: state.setSelectedVectorStore,
+  }));
   // State
   const [newAssistant, setNewAssistant] = useState(DEFAULT_ASSISTANT);
   const [newMessage, setNewMessage] = useState("");
-  const [streaming, setStreaming] = useState(false);
-  const [streamingMessages, setStreamingMessages] = useState({});
+
   const [chatOpen, setChatOpen] = useState(false);
   const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
-  const [chatMessages, setChatMessages] = useState([]);
   const [uploadingFiles, setUploadingFiles] = useState(new Map());
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null); // Add error state
 
+  const fetchRef = React.useRef(false);
+  useEffect(() => {
+    if (!fetchRef.current) {
+      fetchRef.current = true;
+      store.fetchVectorStores();
+    }
+    return () => {
+      fetchRef.current = false;
+    };
+  }, []);
+
   // Custom hooks
   const {
+    // Core state
     assistants,
+    selectedAssistant,
     loading: assistantsLoading,
     error: assistantsError,
-    createAssistant,
-    fetchAssistants,
-    selectedAssistant,
-    setSelectedAssistant,
-  } = useAssistants(apiKey);
-
-  const {
-    threads,
+    streaming,
+    streamingChatMessages,
+    assistantChatMessages,
+    setStreaming,
+    setAssistantChatMessages,
+    setStreamingChatMessages,
     threadMessages,
-    loading: threadsLoading,
+    selectedThread,
+    setSelectedThread,
     expandedThreads,
+
+    // Actions
+    setSelectedAssistant,
+    fetchAssistants,
+    createAssistant,
+    handleFileUpload: uploadAssistantFile,
+    sendMessage,
     createThread,
     deleteThread,
     toggleThread,
-    sendMessage,
-    fetchThreadMessages,
-    selectedThread,
-    setSelectedThread,
-  } = useThreads(selectedAssistant);
+    createStreamedThreadWithMessage,
+    fetchThreadsForAssistant,
+
+    // Thread & Message operations
+    getAssistantThreads,
+    getThreadMessages,
+    isThreadExpanded,
+
+    // Feedback and regeneration
+    regenerateResponse,
+    submitFeedback,
+  } = useAssistants();
+
+  // Fetch initial data
+  useEffect(() => {
+    if (!fetchRef.current && apiKey) {
+      fetchRef.current = true;
+      fetchAssistants();
+      vectorStore.fetchVectorStores();
+    }
+  }, [apiKey]);
+
+  // const {
+  //   threads,
+  //   threadMessages,
+  //   loading: threadsLoading,
+  //   expandedThreads,
+  //   createThread,
+  //   deleteThread,
+  //   toggleThread,
+  //   sendMessage,
+  //   fetchThreadMessages,
+  //   selectedThread,
+  //   setSelectedThread,
+  // } = useThreads(selectedAssistant);
 
   const {
     submitMessage,
@@ -108,14 +160,27 @@ export default function AssistantTesting() {
     createVectorStore,
     deleteVectorStore,
     files,
-  } = useVectorStore();
+    setSelectedVectorStore,
+    selectedVectorStore,
+  } = useStore((state) => ({
+    vectorStores: state.vectorStores,
+    loading: state.loading,
+    error: state.error,
+    fetchVectorStores: state.fetchVectorStores,
+    createVectorStore: state.createVectorStore,
+    deleteVectorStore: state.deleteVectorStore,
+    selectedVectorStore: state.selectedVectorStore,
+    setSelectedVectorStore: state.setSelectedVectorStore,
+  }));
 
-  useEffect(() => {
-    fetchVectorStores();
-  }, [fetchVectorStores]);
+  // useEffect(() => {
+  //   fetchVectorStores();
+  // }, [fetchVectorStores]);
 
   // Combine loading states
   const loading = threadsLoading || assistantsLoading;
+
+  const threads = getAssistantThreads(selectedAssistant?.id);
 
   const handleStartRun = useCallback(
     async (assistant) => {
@@ -128,7 +193,7 @@ export default function AssistantTesting() {
         console.log("Run:", run);
         console.log("Thread:", thread);
         console.log("Messages:", messages);
-        setChatMessages(messages);
+        setAssistantChatMessages(messages);
         setChatOpen(true);
       } catch (error) {
         // Handle error
@@ -142,6 +207,7 @@ export default function AssistantTesting() {
     },
     [startNewRun]
   );
+
   const handleChatMessage = useCallback(
     async (message, fileIds = []) => {
       if (!currentThread?.id || !selectedAssistant?.id) {
@@ -152,7 +218,7 @@ export default function AssistantTesting() {
       try {
         const { run, thread, messages } = await submitMessage(message);
         setSelectedThread(thread);
-        setChatMessages(messages);
+        setAssistantChatMessages(messages);
         console.log("Run:", run);
       } catch (err) {
         setError(err);
@@ -165,15 +231,6 @@ export default function AssistantTesting() {
   useEffect(() => {
     setError(assistantsError);
   }, [assistantsError]);
-
-  const filteredThreads = useMemo(() => {
-    const threadsArray = Array.isArray(threads) ? threads : [];
-    return selectedAssistant
-      ? threadsArray.filter(
-          (thread) => thread.metadata?.assistantId === selectedAssistant.id
-        )
-      : [];
-  }, [threads, selectedAssistant]);
 
   const handleCreateEmptyThread = async () => {
     try {
@@ -386,12 +443,11 @@ export default function AssistantTesting() {
       return;
     }
 
-    const formattedTools = newAssistant.tools.map((tool) => ({ type: tool }));
     const assistantData = {
       name: newAssistant.name.trim(),
       instructions: newAssistant.instructions.trim(),
       model: newAssistant.model,
-      tools: formattedTools,
+      tools: newAssistant.tools.map((tool) => ({ type: tool })),
       file_ids: newAssistant.file_ids,
       metadata: newAssistant.metadata,
       ...(newAssistant.temperature !== 0.7 && {
@@ -414,7 +470,7 @@ export default function AssistantTesting() {
   };
 
   const handleSendMessage = async (threadId) => {
-    if (!newMessage.trim() || threadsLoading) return;
+    if (!newMessage.trim() || loading) return;
 
     try {
       if (streaming) {
@@ -423,7 +479,7 @@ export default function AssistantTesting() {
         });
         for await (const chunk of stream) {
           if (chunk.choices?.[0]?.delta?.content) {
-            setStreamingMessages((prev) => ({
+            setStreamingChatMessages((prev) => ({
               ...prev,
               [threadId]:
                 (prev[threadId] || "") + chunk.choices[0].delta.content,
@@ -443,93 +499,6 @@ export default function AssistantTesting() {
     }
   };
 
-  const handleRegenerate = useCallback(
-    async (message) => {
-      if (!currentThread?.id || !selectedAssistant?.id) {
-        toast({
-          title: "Error",
-          description: "No active conversation",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      try {
-        // First, we'll create a new run that starts from this message
-        const run = await UnifiedOpenAIService.threads.runs.create(
-          currentThread.id,
-          selectedAssistant.id,
-          {
-            instructions: `Please regenerate your response to the user's message: "${message.content}"`,
-          }
-        );
-
-        // Wait for the run to complete and get updated messages
-        const updatedMessages =
-          await UnifiedOpenAIService.threads.messages.list(currentThread.id);
-
-        setChatMessages(updatedMessages.data);
-        return run;
-      } catch (error) {
-        setError(error);
-        toast({
-          title: "Error",
-          description: "Failed to regenerate response",
-          variant: "destructive",
-        });
-      }
-    },
-    [currentThread?.id, selectedAssistant?.id, toast]
-  );
-
-  const handleFeedback = useCallback(
-    async (message, type) => {
-      if (!currentThread?.id || !message?.id) {
-        toast({
-          title: "Error",
-          description: "Invalid message or thread",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      try {
-        // Create feedback for the message
-        await UnifiedOpenAIService.threads.messages.feedback.create(
-          currentThread.id,
-          message.id,
-          {
-            rating: type === "positive" ? "good" : "poor",
-            feedback_text:
-              type === "positive"
-                ? "This response was helpful"
-                : "This response needs improvement",
-          }
-        );
-
-        toast({
-          title: "Success",
-          description: "Feedback submitted successfully",
-        });
-
-        // Optionally, you can update the UI to show the feedback has been recorded
-        setChatMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === message.id ? { ...msg, feedback: type } : msg
-          )
-        );
-      } catch (error) {
-        setError(error);
-        toast({
-          title: "Error",
-          description: "Failed to submit feedback",
-          variant: "destructive",
-        });
-      }
-    },
-    [currentThread?.id, toast]
-  );
-
   const toggleTool = (tool) => {
     setNewAssistant((prev) => ({
       ...prev,
@@ -538,6 +507,15 @@ export default function AssistantTesting() {
         : [...prev.tools, tool],
     }));
   };
+  // Memoize filtered threads
+  const filteredThreads = useMemo(() => {
+    const threadsArray = Array.isArray(threads) ? threads : [];
+    return selectedAssistant
+      ? threadsArray.filter(
+          (thread) => thread.metadata?.assistantId === selectedAssistant.id
+        )
+      : [];
+  }, [threads, selectedAssistant]);
 
   // Update the renderError function
   const renderError = (error) => {
@@ -559,19 +537,15 @@ export default function AssistantTesting() {
     return "An unknown error occurred";
   };
 
-  // Update the error display in the JSX
-  {
-    error && (
-      <Alert variant="destructive" className="mb-4">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Error</AlertTitle>
-        <AlertDescription>{renderError(error)}</AlertDescription>
-      </Alert>
-    );
-  }
-
   return (
     <div className="flex h-[calc(100vh-4rem)]">
+      {error && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{renderError(error)}</AlertDescription>
+        </Alert>
+      )}
       <Tabs
         defaultValue="assistants"
         orientation="vertical"
@@ -697,7 +671,7 @@ export default function AssistantTesting() {
                     expandedThreads={expandedThreads}
                     toggleThread={toggleThread}
                     threadMessages={threadMessages}
-                    fetchThreadMessages={fetchThreadMessages}
+                    fetchThreadMessages={fetchThreadsForAssistant}
                     newMessage={newMessage}
                     setNewMessage={setNewMessage}
                     sendMessage={handleSendMessage}
@@ -707,7 +681,7 @@ export default function AssistantTesting() {
                     loading={loading}
                     streaming={streaming}
                     setStreaming={setStreaming}
-                    streamingMessages={streamingMessages}
+                    streamingMessages={streamingChatMessages}
                     onThreadExpand={handleThreadExpand}
                   />
                 </Card>
@@ -718,9 +692,9 @@ export default function AssistantTesting() {
                   <h2 className="text-2xl font-bold mb-6">Thread Messages</h2>
                   <ThreadMessages
                     threadMessages={threadMessages}
-                    loading={threadsLoading}
+                    loading={loading}
                     selectedAssistant={selectedAssistant}
-                    streamingMessages={streamingMessages}
+                    streamingMessages={streamingChatMessages}
                   />
                 </Card>
               </TabsContent>
@@ -744,12 +718,14 @@ export default function AssistantTesting() {
                   <h2 className="text-2xl font-bold mb-6">Vector Store</h2>
                   <VectorStoreManagement
                     createVectorStore={handleCreateStore}
-                    listVectorStores={vectorStores}
+                    listVectorStores={fetchVectorStores}
                     vectorStoresLoading={vectorStoresLoading}
                     vectorStoresError={vectorStoresError}
                     onFileUpload={handleVectorStoreFileUpload}
                     onSelect={(storeId) => {
                       // Handle store selection
+                      console.log("Store selected:", storeId);
+                      setSelectedVectorStore(storeId);
                     }}
                     onBack={() => {
                       // Handle back navigation
@@ -780,11 +756,11 @@ export default function AssistantTesting() {
       <ChatDialog
         open={chatOpen}
         onOpenChange={setChatOpen}
-        messages={chatMessages}
+        messages={assistantChatMessages}
         onSendMessage={handleChatMessage}
         onFileUpload={handleSingleFileUpload}
-        onRegenerate={handleRegenerate}
-        onFeedback={handleFeedback}
+        onRegenerate={regenerateResponse}
+        onFeedback={submitFeedback}
         isLoading={status === "polling"}
         assistant={selectedAssistant}
         error={error}

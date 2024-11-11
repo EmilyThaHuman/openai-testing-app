@@ -207,13 +207,13 @@ export default function ChatTesting() {
   }, [error]);
 
   useEffect(() => {
-    if (!activeChat && chats.length === 0) {
+    if (!activeChat && chats?.length === 0) {
       const newChat = createNewChat();
       setActiveChatId(newChat.id);
-    } else if (!activeChat && chats.length > 0) {
+    } else if (!activeChat && chats?.length > 0) {
       setActiveChatId(chats[0].id);
     }
-  }, [chats.length, activeChat, createNewChat, setActiveChatId]);
+  }, [chats?.length, activeChat, createNewChat, setActiveChatId]);
 
   const handleFileUpload = useCallback(
     async (file) => {
@@ -354,7 +354,7 @@ export default function ChatTesting() {
           </Button>
           <ScrollArea className="flex-1">
             <div className="space-y-2">
-              {chats.map((chat) => (
+              {chats?.map((chat) => (
                 <Card
                   key={chat.id}
                   className={`p-3 cursor-pointer hover:bg-accent ${

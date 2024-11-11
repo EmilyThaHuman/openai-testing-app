@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -40,6 +40,11 @@ export const VectorStoreManagement = ({
       setLoading(false);
     }
   };
+
+  // useEffect(() => {
+  //   listVectorStores();
+  //   console.log("Listed vector stores");
+  // }, []);
 
   return (
     <div className="w-[440px] bg-zinc-900 rounded-lg p-6">

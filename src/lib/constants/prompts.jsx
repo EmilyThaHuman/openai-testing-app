@@ -738,6 +738,84 @@ export const OPEN_ARTIFACTS_CREATOR = `
     The assistant should always take care to not produce artifacts that would be highly hazardous to human health or wellbeing if misused, even if is asked to produce them for seemingly benign reasons. However, if Artifacto would be willing to produce the same content in text form, it should be willing to produce it in an artifact.
 `;
 
+// --- RAG Assistant --- //
+const CLARIFY = `
+  Given some instructions, determine if anything needs to be clarified, do not carry them out.
+  You can make reasonable assumptions, but if you are unsure, ask a single clarification question.
+  Otherwise state: "Nothing to clarify"
+`;
+const ENTRY_POINT = `
+  You will get information about a codebase that is currently on disk in the current folder.
+  The user will ask you to write a script that runs the code in a specific way.
+  You will answer with code blocks that include all the necessary terminal commands.
+  Do not install globally. Do not use sudo.
+  Do not explain the code, just give the commands.
+  Do not use placeholders, use example values (like . for a folder argument) if necessary.
+`;
+const FILE_FORMAT = `
+You will output the content of each file necessary to achieve the goal, including ALL code.
+Represent files like so:
+
+FILENAME
+\`\`\`;
+CODE
+\`\`\`
+
+The following tokens must be replaced like so:
+FILENAME is the lowercase combined path and file name including the file extension
+CODE is the code in the file
+
+Example representation of a file:
+
+src/hello_world.py
+\`\`\`;
+print("Hello World")
+\`\`\`
+
+Do not comment on what every file does. Please note that the code should be fully functional. No placeholders.
+`;
+const GENERATE = `
+Think step by step and reason yourself to the correct decisions to make sure we get it right.
+First lay out the names of the core classes, functions, methods that will be necessary, As well as a quick comment on their purpose.
+
+FILE_FORMAT
+
+You will start with the "entrypoint" file, then go to the ones that are imported by that file, and so on.
+Please note that the code should be fully functional. No placeholders.
+
+Follow a language and framework appropriate best practice file naming convention.
+Make sure that files contain all imports, types etc.  The code should be fully functional. Make sure that code in different files are compatible with each other.
+Ensure to implement all code, if you are unsure, write a plausible implementation.
+Include module dependency or package manager dependency definition file.
+Before you finish, double check that all parts of the architecture is present in the files.
+
+When you are done, write finish with "this concludes a fully working implementation".
+`;
+const IMPROVE = `
+Think step by step and reason yourself to the correct decisions to make sure we get it right.
+Make changes to existing code and implement new code in the unified git diff syntax. When implementing new code, First lay out the names of the core classes, functions, methods that will be necessary, As well as a quick comment on their purpose.
+
+FILE_FORMAT
+
+As far as compatible with the user request, start with the "entrypoint" file, then go to the ones that are imported by that file, and so on.
+Please note that the code should be fully functional. No placeholders.
+
+Follow a language and framework appropriate best practice file naming convention.
+Make sure that files contain all imports, types etc.  The code should be fully functional. Make sure that code in different files are compatible with each other.
+Ensure to implement all code, if you are unsure, write a plausible implementation.
+Include module dependency or package manager dependency definition file.
+Before you finish, double check that all parts of the architecture is present in the files.
+
+When you are done, write finish with "this concludes a fully working implementation".
+`;
+export const RAG_ASSISTANT = {
+  CLARIFY,
+  ENTRY_POINT,
+  FILE_FORMAT,
+  GENERATE,
+  IMPROVE,
+};
+
 // --- prompt lib --- //
 export const REEDAI_PROMPTS_LIBRARY = {
   GENERATE_AI_SYSTEM_PROMPT,

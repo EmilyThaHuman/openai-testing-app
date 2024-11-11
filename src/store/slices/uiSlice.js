@@ -1,33 +1,18 @@
-export const createUISlice = (set) => ({
-  theme: 'system',
+export const createUISlice = (set, get) => ({
+  theme: 'light',
+  isLoading: false,
+  error: null,
+  commandPaletteOpen: false,
   sidebarOpen: true,
-  modals: {
-    settings: false,
-    shortcuts: false,
-    profile: false,
-  },
-  toasts: [],
-  
+
   setTheme: (theme) => set({ theme }),
-  
-  toggleSidebar: () => 
-    set((state) => ({ sidebarOpen: !state.sidebarOpen })),
-  
-  toggleModal: (modalName) =>
-    set((state) => ({
-      modals: {
-        ...state.modals,
-        [modalName]: !state.modals[modalName],
-      },
-    })),
-    
-  addToast: (toast) =>
-    set((state) => ({
-      toasts: [...state.toasts, { id: Date.now(), ...toast }],
-    })),
-    
-  removeToast: (toastId) =>
-    set((state) => ({
-      toasts: state.toasts.filter((t) => t.id !== toastId),
-    })),
-}); 
+  setIsLoading: (loading) => set({ isLoading: loading }),
+  setError: (error) => set({ error }),
+  clearError: () => set({ error: null }),
+  toggleCommandPalette: () => set((state) => ({ 
+    commandPaletteOpen: !state.commandPaletteOpen 
+  })),
+  toggleSidebar: () => set((state) => ({ 
+    sidebarOpen: !state.sidebarOpen 
+  })),
+}) 

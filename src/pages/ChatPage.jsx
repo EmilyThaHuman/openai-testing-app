@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useChat } from '@/context/ChatContext';
 import { ChatMessage } from '@/components/chat/ChatMessage';
 import { ChatInput } from '@/components/chat/ChatInput';
-import { ChatHistory } from '@/components/chat/ChatHistory';
 import { ChatSettings } from '@/components/chat/ChatSettings';
 import { Loading } from '@/components/ui/loading';
 import { ScrollArea } from '@/components/ui/scroll-area';

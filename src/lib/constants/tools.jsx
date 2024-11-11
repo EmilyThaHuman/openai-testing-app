@@ -459,7 +459,7 @@ const generateToolData = (definitions) => {
 };
 
 // Generate toolPrompts map and tools array
-const { toolPrompts, tools } = generateToolData(toolDefinitions);
+export const { toolPrompts, tools } = generateToolData(toolDefinitions);
 
 export default {
   tools,

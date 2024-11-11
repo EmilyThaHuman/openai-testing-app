@@ -1,7 +1,6 @@
 // OpenAITestPage.js
 
 import React, { useState } from "react";
-import { UnifiedOpenAIService } from "@/services/openai/unifiedOpenAIService";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import CompletionTesting from "@/components/openai-testing/tabs/CompletionTesting";

@@ -12,7 +12,10 @@ const checkInitialization = () => {
 };
 
 export const UnifiedOpenAIService = {
-  // Initialization
+  /**
+   * Initialization
+   * - initialize(apiKey: string) -> void
+   */
   initialize: (apiKey) => {
     if (!apiKey) return;
     openaiInstance = new OpenAI({
@@ -21,6 +24,10 @@ export const UnifiedOpenAIService = {
     });
   },
 
+  /**
+   * Set API Key
+   * - setApiKey(apiKey: string) -> void
+   */
   setApiKey: (apiKey) => {
     if (!apiKey) return;
     openaiInstance = new OpenAI({
@@ -29,7 +36,11 @@ export const UnifiedOpenAIService = {
     });
   },
 
-  // Chat Completions
+  /**
+   * Chat Completions API
+   * - create({ model: string, messages: array, temperature?: number, ... }) -> Promise<Response>
+   * - createStream({ model: string, messages: array, ... }, onData: function) -> Promise<void>
+   */
   chat: {
     create: async (data) => {
       try {
@@ -60,10 +71,25 @@ export const UnifiedOpenAIService = {
     },
   },
 
-  // Assistants
+  /**
+   * Assistants API
+   * - create({ model: string, name: string, instructions: string, tools?: array, metadata?: object }) -> Promise<Assistant>
+   * - list() -> Promise<{ data: Assistant[] }>
+   * - get(assistantId: string) -> Promise<Assistant>
+   * - update(assistantId: string, params: object) -> Promise<Assistant>
+   * - delete(assistantId: string) -> Promise<void>
+   */
   assistants: {
     create: async (params) => {
       const openai = checkInitialization();
+      console.log("Creating assistant...");
+
+      // Log the assistant details and file IDs
+      console.log("(create)-> Assistant Name:", params.name);
+      console.log("(create)-> Assistant Model:", params.model);
+      console.log("(create)-> Assistant Description:", params.description);
+      console.log("(create)-> Assistant Instructions:", params.instructions);
+      console.log("(create)-> File IDs:", params.fileIds);
       const requestBody = {
         model: params.model,
         name: params.name,
@@ -96,11 +122,37 @@ export const UnifiedOpenAIService = {
     },
   },
 
-  // Threads
+  /**
+   * Threads API
+   * - create() -> Promise<Thread>
+   * - list() -> Promise<{ data: Thread[] }> (from localStorage)
+   * - get(threadId: string) -> Promise<Thread & { messages: Message[] }>
+   * - update(threadId: string, params: object) -> Promise<Thread>
+   * - delete(threadId: string) -> Promise<void>
+   *
+   * Messages:
+   * - create(threadId: string, content: string) -> Promise<Message>
+   * - list(threadId: string) -> Promise<{ data: Message[] }>
+   * - get(threadId: string, messageId: string) -> Promise<Message>
+   * - update(threadId: string, messageId: string, params: object) -> Promise<Message>
+   *
+   * Runs:
+   * - create(threadId: string, assistantId: string) -> Promise<Run>
+   * - get(threadId: string, runId: string) -> Promise<Run>
+   * - list(threadId: string) -> Promise<{ data: Run[] }>
+   * - update(threadId: string, runId: string, params: object) -> Promise<Run>
+   * - submitToolOutputs(threadId: string, runId: string, params: object) -> Promise<Run>
+   * - cancel(threadId: string, runId: string) -> Promise<Run>
+   * - steps.list(threadId: string, runId: string) -> Promise<{ data: Step[] }>
+   * - steps.get(threadId: string, runId: string, stepId: string) -> Promise<Step>
+   */
   threads: {
-    create: async () => {
+    create: async (messages) => {
+      console.log("Creating thread...");
       const openai = checkInitialization();
-      const thread = await openai.beta.threads.create();
+      const thread = await openai.beta.threads.create({
+        messages: messages || [],
+      });
       // Store the new thread in localStorage
       const threads = JSON.parse(
         localStorage.getItem("openai_threads") || "[]"
@@ -175,10 +227,25 @@ export const UnifiedOpenAIService = {
           params
         );
       },
+
+      submitFeedback: async (threadId, messageId, type) => {
+        const openai = checkInitialization();
+        // return await openai.beta.threads.messages.submitFeedback(
+        //   threadId,
+        //   messageId,
+        //   type
+        // );
+        console.log("submitFeedback", threadId, messageId, type);
+        return null;
+      },
     },
 
     runs: {
       create: async (threadId, assistantId) => {
+        console.log("Creating run...");
+        console.log("(create)-> Thread ID:", threadId);
+        console.log("(create)-> Assistant ID:", assistantId);
+
         const openai = checkInitialization();
         const run = await openai.beta.threads.runs.create(threadId, {
           assistant_id: assistantId,
@@ -279,7 +346,11 @@ export const UnifiedOpenAIService = {
     },
   },
 
-  // Audio
+  /**
+   * Audio API
+   * - transcribe(file: File, model: string, options?: object) -> Promise<Transcription>
+   * - translate(file: File, model: string) -> Promise<Translation>
+   */
   audio: {
     transcribe: async (file, model, options = {}) => {
       const openai = checkInitialization();
@@ -298,7 +369,12 @@ export const UnifiedOpenAIService = {
     },
   },
 
-  // Images
+  /**
+   * Images API
+   * - generate({ prompt: string, n?: number, size?: string, ... }) -> Promise<{ data: Image[] }>
+   * - edit({ image: File, mask?: File, prompt: string, ... }) -> Promise<{ data: Image[] }>
+   * - createVariation({ image: File, n?: number, size?: string }) -> Promise<{ data: Image[] }>
+   */
   images: {
     generate: async (params) => {
       const openai = checkInitialization();
@@ -325,7 +401,14 @@ export const UnifiedOpenAIService = {
     },
   },
 
-  // Files
+  /**
+   * Files API
+   * - list() -> Promise<{ data: File[] }>
+   * - get(fileId: string) -> Promise<File>
+   * - delete(fileId: string) -> Promise<void>
+   * - getContent(fileId: string) -> Promise<string>
+   * - upload(file: File, purpose?: string) -> Promise<File>
+   */
   files: {
     list: async () => {
       const openai = checkInitialization();
@@ -369,7 +452,12 @@ export const UnifiedOpenAIService = {
     },
   },
 
-  // Batches
+  /**
+   * Batches API
+   * - create(params: object) -> Promise<Batch>
+   * - get(batchId: string) -> Promise<Batch>
+   * - list() -> Promise<{ data: Batch[] }>
+   */
   batches: {
     create: async (params) => {
       const openai = checkInitialization();
@@ -386,7 +474,20 @@ export const UnifiedOpenAIService = {
     },
   },
 
-  // Vector Stores
+  /**
+   * Vector Stores API
+   * - create(params: object) -> Promise<VectorStore>
+   * - get(vectorStoreId: string) -> Promise<VectorStore>
+   * - delete(vectorStoreId: string) -> Promise<void>
+   * - list() -> Promise<{ data: VectorStore[] }>
+   * - update(vectorStoreId: string, params: object) -> Promise<VectorStore>
+   *
+   * Files:
+   * - create(vectorStoreId: string, params: object) -> Promise<VectorStoreFile>
+   * - get(vectorStoreId: string, fileId: string) -> Promise<VectorStoreFile>
+   * - delete(vectorStoreId: string, fileId: string) -> Promise<void>
+   * - list(vectorStoreId: string) -> Promise<{ data: VectorStoreFile[] }>
+   */
   vectorStores: {
     create: async (params) => {
       const openai = checkInitialization();
@@ -435,7 +536,10 @@ export const UnifiedOpenAIService = {
     },
   },
 
-  // Embeddings
+  /**
+   * Embeddings API
+   * - create({ model: string, input: string | string[] }) -> Promise<Embedding>
+   */
   embeddings: {
     create: async (params) => {
       const openai = checkInitialization();
@@ -489,7 +593,11 @@ export const UnifiedOpenAIService = {
     },
   },
 
-  // Completions
+  /**
+   * Completions API
+   * - create({ model: string, prompt: string, ... }) -> Promise<Completion>
+   * - createStream({ model: string, prompt: string, ... }, onChunk: function) -> Promise<void>
+   */
   completions: {
     create: async (params) => {
       const openai = checkInitialization();

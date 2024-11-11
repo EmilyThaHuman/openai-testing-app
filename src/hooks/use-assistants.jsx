@@ -1,97 +1,117 @@
-// useAssistants.js
-import { useState, useEffect } from "react";
-import { UnifiedOpenAIService } from "@/services/openai/unifiedOpenAIService";
-import { CACHE_KEYS, cacheService } from "@/services/cache/CacheService";
+// hooks/useAssistants.js
+import { useCallback } from "react";
+import { useStoreShallow } from "@/store/useStore";
 import { useToast } from "@/components/ui/use-toast";
-import { fetchThreads, fetchThreadMessages } from "@/utils/openAIUtils";
 
-export function useAssistants(apiKey) {
-  const [assistants, setAssistants] = useState(
-    () => cacheService.get(CACHE_KEYS.ASSISTANTS) || []
-  );
-  const [selectedAssistant, setSelectedAssistant] = useState(null);
+export const useAssistants = () => {
+  const store = useStoreShallow((state) => ({
+    // Core state
+    assistants: state.assistants,
+    selectedAssistant: state.selectedAssistant,
+    streaming: state.streaming,
+    loading: state.loading,
+    error: state.error,
+    expandedThreads: state.expandedThreads,
 
-  const [assistantIds, setAssistantIds] = useState([]);
-  const [assistantThreads, setAssistantThreads] = useState({});
-  const [assistantThreadMessages, setAssistantThreadMessages] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+    // Actions
+    setStreaming: state.setStreaming,
+    streamingChatMessages: state.streamingChatMessages,
+    assistantChatMessages: state.assistantChatMessages,
+    setStreamingChatMessages: state.setStreamingChatMessages,
+    setAssistantChatMessages: state.setAssistantChatMessages,
+    setSelectedAssistant: state.setSelectedAssistant,
+    setExpandedThreads: state.setExpandedThreads,
+    fetchAssistants: state.fetchAssistants,
+    createAssistant: state.createAssistant,
+    updateAssistant: state.updateAssistant,
+    deleteAssistant: state.deleteAssistant,
+    fetchThreadsForAssistant: state.fetchThreadsForAssistant,
+    createThread: state.createThread,
+    toggleThread: state.toggleThread,
+    sendMessage: state.sendMessage,
+    createStreamedThreadWithMessage: state.createStreamedThreadWithMessage,
+
+    // Selectors
+    getAssistantThreads: state.getAssistantThreads,
+    getThreadMessages: state.getThreadMessages,
+    isThreadExpanded: state.isThreadExpanded,
+  }));
+
   const { toast } = useToast();
 
-  const fetchAssistants = async () => {
-    setLoading(true);
-    try {
-      const response = await UnifiedOpenAIService.assistants.list();
-      setAssistants(response.data);
-      cacheService.set(CACHE_KEYS.ASSISTANTS, response.data);
-
-      const newAssistantIds = response.data.map((assistant) => assistant.id);
-      setAssistantIds(newAssistantIds);
-
-      // Fetch threads and messages for all assistants
-      await Promise.all(
-        newAssistantIds.map((assistantId) => fetchAssistantData(assistantId))
-      );
-    } catch (error) {
-      setError(error);
+  const handleError = useCallback(
+    (error, title) => {
+      console.error(error);
       toast({
-        title: "Error fetching assistants",
+        title,
         description: error.message,
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
-    }
-  };
+      return null;
+    },
+    [toast]
+  );
 
-  const fetchAssistantData = async (assistantId) => {
-    try {
-      await fetchThreads(
-        assistantId,
-        (threads) =>
-          setAssistantThreads((prev) => ({ ...prev, [assistantId]: threads })),
-        CACHE_KEYS.THREADS,
-        toast
-      );
-
-      const threads = assistantThreads[assistantId] || [];
-
-      if (threads?.length > 0) {
-        await Promise.all(
-          threads?.map((thread) =>
-            fetchThreadMessages(
-              thread.id,
-              setAssistantThreadMessages,
-              CACHE_KEYS.MESSAGES,
-              toast
-            )
-          )
-        );
+  const safeOperation = useCallback(
+    async (operation, errorTitle) => {
+      try {
+        return await operation();
+      } catch (error) {
+        return handleError(error, errorTitle);
       }
-    } catch (error) {
-      setError(error);
-      toast({
-        title: "Error fetching assistant data",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
-
-  useEffect(() => {
-    if (apiKey) {
-      UnifiedOpenAIService.initialize(apiKey);
-      fetchAssistants();
-    }
-  }, [apiKey]);
+    },
+    [handleError]
+  );
 
   return {
-    assistants,
-    assistantThreads,
-    assistantThreadMessages,
-    loading,
-    error,
-    selectedAssistant,
-    setSelectedAssistant,
+    ...store,
+    // Wrap key operations with error handling
+    updateAssistant: (id, data) =>
+      safeOperation(
+        () => store.updateAssistant(id, data),
+        "Error updating assistant"
+      ),
+    deleteAssistant: (id) =>
+      safeOperation(
+        () => store.deleteAssistant(id),
+        "Error deleting assistant"
+      ),
+    fetchAssistants: () =>
+      safeOperation(store.fetchAssistants, "Error fetching assistants"),
+    createAssistant: (data) =>
+      safeOperation(
+        () => store.createAssistant(data),
+        "Error creating assistant"
+      ),
+    fetchThreadsForAssistant: (force) =>
+      safeOperation(
+        () => store.fetchThreadsForAssistant(force),
+        "Error fetching threads"
+      ),
+    sendMessage: (threadId, content, options) =>
+      safeOperation(
+        () => store.sendMessage(threadId, content, options),
+        "Error sending message"
+      ),
+    createStreamedThreadWithMessage: (message) =>
+      safeOperation(
+        () => store.createStreamedThreadWithMessage(message),
+        "Error creating thread with message"
+      ),
+    submitFeedback: (messageId, type) =>
+      safeOperation(
+        () => store.submitFeedback(messageId, type),
+        "Error submitting feedback"
+      ),
+    regenerateResponse: (threadId) =>
+      safeOperation(
+        () => store.regenerate(threadId),
+        "Error regenerating message"
+      ),
+
+    // Helper methods
+    isLoading: store.loading,
+    hasError: !!store.error,
+    clearError: () => store.setError(null),
   };
-}
+};
