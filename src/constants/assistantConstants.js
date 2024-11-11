@@ -22,4 +22,7 @@ export const DEFAULT_ASSISTANT = {
   presence_penalty: 0,
   frequency_penalty: 0,
   response_format: { type: "text" },
+  file_search_enabled: false,
+  code_interpreter_enabled: false,
+  function_calling_enabled: false,
 };

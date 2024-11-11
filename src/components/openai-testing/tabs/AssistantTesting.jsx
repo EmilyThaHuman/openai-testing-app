@@ -7,7 +7,17 @@ import AssistantList from "../../assistants/AssistantList";
 import ThreadList from "../../assistants/ThreadList";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertCircle, MessageSquare, Plus, Users } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle,
+  Database,
+  File,
+  MessageSquare,
+  Plus,
+  Store,
+  Users,
+  XCircle,
+} from "lucide-react";
 import { DEFAULT_ASSISTANT } from "../../../constants/assistantConstants";
 import { useAssistants } from "@/hooks/use-assistants";
 import { useThreads } from "@/hooks/use-threads";
@@ -18,6 +28,16 @@ import useRuns from "@/hooks/use-runs";
 import { useActiveRun } from "@/hooks/use-active-run";
 import { ChatDialog } from "@/components/chat/ChatDialog";
 import { UnifiedOpenAIService } from "@/services/openai/unifiedOpenAIService";
+import { FileUploadDialog } from "@/components/shared/FileUploadDialog";
+import ErrorBoundary from "@/components/shared/ErrorBoundary";
+import { LoadingState } from "@/components/shared/LoadingState";
+import { ErrorDisplay } from "@/components/shared/ErrorDisplay";
+import { motion, AnimatePresence } from "framer-motion";
+import { Progress } from "@/components/ui/progress";
+import AssistantToolsManager from "@/components/assistants/AssistantToolsManager";
+import VectorStoreManagement from "@/components/vector-store/VectorStoreManagement";
+import FileManagement from "@/components/shared/FileManagement";
+import { useVectorStore } from "@/hooks/use-vector-store";
 
 export default function AssistantTesting() {
   const { apiKey } = useOpenAI();
@@ -29,8 +49,10 @@ export default function AssistantTesting() {
   const [streaming, setStreaming] = useState(false);
   const [streamingMessages, setStreamingMessages] = useState({});
   const [chatOpen, setChatOpen] = useState(false);
+  const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState([]);
-
+  const [uploadingFiles, setUploadingFiles] = useState(new Map());
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null); // Add error state
 
   // Custom hooks
@@ -77,6 +99,20 @@ export default function AssistantTesting() {
       }));
     },
   });
+
+  const {
+    vectorStores,
+    loading: vectorStoresLoading,
+    error: vectorStoresError,
+    fetchVectorStores,
+    createVectorStore,
+    deleteVectorStore,
+    files,
+  } = useVectorStore();
+
+  useEffect(() => {
+    fetchVectorStores();
+  }, [fetchVectorStores]);
 
   // Combine loading states
   const loading = threadsLoading || assistantsLoading;
@@ -170,19 +206,168 @@ export default function AssistantTesting() {
     }
   }, [selectedAssistant, createThread, startNewRun]);
 
-  const handleFileUpload = useCallback(async (file) => {
-    try {
-      // const formData = new FormData();
-      // formData.append("file", file);
-      // formData.append("purpose", "assistants");
+  const handleFileUpload = useCallback(
+    async (filesInput) => {
+      // Normalize input to array
+      const files = Array.isArray(filesInput) ? filesInput : [filesInput];
 
-      const response = await UnifiedOpenAIService.files.upload(file, "assistants");
-      return response;
+      try {
+        setUploading(true);
+
+        // Initialize upload tracking for new files
+        setUploadingFiles(
+          new Map(
+            files.map((file) => [file.name, { progress: 0, status: "pending" }])
+          )
+        );
+
+        const uploadResults = await Promise.all(
+          files.map(async (file) => {
+            try {
+              // Update status to uploading
+              setUploadingFiles((prev) =>
+                new Map(prev).set(file.name, {
+                  progress: 0,
+                  status: "uploading",
+                })
+              );
+
+              // Upload to OpenAI
+              const openAIFile = await UnifiedOpenAIService.files.create({
+                file,
+                purpose: "assistants",
+                onProgress: (progress) => {
+                  setUploadingFiles((prev) =>
+                    new Map(prev).set(file.name, {
+                      progress,
+                      status: "uploading",
+                    })
+                  );
+                },
+              });
+
+              // Update status to attaching
+              setUploadingFiles((prev) =>
+                new Map(prev).set(file.name, {
+                  progress: 100,
+                  status: "attaching",
+                })
+              );
+
+              // Attach to assistant if one is selected
+              if (selectedAssistant?.id) {
+                await UnifiedOpenAIService.assistants.files.create(
+                  selectedAssistant.id,
+                  openAIFile.id
+                );
+              }
+
+              // Update status to complete
+              setUploadingFiles((prev) =>
+                new Map(prev).set(file.name, {
+                  progress: 100,
+                  status: "complete",
+                })
+              );
+
+              return { success: true, file: openAIFile };
+            } catch (error) {
+              // Update status to error
+              setUploadingFiles((prev) =>
+                new Map(prev).set(file.name, {
+                  progress: 0,
+                  status: "error",
+                  error: error.message,
+                })
+              );
+
+              return { success: false, error, fileName: file.name };
+            }
+          })
+        );
+
+        // Process results
+        const successful = uploadResults.filter((result) => result.success);
+        const failed = uploadResults.filter((result) => !result.success);
+
+        // Update assistant data if any files were successfully attached
+        if (selectedAssistant?.id && successful.length > 0) {
+          const updatedAssistant =
+            await UnifiedOpenAIService.assistants.retrieve(
+              selectedAssistant.id
+            );
+          setSelectedAssistant(updatedAssistant);
+          await fetchAssistants(); // Refresh assistants list
+        }
+
+        // Show appropriate toast messages
+        if (successful.length > 0) {
+          toast({
+            title: "Files Uploaded",
+            description: `Successfully uploaded ${successful.length} file${successful.length === 1 ? "" : "s"}`,
+          });
+        }
+
+        if (failed.length > 0) {
+          failed.forEach(({ fileName, error }) => {
+            toast({
+              title: `Failed to upload ${fileName}`,
+              description: error.message,
+              variant: "destructive",
+            });
+          });
+        }
+
+        return successful.map((result) => result.file);
+      } catch (error) {
+        console.error("File upload error:", error);
+        toast({
+          title: "Error",
+          description:
+            error instanceof Error ? error.message : "Failed to upload files",
+          variant: "destructive",
+        });
+        setError(error);
+        return [];
+      } finally {
+        setUploading(false);
+        // Clear upload tracking after a delay
+        setTimeout(() => setUploadingFiles(new Map()), 2000);
+      }
+    },
+    [selectedAssistant?.id, toast, fetchAssistants]
+  );
+
+  // Handler for single file upload (e.g., from a button or drag-drop)
+  const handleSingleFileUpload = useCallback(
+    async (file) => {
+      const result = await handleFileUpload(file);
+      return result[0]; // Return the first (and only) result
+    },
+    [handleFileUpload]
+  );
+
+  const handleCreateStore = async () => {
+    try {
+      await createVectorStore({
+        name: "My Vector Store",
+        description: "Description here",
+      });
     } catch (error) {
-      setError(error);
-      throw error;
+      console.error("Failed to create vector store:", error);
     }
-  }, []);
+  };
+
+  const handleVectorStoreFileUpload = async (vectorStoreId, file) => {
+    try {
+      await files.upload(vectorStoreId, {
+        file,
+        purpose: "assistants",
+      });
+    } catch (error) {
+      console.error("Failed to upload file:", error);
+    }
+  };
   const handleThreadExpand = (threadId) => {
     toggleThread(new Set([threadId]));
   };
@@ -354,13 +539,36 @@ export default function AssistantTesting() {
     }));
   };
 
-  // Handle error states
+  // Update the renderError function
   const renderError = (error) => {
     if (!error) return null;
-    return typeof error === "string"
-      ? error
-      : error.message || "An error occurred";
+
+    // Handle different error types
+    if (typeof error === "string") {
+      return error;
+    }
+
+    if (error instanceof Error) {
+      return error.message;
+    }
+
+    if (typeof error === "object" && error !== null) {
+      return error.message || "An unknown error occurred";
+    }
+
+    return "An unknown error occurred";
   };
+
+  // Update the error display in the JSX
+  {
+    error && (
+      <Alert variant="destructive" className="mb-4">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>{renderError(error)}</AlertDescription>
+      </Alert>
+    );
+  }
 
   return (
     <div className="flex h-[calc(100vh-4rem)]">
@@ -403,6 +611,34 @@ export default function AssistantTesting() {
               <MessageSquare className="h-5 w-5" />
               Thread Messages
             </TabsTrigger>
+            <TabsTrigger
+              value="files"
+              className="w-full justify-start gap-2 px-4 py-2"
+            >
+              <File className="h-5 w-5" />
+              Files
+            </TabsTrigger>
+            <TabsTrigger
+              value="vector-store"
+              className="w-full justify-start gap-2 px-4 py-2"
+            >
+              <Store className="h-5 w-5" />
+              Vector Store
+            </TabsTrigger>
+            <TabsTrigger
+              value="embeddings"
+              className="w-full justify-start gap-2 px-4 py-2"
+            >
+              <Database className="h-5 w-5" />
+              Embeddings
+            </TabsTrigger>
+            <TabsTrigger
+              value="tools"
+              className="w-full justify-start gap-2 px-4 py-2"
+            >
+              <Database className="h-5 w-5" />
+              Tools
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -410,17 +646,7 @@ export default function AssistantTesting() {
         <div className="flex-1 overflow-hidden">
           <ScrollArea className="h-full">
             <div className="p-6">
-              {error && (
-                <Alert variant="destructive" className="mb-4">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Error</AlertTitle>
-                  <AlertDescription>
-                    {typeof error === "string"
-                      ? error
-                      : error.message || "An error occurred"}
-                  </AlertDescription>
-                </Alert>
-              )}
+              {error && <ErrorDisplay error={error} />}
               <TabsContent value="create" className="mt-0 border-0">
                 <Card className="p-6">
                   <h2 className="text-2xl font-bold mb-6">
@@ -435,6 +661,8 @@ export default function AssistantTesting() {
                     selectedAssistant={selectedAssistant}
                     setSelectedAssistant={setSelectedAssistant}
                     handleAssistantSelect={handleAssistantSelect}
+                    isFileDialogOpen={isFileDialogOpen}
+                    setIsFileDialogOpen={setIsFileDialogOpen}
                   />
                 </Card>
               </TabsContent>
@@ -496,23 +724,123 @@ export default function AssistantTesting() {
                   />
                 </Card>
               </TabsContent>
+              <TabsContent value="files" className="mt-0 border-0">
+                <Card className="p-6">
+                  <h2 className="text-2xl font-bold mb-6">Files</h2>
+                  <FileManagement
+                    onAttach={(files, options) => {
+                      // Handle file attachment
+                      console.log("Files:", files);
+                      console.log("Options:", options); // { chunkSize: 800, chunkOverlap: 400 }
+                    }}
+                    onCancel={() => {
+                      // Handle cancellation
+                    }}
+                  />
+                </Card>
+              </TabsContent>
+              <TabsContent value="vector-store" className="mt-0 border-0">
+                <Card className="p-6">
+                  <h2 className="text-2xl font-bold mb-6">Vector Store</h2>
+                  <VectorStoreManagement
+                    createVectorStore={handleCreateStore}
+                    listVectorStores={vectorStores}
+                    vectorStoresLoading={vectorStoresLoading}
+                    vectorStoresError={vectorStoresError}
+                    onFileUpload={handleVectorStoreFileUpload}
+                    onSelect={(storeId) => {
+                      // Handle store selection
+                    }}
+                    onBack={() => {
+                      // Handle back navigation
+                    }}
+                    onCancel={() => {
+                      // Handle cancel action
+                    }}
+                  />
+                </Card>
+              </TabsContent>
+              <TabsContent value="embeddings" className="mt-0 border-0">
+                <Card className="p-6">
+                  <h2 className="text-2xl font-bold mb-6">Embeddings</h2>
+                </Card>
+              </TabsContent>
+              <TabsContent value="tools" className="mt-0 border-0">
+                <Card className="p-6">
+                  <h2 className="text-2xl font-bold mb-6">Tools</h2>
+                  <AssistantToolsManager />
+                </Card>
+              </TabsContent>
             </div>
           </ScrollArea>
         </div>
       </Tabs>
       {error && <div className="text-red-500 p-4">{renderError(error)}</div>}
+      {/* Chat Dialog */}
       <ChatDialog
         open={chatOpen}
         onOpenChange={setChatOpen}
         messages={chatMessages}
         onSendMessage={handleChatMessage}
-        onFileUpload={handleFileUpload}
+        onFileUpload={handleSingleFileUpload}
         onRegenerate={handleRegenerate}
         onFeedback={handleFeedback}
         isLoading={status === "polling"}
         assistant={selectedAssistant}
         error={error}
       />
+      {/* File Upload Dialog */}
+      <FileUploadDialog
+        open={isFileDialogOpen}
+        onClose={() => setIsFileDialogOpen(false)}
+        onUpload={handleFileUpload}
+        purpose="assistants"
+        uploadProgress={uploadingFiles}
+        setUploadProgress={setUploadingFiles}
+        uploading={uploading}
+        setUploading={setUploading}
+      />
+      {/* Add upload progress indicator */}
+      {uploadingFiles.size > 0 && (
+        <div className="fixed bottom-4 right-4 z-50">
+          <AnimatePresence>
+            {Array.from(uploadingFiles.entries()).map(([fileName, status]) => (
+              <motion.div
+                key={fileName}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="bg-background border rounded-lg shadow-lg p-4 mb-2 w-80"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium truncate flex-1">
+                    {fileName}
+                  </span>
+                  {status.status === "complete" && (
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                  )}
+                  {status.status === "error" && (
+                    <XCircle className="h-4 w-4 text-destructive" />
+                  )}
+                </div>
+                <Progress
+                  value={status.progress}
+                  className="h-1"
+                  variant={
+                    status.status === "error" ? "destructive" : "default"
+                  }
+                />
+                <span className="text-xs text-muted-foreground mt-1">
+                  {status.status === "uploading" && "Uploading..."}
+                  {status.status === "attaching" && "Attaching to assistant..."}
+                  {status.status === "complete" && "Upload complete"}
+                  {status.status === "error" && status.error}
+                </span>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      )}
     </div>
   );
 }

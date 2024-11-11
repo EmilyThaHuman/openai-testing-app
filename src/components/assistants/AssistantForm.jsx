@@ -14,6 +14,10 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { MODELS, TOOLS } from "../../constants/assistantConstants";
+import InstructionsGenerator from "../shared/InstructionsGenerator";
+import { GENERATOR_TYPES } from "@/utils/instructionsGenerator";
+import { Switch } from "../ui/switch";
+import { FileUp } from "lucide-react";
 
 const AssistantForm = ({
   newAssistant,
@@ -21,6 +25,8 @@ const AssistantForm = ({
   createAssistant,
   loading,
   toggleTool,
+  isFileDialogOpen,
+  setIsFileDialogOpen,
 }) => {
   return (
     <Card className="p-4">
@@ -34,7 +40,7 @@ const AssistantForm = ({
           }
         />
 
-        <Textarea
+        {/* <Textarea
           placeholder="Instructions"
           value={newAssistant.instructions}
           onChange={(e) =>
@@ -43,7 +49,52 @@ const AssistantForm = ({
               instructions: e.target.value,
             }))
           }
-        />
+        /> */}
+        {/* System Instructions */}
+        <div className="space-y-2">
+          <Label>System Instructions</Label>
+          <InstructionsGenerator
+            type={GENERATOR_TYPES.SYSTEM}
+            value={newAssistant.instructions}
+            onChange={(value) =>
+              setNewAssistant({ ...newAssistant, instructions: value })
+            }
+            title="System Instructions"
+            placeholder="Enter system instructions"
+          />
+        </div>
+
+        {/* File Upload Section */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Label>File search</Label>
+              <Switch
+                checked={newAssistant.file_search_enabled}
+                onCheckedChange={(checked) =>
+                  setNewAssistant({
+                    ...newAssistant,
+                    file_search_enabled: checked,
+                  })
+                }
+              />
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsFileDialogOpen(true)}
+            >
+              <FileUp className="h-4 w-4 mr-2" />
+              Files
+            </Button>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Files</Label>
+            {/* <FileList files={newAssistant.file_ids} /> */}
+          </div>
+        </div>
 
         <div className="space-y-2">
           <Label>Model</Label>

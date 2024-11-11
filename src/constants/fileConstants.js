@@ -9,4 +9,6 @@ export const ALLOWED_FILE_TYPES = {
   "application/msword": "Word documents",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
     "Word documents",
-}; 
+};
+
+export const MAX_CHUNK_SIZE = 5 * 1024 * 1024; // 5MB chunks

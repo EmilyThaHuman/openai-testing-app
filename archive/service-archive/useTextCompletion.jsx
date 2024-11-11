@@ -1,7 +1,7 @@
 // useTextCompletion.js
 
 import { useState } from "react";
-import { createCompletion } from "../services/old/openaiRegularService";
+import { createCompletion } from "./openaiRegularService";
 
 export const useTextCompletion = () => {
   const [result, setResult] = useState("");
