@@ -67,7 +67,9 @@ export const GenerateDialog = ({ open, onOpenChange, onGenerate }) => {
       toast({
         title: "Error generating schema",
         description:
-          error instanceof Error ? error.message : "An error occurred",
+          error instanceof Error
+            ? error.message
+            : "An error occurred in generate dialog in generate dialog",
         variant: "destructive",
       });
     } finally {

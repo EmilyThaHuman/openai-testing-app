@@ -41,21 +41,45 @@ export const useStore = createWithEqualityFn(
     {
       name: "app-storage",
       partialize: (state) => ({
+        // --- global state --- //
         apiKey: state.apiKey,
-        settings: state.settings,
+
+        // --- chat state --- //
+        chatSettings: state.chatSettings,
         chats: state.chats,
+        activeChatId: state.activeChatId,
+        activeChat: state.activeChat,
+        savedPresets: state.savedPresets,
+        selectedPreset: state.selectedPreset,
+
+        // --- assistant state --- //
+        assistantSettings: state.assistantSettings,
         assistantChats: state.assistantChats,
         threads: state.threads,
         threadMessages: state.threadMessages,
         expandedThreads: Array.from(state.expandedThreads),
         assistants: state.assistants,
         selectedAssistant: state.selectedAssistant,
-        vectorStores: state.vectorStores,
-        selectedVectorStore: state.selectedVectorStore,
-        attachedTools: state.attachedTools,
-        selectedTool: state.selectedTool,
+
+        // --- file state --- //
+        files: state.files,
+        uploadProgress: state.uploadProgress,
+
+        // --- ui state --- //
+        sidebarOpen: state.sidebarOpen,
+        isCommandPaletteOpen: state.commandPaletteOpen,
+        isLoading: state.isLoading,
         loading: state.loading,
         error: state.error,
+
+        // --- vector store state --- //
+        vectorStores: state.vectorStores,
+        selectedVectorStore: state.selectedVectorStore,
+        vectorStoreFiles: state.vectorStoreFiles,
+
+        // --- tools state --- //
+        attachedTools: state.attachedTools,
+        selectedTool: state.selectedTool,
       }),
     }
   ),

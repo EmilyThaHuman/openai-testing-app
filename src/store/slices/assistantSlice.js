@@ -29,20 +29,24 @@ export const DEFAULT_ASSISTANT = {
   file_search_enabled: false,
   code_interpreter_enabled: false,
   function_calling_enabled: false,
+  streaming: false,
 };
 
 export const createAssistantSlice = (set, get) => ({
   // Extended State
   assistants: [],
+  assistantChats: [],
+  assistantSettings: DEFAULT_ASSISTANT,
   selectedAssistant: null,
   selectedThread: null,
   threads: {},
   threadMessages: {},
   expandedThreads: new Set(),
   runningThreads: new Set(),
-
-  streamingChatMessages: [],
   streaming: false,
+
+  streamingAssistantChatMessages: [],
+  streamingAssistantChat: false,
   loading: false,
   error: null,
 
@@ -50,16 +54,22 @@ export const createAssistantSlice = (set, get) => ({
   setAssistants: (assistants) => set({ assistants }),
   setSelectedAssistant: (assistant) => set({ selectedAssistant: assistant }),
   setSelectedThread: (thread) => set({ selectedThread: thread }),
-  setStreaming: (streaming) => set({ streaming: !streaming }),
-  setLoading: (loading) => set({ loading }),
-  setError: (error) => set({ error }),
+  setStreamingAssistantChat: (streaming) =>
+    set({ streamingAssistantChat: streaming }),
+  setLoadingAssistantChat: (loading) => set({ loadingAssistantChat: loading }),
+  setErrorAssistantChat: (error) => set({ errorAssistantChat: error }),
   setExpandedThreads: (threadIds) =>
     set({ expandedThreads: new Set(threadIds) }),
   setThreadMessages: (messages) => set({ threadMessages: messages }),
-  setStreamingChatMessages: (messages) =>
-    set({ streamingChatMessages: messages }),
+  setStreamingAssistantChatMessages: (messages) =>
+    set({ streamingAssistantChatMessages: messages }),
   setAssistantChatMessages: (messages) =>
     set({ assistantChatMessages: messages }),
+
+  setLoading: (loading) => set({ loading }),
+  setError: (error) => set({ error }),
+
+  setAssistantSettings: (settings) => set({ assistantSettings: settings }),
 
   // Main assistant operations
   fetchAssistants: async (force = false) => {

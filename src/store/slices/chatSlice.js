@@ -1,5 +1,7 @@
 import { UnifiedOpenAIService } from "@/services/openai/unifiedOpenAIService";
 import { toast } from "@/components/ui/use-toast";
+import { OPENAI_COMPONENT_CREATOR } from "@/lib/constants/prompts";
+import { cacheService, CACHE_KEYS } from "@/services/cache/CacheService";
 
 const DEFAULT_CHAT_SETTINGS = {
   model: "gpt-4-turbo-preview",
@@ -36,24 +38,47 @@ const SETTING_DESCRIPTIONS = {
 };
 
 export const createChatSlice = (set, get) => ({
-  chats: JSON.parse(localStorage.getItem("chats") || "[]"),
-  activeChatId: null,
+  chats: cacheService.get(CACHE_KEYS.CHATS) || [],
+  activeChatId: cacheService.get(CACHE_KEYS.ACTIVE_CHAT_ID) || null,
   isLoading: false,
   error: null,
   model: "gpt-4-turbo-preview",
   models: MODELS,
   modelDescriptions: MODEL_DESCRIPTIONS,
-  chatSettings: DEFAULT_CHAT_SETTINGS,
-  savedPresets: [],
-  selectedPreset: DEFAULT_CHAT_SETTINGS,
+  chatSettings:
+    cacheService.get(CACHE_KEYS.CHAT_SETTINGS) || DEFAULT_CHAT_SETTINGS,
+  savedPresets: cacheService.get(CACHE_KEYS.SAVED_PRESETS) || [],
+  selectedPreset:
+    cacheService.get(CACHE_KEYS.SELECTED_PRESET) || DEFAULT_CHAT_SETTINGS,
 
-  // Computed values
+  // Keep existing computed values
   activeChat: () => get().chats.find((chat) => chat.id === get().activeChatId),
 
-  // Actions
-  setModel: (model) => set({ model }),
-  setActiveChatId: (id) => set({ activeChatId: id }),
-  setChatSettings: (settings) => ({ settings }),
+  // Update setters to use cache
+  setModel: (model) => {
+    set({ model });
+    cacheService.set(CACHE_KEYS.MODEL, model);
+  },
+
+  setActiveChatId: (id) => {
+    set({ activeChatId: id });
+    cacheService.set(CACHE_KEYS.ACTIVE_CHAT_ID, id);
+  },
+
+  setActiveChat: (chat) => {
+    set({ activeChat: chat });
+    cacheService.set(CACHE_KEYS.ACTIVE_CHAT, chat);
+  },
+
+  setChatSettings: (settings) => {
+    set({ chatSettings: settings });
+    cacheService.set(CACHE_KEYS.CHAT_SETTINGS, settings);
+  },
+
+  setChats: (chats) => {
+    set({ chats });
+    cacheService.set(CACHE_KEYS.CHATS, chats);
+  },
 
   setLoading: (isLoading) => set({ isLoading }),
   setError: (error) => set({ error }),
@@ -69,12 +94,15 @@ export const createChatSlice = (set, get) => ({
         updatedAt: new Date().toISOString(),
       };
 
-      set((state) => ({
-        chats: [...state.chats, newChat],
-        activeChatId: newChat.id,
-      }));
-
-      localStorage.setItem("chats", JSON.stringify(get().chats));
+      set((state) => {
+        const updatedChats = [...state.chats, newChat];
+        cacheService.set(CACHE_KEYS.CHATS, updatedChats);
+        return {
+          chats: updatedChats,
+          activeChatId: newChat.id,
+          activeChat: newChat,
+        };
+      });
 
       toast({
         title: "Chat created",
@@ -91,7 +119,7 @@ export const createChatSlice = (set, get) => ({
     }
   },
 
-  sendMessage: async (content, options = {}) => {
+  sendChatMessage: async (content, options = {}) => {
     set({ isLoading: true, error: null });
 
     try {
@@ -123,10 +151,10 @@ export const createChatSlice = (set, get) => ({
 
       // Prepare messages array for API
       const apiMessages = [
-        ...(chat.settings.systemPrompt
-          ? [{ role: "system", content: chat.settings.systemPrompt.trim() }]
-          : []),
-        ...chat.messages,
+        ...(chat?.settings?.systemPrompt
+          ? [{ role: "system", content: chat?.settings?.systemPrompt.trim() }]
+          : [{ role: "system", content: OPENAI_COMPONENT_CREATOR }]),
+        ...(chat.messages || []),
         userMessage,
       ].map((msg) => ({
         role: msg.role,
@@ -138,13 +166,13 @@ export const createChatSlice = (set, get) => ({
       }
 
       const isStreaming = Boolean(
-        options.settings?.stream ?? chat.settings.streaming ?? false
+        options.settings?.stream ?? chat.settings?.streaming ?? false
       );
 
       const response = await UnifiedOpenAIService.chat.create({
         model:
           options.settings?.model ||
-          chat.settings.model ||
+          chat.settings?.model ||
           "gpt-4-turbo-preview",
         messages: apiMessages,
         temperature: Number(
@@ -153,15 +181,15 @@ export const createChatSlice = (set, get) => ({
         max_tokens: Number(
           options.settings?.maxTokens ?? chat.settings.maxTokens ?? 1000
         ),
-        top_p: Number(options.settings?.topP ?? chat.settings.topP ?? 1),
+        top_p: Number(options.settings?.topP ?? chat.settings?.topP ?? 1),
         frequency_penalty: Number(
           options.settings?.frequencyPenalty ??
-            chat.settings.frequencyPenalty ??
+            chat.settings?.frequencyPenalty ??
             0
         ),
         presence_penalty: Number(
           options.settings?.presencePenalty ??
-            chat.settings.presencePenalty ??
+            chat.settings?.presencePenalty ??
             0
         ),
         stream: isStreaming,
@@ -249,38 +277,50 @@ export const createChatSlice = (set, get) => ({
 
   // Additional helper methods
   clearChat: (chatId) => {
-    set((state) => ({
-      chats: state.chats.map((c) =>
+    set((state) => {
+      const updatedChats = state.chats.map((c) =>
         c.id === chatId
           ? { ...c, messages: [], updatedAt: new Date().toISOString() }
           : c
-      ),
-    }));
-    localStorage.setItem("chats", JSON.stringify(get().chats));
+      );
+      cacheService.set(CACHE_KEYS.CHATS, updatedChats);
+      return { chats: updatedChats };
+    });
   },
 
   deleteChat: (chatId) => {
-    set((state) => ({
-      chats: state.chats.filter((c) => c.id !== chatId),
-      activeChatId: state.activeChatId === chatId ? null : state.activeChatId,
-    }));
-    localStorage.setItem("chats", JSON.stringify(get().chats));
+    set((state) => {
+      const updatedChats = state.chats.filter((c) => c.id !== chatId);
+      const updatedActiveChatId =
+        state.activeChatId === chatId ? null : state.activeChatId;
+
+      cacheService.set(CACHE_KEYS.CHATS, updatedChats);
+      if (updatedActiveChatId !== state.activeChatId) {
+        cacheService.set(CACHE_KEYS.ACTIVE_CHAT_ID, updatedActiveChatId);
+      }
+
+      return {
+        chats: updatedChats,
+        activeChatId: updatedActiveChatId,
+      };
+    });
   },
 
   updateChatTitle: (chatId, newTitle) => {
-    set((state) => ({
-      chats: state.chats.map((c) =>
+    set((state) => {
+      const updatedChats = state.chats.map((c) =>
         c.id === chatId
           ? { ...c, title: newTitle, updatedAt: new Date().toISOString() }
           : c
-      ),
-    }));
-    localStorage.setItem("chats", JSON.stringify(get().chats));
+      );
+      cacheService.set(CACHE_KEYS.CHATS, updatedChats);
+      return { chats: updatedChats };
+    });
   },
 
   updateChatSettings: (chatId, newSettings) => {
-    set((state) => ({
-      chats: state.chats.map((c) =>
+    set((state) => {
+      const updatedChats = state.chats.map((c) =>
         c.id === chatId
           ? {
               ...c,
@@ -288,9 +328,20 @@ export const createChatSlice = (set, get) => ({
               updatedAt: new Date().toISOString(),
             }
           : c
-      ),
-    }));
-    localStorage.setItem("chats", JSON.stringify(get().chats));
+      );
+      cacheService.set(CACHE_KEYS.CHATS, updatedChats);
+      return { chats: updatedChats };
+    });
+  },
+
+  addMessage: (chatId, message) => {
+    set((state) => {
+      const updatedChats = state.chats.map((c) =>
+        c.id === chatId ? { ...c, messages: [...c.messages, message] } : c
+      );
+      cacheService.set(CACHE_KEYS.CHATS, updatedChats);
+      return { chats: updatedChats };
+    });
   },
 
   getSettingInfo: (key) => {
@@ -314,5 +365,18 @@ export const createChatSlice = (set, get) => ({
             : 4000,
       step: key === "maxTokens" ? 100 : 0.1,
     };
+  },
+
+  loadChatsFromCache: () => {
+    const chats = cacheService.get(CACHE_KEYS.CHATS) || [];
+    const activeChatId = cacheService.get(CACHE_KEYS.ACTIVE_CHAT_ID) || null;
+    const chatSettings =
+      cacheService.get(CACHE_KEYS.CHAT_SETTINGS) || DEFAULT_CHAT_SETTINGS;
+
+    set({
+      chats,
+      activeChatId,
+      chatSettings,
+    });
   },
 });

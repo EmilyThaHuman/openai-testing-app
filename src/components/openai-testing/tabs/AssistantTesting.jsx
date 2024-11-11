@@ -775,7 +775,6 @@ export default function AssistantTesting() {
               <TabsContent value="threads" className="mt-0 border-0">
                 <Card className="p-6">
                   <ThreadsManager
-                    selectedAssistant={selectedAssistant}
                     onThreadSelect={handleThreadSelect}
                     selectedThread={selectedThread}
                   />

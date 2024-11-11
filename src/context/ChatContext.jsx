@@ -19,6 +19,8 @@ export const ChatProvider = ({ children }) => {
     model: state.model,
     setModel: state.setModel,
     setActiveChatId: state.setActiveChatId,
+    setActiveChat: state.setActiveChat,
+    setChats: state.setChats,
     setLoading: state.setLoading,
     setError: state.setError,
     createChat: state.createChat,
@@ -27,8 +29,10 @@ export const ChatProvider = ({ children }) => {
     clearChat: state.clearChat,
     updateChatSettings: state.updateChatSettings,
     getSettingInfo: state.getSettingInfo,
-    sendMessage: state.sendMessage,
+    sendMessage: state.sendChatMessage,
     activeChat: state.activeChat,
+    loadChatsFromLocalStorage: state.loadChatsFromLocalStorage,
+    addMessage: state.addMessage,
   }));
 
   return <ChatContext.Provider value={store}>{children}</ChatContext.Provider>;

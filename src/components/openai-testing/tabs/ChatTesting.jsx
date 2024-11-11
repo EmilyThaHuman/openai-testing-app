@@ -149,6 +149,7 @@ export default function ChatTesting() {
   const {
     activeChat,
     setActiveChatId,
+    setActiveChat,
     isLoading,
     error,
     sendMessage,
@@ -199,7 +200,9 @@ export default function ChatTesting() {
   useEffect(() => {
     if (error) {
       setErrorMessage(
-        typeof error === "string" ? error : error.message || "An error occurred"
+        typeof error === "string"
+          ? error
+          : error.message || "An error occurred in chat testing"
       );
     } else {
       setErrorMessage("");
@@ -274,12 +277,16 @@ export default function ChatTesting() {
 
   const handleSend = useCallback(
     async (message, files = []) => {
+      console.log("Sending message", message, files);
+      // If there's no message and no files, or if the chat is loading, do nothing
       if ((!message?.trim() && files.length === 0) || isLoading) return;
 
       let currentChat = activeChat;
       if (!currentChat) {
+        console.log("Creating new chat");
         currentChat = createNewChat();
         setActiveChatId(currentChat.id);
+        setActiveChat(currentChat);
       }
 
       try {
@@ -317,10 +324,19 @@ export default function ChatTesting() {
           },
         });
 
+        console.log("Response", response);
+
         // Scroll to bottom after message is sent
         setTimeout(() => {
           scrollRef.current?.scrollIntoView({ behavior: "smooth" });
         }, 100);
+
+        const assistantMessage = response.content;
+        if (assistantMessage) {
+          addMessage(currentChat.id, assistantMessage);
+        }
+
+        return response;
       } catch (error) {
         console.error("Chat error:", error);
         toast({

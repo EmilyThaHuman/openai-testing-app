@@ -23,16 +23,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useStoreShallow } from "@/store/useStore";
 
-export function ThreadsManager({
-  selectedAssistant,
-  onThreadSelect,
-  selectedThread,
-}) {
-  const store = useStoreShallow((state) => ({
-    threads: state.threads,
-    setThreads: state.setThreads,
-  }));
-
+export function ThreadsManager({ onThreadSelect, selectedThread }) {
+  const store = useStoreShallow();
+  const selectedAssistantId = store.selectedAssistant?.id;
+  const threads = store?.threads?.[selectedAssistantId] || [];
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const { toast } = useToast();
@@ -88,7 +82,7 @@ export function ThreadsManager({
           })
         );
 
-        store.setThreads(threadsWithMetadata);
+        setThreads(threadsWithMetadata);
         localStorage.setItem(
           "openai_threads",
           JSON.stringify(threadsWithMetadata)
@@ -111,6 +105,12 @@ export function ThreadsManager({
     fetchThreads();
   }, [fetchThreads]);
 
+  useEffect(() => {
+    if (selectedAssistantId) {
+      store.fetchThreadsForAssistant(selectedAssistantId);
+    }
+  }, [selectedAssistantId]);
+
   const handleCreateThread = async () => {
     try {
       setLoading(true);
@@ -118,7 +118,7 @@ export function ThreadsManager({
       console.log("Created thread:", thread);
 
       // Add the new thread to the list
-      store.setThreads((prev) => [thread, ...prev]);
+      setThreads((prev) => [thread, ...prev]);
 
       toast({
         title: "Thread created",
@@ -144,7 +144,7 @@ export function ThreadsManager({
       await UnifiedOpenAIService.threads.delete(threadId);
 
       // Remove the thread from the list
-      store.setThreads((prev) => prev.filter((t) => t.id !== threadId));
+      setThreads((prev) => prev.filter((t) => t.id !== threadId));
 
       toast({
         title: "Thread deleted",
@@ -207,7 +207,7 @@ export function ThreadsManager({
                 <Skeleton key={i} className="h-24 w-full" />
               ))}
             </div>
-          ) : store?.threads?.length === 0 ? (
+          ) : threads?.length === 0 ? (
             // Empty state
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -226,9 +226,9 @@ export function ThreadsManager({
           ) : (
             // Thread list
             <div className="space-y-3">
-              {store?.threads?.map((thread) => (
+              {threads?.map((thread) => (
                 <motion.div
-                  key={thread.id}
+                  key={uniqueId()}
                   layout
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
