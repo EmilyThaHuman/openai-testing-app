@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useChat } from "@/context/ChatContext";
 import { ChatMessage } from "@/components/chat/ChatMessage";
 import { ChatInput } from "@/components/chat/ChatInput";
@@ -29,11 +29,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Info, Trash2, Copy, Settings2, Paperclip } from "lucide-react";
+import { Info, Trash2, Settings2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useInView } from "react-intersection-observer";
-import { FileUploadProgress } from "@/components/chat/FileUploadProgress";
+import SystemInstructions from "@/components/chat/SystemInstructions";
 
+// Define your settings groups
 const SETTINGS_GROUPS = {
   model: {
     title: "Model Settings",
@@ -61,6 +62,7 @@ const SETTINGS_GROUPS = {
   },
 };
 
+// Component to handle individual settings controls
 const SettingControl = ({ settingKey, type, onSettingChange }) => {
   const { getSettingInfo, models } = useChat();
   const setting = getSettingInfo(settingKey);
@@ -140,6 +142,7 @@ export default function ChatTesting() {
   const { toast } = useToast();
   const { ref: scrollRef, inView } = useInView();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true); // State for sidebar
   const [uploadProgress, setUploadProgress] = useState({});
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
@@ -156,6 +159,9 @@ export default function ChatTesting() {
     chats,
     createNewChat,
     addMessage,
+    createChat,
+    deleteChat,
+    activeChatId,
   } = useChat();
 
   useEffect(() => {
@@ -269,7 +275,7 @@ export default function ChatTesting() {
   const handleSend = useCallback(
     async (message, files = []) => {
       if ((!message?.trim() && files.length === 0) || isLoading) return;
-      
+
       let currentChat = activeChat;
       if (!currentChat) {
         currentChat = createNewChat();
@@ -315,7 +321,6 @@ export default function ChatTesting() {
         setTimeout(() => {
           scrollRef.current?.scrollIntoView({ behavior: "smooth" });
         }, 100);
-
       } catch (error) {
         console.error("Chat error:", error);
         toast({
@@ -325,14 +330,71 @@ export default function ChatTesting() {
         });
       }
     },
-    [activeChat, isLoading, sendMessage, addMessage, toast, scrollRef, createNewChat, setActiveChatId]
+    [
+      activeChat,
+      isLoading,
+      sendMessage,
+      addMessage,
+      toast,
+      scrollRef,
+      createNewChat,
+      setActiveChatId,
+    ]
   );
 
   return (
-    <div className="grid grid-cols-[1fr_auto] gap-4 h-[calc(100vh-12rem)]">
-      <Card className="p-4 flex flex-col">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold">Chat</h2>
+    <div className="flex h-screen">
+      {/* Sidebar for Chat History */}
+      {isSidebarOpen && (
+        <div className="w-56 p-4 overflow-auto border-r">
+          {" "}
+          {/* Adjusted width */}
+          <Button className="w-full mb-4" onClick={() => createChat()}>
+            New Chat
+          </Button>
+          <ScrollArea className="flex-1">
+            <div className="space-y-2">
+              {chats.map((chat) => (
+                <Card
+                  key={chat.id}
+                  className={`p-3 cursor-pointer hover:bg-accent ${
+                    chat.id === activeChatId ? "bg-accent" : ""
+                  }`}
+                  onClick={() => setActiveChatId(chat.id)}
+                >
+                  <div className="flex justify-between items-center">
+                    <p className="text-sm font-medium truncate">{chat.title}</p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteChat(chat.id);
+                      }}
+                    >
+                      ×
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(chat.updatedAt).toLocaleDateString()}
+                  </p>
+                </Card>
+              ))}
+            </div>
+          </ScrollArea>
+        </div>
+      )}
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col">
+        {/* Header with Toggle Buttons */}
+        <div className="flex justify-between items-center p-4 border-b">
+          {/* Toggle Sidebar Button */}
+          <Button onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
+            {isSidebarOpen ? "Hide Chats" : "Show Chats"}
+          </Button>
+
+          {/* Action Buttons */}
           <div className="flex gap-2">
             <Button
               variant="outline"
@@ -353,8 +415,17 @@ export default function ChatTesting() {
           </div>
         </div>
 
-        <ScrollArea className="flex-1 pr-4">
-          <div className="space-y-4 mb-4">
+        {/* System Instructions */}
+        <SystemInstructions
+          value={activeChat?.settings?.systemPrompt || ""}
+          onChange={(newInstructions) =>
+            handleSettingChange("systemPrompt", newInstructions)
+          }
+        />
+
+        {/* Chat Messages */}
+        <ScrollArea className="flex-1 p-4">
+          <div className="space-y-4">
             {activeChat?.messages?.map((message) => (
               <ChatMessage
                 key={message.id}
@@ -372,7 +443,8 @@ export default function ChatTesting() {
           </div>
         </ScrollArea>
 
-        <div className="mt-4">
+        {/* Chat Input */}
+        <div className="p-4 border-t">
           <ChatInput
             onSend={handleSend}
             onFileUpload={handleFileUpload}
@@ -381,10 +453,11 @@ export default function ChatTesting() {
             uploadedFiles={uploadedFiles}
           />
         </div>
-      </Card>
+      </div>
 
+      {/* Settings Sidebar */}
       {isSettingsOpen && (
-        <Card className="w-80 p-4 overflow-auto">
+        <div className="w-80 p-4 overflow-auto border-l">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold">Settings</h2>
             <Button
@@ -418,13 +491,16 @@ export default function ChatTesting() {
               </AccordionItem>
             ))}
           </Accordion>
-        </Card>
+        </div>
       )}
 
+      {/* Error Message */}
       {errorMessage && (
-        <Card className="p-4 bg-destructive text-destructive-foreground col-span-2">
-          <p>{errorMessage}</p>
-        </Card>
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
+          <Card className="p-4 bg-destructive text-destructive-foreground">
+            <p>{errorMessage}</p>
+          </Card>
+        </div>
       )}
     </div>
   );

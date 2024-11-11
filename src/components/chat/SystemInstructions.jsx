@@ -88,9 +88,9 @@ const SystemInstructions = ({ value, onChange }) => {
   };
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between mb-2">
-        <h2 className="text-lg font-semibold">System Instructions</h2>
+    <div className="space-y-2 ml-2">
+      <div className="flex items-center justify-between mb-2 mt-2">
+        <h2 className="text-lg font-semibold ml-2">System Instructions</h2>
         <Button
           variant="outline"
           size="sm"

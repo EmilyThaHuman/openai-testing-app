@@ -1,11 +1,31 @@
-# React + Vite
+# OpenAI Testing Application
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Overview
 
-Currently, two official plugins are available:
+A comprehensive React-based testing application for OpenAI's APIs, featuring a modern UI built with Shadcn UI components and offering extensive testing capabilities for various OpenAI services.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Features
+
+- 🤖 Complete OpenAI API Integration
+- 🔄 Unified Service Architecture
+- 📝 Chat Completions Testing
+- 🎯 Fine-tuning Management
+- 📁 File Operations
+- ⚖️ Content Moderation
+- 🔍 Code Syntax Highlighting
+- 🎨 Modern UI with Shadcn Components
+- 🧪 Testing Infrastructure
+
+## Tech Stack
+
+- React + Vite
+- Tailwind CSS
+- Shadcn UI
+- OpenAI SDK
+- React Router
+- React Markdown
+- Testing Library + Vitest
+- Axios
 
 # Shadcn UI
 
@@ -61,3 +81,10 @@ src/
 ├── services/
 ├── styles/
 └── utils/
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js (v16+)
+- OpenAI API Key

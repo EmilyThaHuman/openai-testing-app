@@ -63,7 +63,7 @@ export function AssistantsPage() {
     try {
       const thread = await UnifiedOpenAIService.threads.create();
       const threads = JSON.parse(localStorage.getItem('openai_threads') || '[]');
-      const updatedThreads = threads.map(t => 
+      const updatedThreads = threads?.map(t => 
         t.id === thread.id 
           ? { ...t, assistant_id: selectedAssistant.id }
           : t
@@ -222,10 +222,10 @@ export function AssistantsPage() {
               </div>
               
               <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                {threads.length === 0 ? (
+                {threads?.length === 0 ? (
                   <p className="text-gray-500 text-center py-4">No threads yet</p>
                 ) : (
-                  threads.map(thread => (
+                  threads?.map(thread => (
                     <Card 
                       key={thread.id} 
                       className={`p-4 cursor-pointer hover:bg-gray-100 ${

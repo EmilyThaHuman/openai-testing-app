@@ -1,3 +1,6 @@
+import { MAX_CHUNK_SIZE } from "@/constants/fileConstants";
+import { chunk } from "lodash";
+
 /**
  * Converts a file to base64 string
  * @param {File} file - The file to convert
@@ -34,3 +37,61 @@ export const validateImageFile = (file) => {
 
   return true;
 };
+
+export const downloadFile = (data, filename) => {
+  const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  link.remove();
+};
+
+/**
+ * Utility class for handling file operations including validation, chunking and uploads
+ * @class FileHandler
+ */
+export class FileHandler {
+  static async validateFile(file, options = {}) {
+    const {
+      maxSize = 100 * 1024 * 1024, // 100MB default
+      allowedTypes = [
+        "text/plain",
+        "application/json",
+        "image/png",
+        "image/jpeg",
+      ],
+    } = options;
+
+    if (!allowedTypes.includes(file.type)) {
+      throw new Error(
+        `Invalid file type. Allowed types: ${allowedTypes.join(", ")}`
+      );
+    }
+
+    if (file.size > maxSize) {
+      throw new Error(
+        `File too large. Maximum size: ${maxSize / 1024 / 1024}MB`
+      );
+    }
+
+    return true;
+  }
+
+  static async uploadWithChunks(file, uploadFn, onProgress) {
+    const chunks = await this.createChunks(file);
+    let uploadedChunks = 0;
+
+    for (const chunk of chunks) {
+      await uploadFn(chunk);
+      uploadedChunks++;
+      onProgress?.(Math.round((uploadedChunks / chunks.length) * 100));
+    }
+  }
+
+  static async createChunks(file) {
+    const buffer = await file.arrayBuffer();
+    return chunk(new Uint8Array(buffer), MAX_CHUNK_SIZE);
+  }
+}
