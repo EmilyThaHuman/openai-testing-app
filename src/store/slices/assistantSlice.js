@@ -18,29 +18,33 @@ export const DEFAULT_ASSISTANT = {
   name: "",
   instructions: "",
   model: "gpt-4-turbo-preview",
-  tools: [],
-  file_ids: [],
   metadata: {},
   temperature: 0.7,
   top_p: 1,
   presence_penalty: 0,
   frequency_penalty: 0,
   response_format: { type: "text" },
+  file_ids: [],
   file_search_enabled: false,
   code_interpreter_enabled: false,
+  tools: [],
   function_calling_enabled: false,
   streaming: false,
 };
 
 export const createAssistantSlice = (set, get) => ({
-  // Extended State
+  // --- State --- //
   assistants: [],
   assistantChats: [],
+  assistantChatMessages: [],
+  assistantChatMessageAttachments: [],
+  threads: {},
+  threadMessages: {},
+  runs: {},
+  steps: {},
   assistantSettings: DEFAULT_ASSISTANT,
   selectedAssistant: null,
   selectedThread: null,
-  threads: {},
-  threadMessages: {},
   expandedThreads: new Set(),
   runningThreads: new Set(),
   streaming: false,
@@ -50,9 +54,18 @@ export const createAssistantSlice = (set, get) => ({
   loading: false,
   error: null,
 
-  // Base setters
+  // --- Computed values --- //
+  activeThread: () => {
+    const state = get();
+    return state.threads[state.selectedAssistant?.id]?.[0];
+  },
+
+  // --- Setters --- //
   setAssistants: (assistants) => set({ assistants }),
+  setAssistantChats: (chats) => set({ assistantChats: chats }),
+  setAssistantSettings: (settings) => set({ assistantSettings: settings }),
   setSelectedAssistant: (assistant) => set({ selectedAssistant: assistant }),
+  setAssistantId: (assistantId) => set({ assistantId }),
   setSelectedThread: (thread) => set({ selectedThread: thread }),
   setStreamingAssistantChat: (streaming) =>
     set({ streamingAssistantChat: streaming }),
@@ -60,7 +73,9 @@ export const createAssistantSlice = (set, get) => ({
   setErrorAssistantChat: (error) => set({ errorAssistantChat: error }),
   setExpandedThreads: (threadIds) =>
     set({ expandedThreads: new Set(threadIds) }),
+  setThreads: (threads) => set({ threads }),
   setThreadMessages: (messages) => set({ threadMessages: messages }),
+  setThreadId: (threadId) => set({ threadId }),
   setStreamingAssistantChatMessages: (messages) =>
     set({ streamingAssistantChatMessages: messages }),
   setAssistantChatMessages: (messages) =>
@@ -68,8 +83,6 @@ export const createAssistantSlice = (set, get) => ({
 
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
-
-  setAssistantSettings: (settings) => set({ assistantSettings: settings }),
 
   // Main assistant operations
   fetchAssistants: async (force = false) => {
@@ -93,8 +106,8 @@ export const createAssistantSlice = (set, get) => ({
       // Pre-fetch threads for each assistant
       await Promise.all(
         assistants.map((assistant) =>
-          state.fetchThreadsForAssistant(assistant.id)
-        )
+          state.fetchThreadsForAssistant(assistant.id),
+        ),
       );
 
       return assistants;
@@ -128,6 +141,7 @@ export const createAssistantSlice = (set, get) => ({
 
       const response = await UnifiedOpenAIService.threads.list(assistantId);
       const threadsData = response?.data || [];
+      console.log("threadsData", threadsData);
 
       set((prevState) => ({
         threads: {
@@ -141,7 +155,9 @@ export const createAssistantSlice = (set, get) => ({
       // Prefetch messages for expanded threads
       const visibleThreads = Array.from(state.expandedThreads);
       await Promise.all(
-        visibleThreads.map((threadId) => state.fetchMessagesForThread(threadId))
+        visibleThreads.map((threadId) =>
+          state.fetchMessagesForThread(threadId),
+        ),
       );
     } catch (error) {
       state.setError(error.message);
@@ -164,6 +180,9 @@ export const createAssistantSlice = (set, get) => ({
       }));
 
       cacheService.set(CACHE_KEYS.ASSISTANTS, get().assistants);
+      state.setSelectedAssistant(assistant);
+      // state.fetchThreadsForAssistant(assistant.id);
+      state.setAssistantId(assistant.id);
       return assistant;
     } catch (error) {
       state.setError(error.message);
@@ -180,12 +199,12 @@ export const createAssistantSlice = (set, get) => ({
     try {
       const updated = await UnifiedOpenAIService.assistants.update(
         assistantId,
-        updateData
+        updateData,
       );
 
       set((state) => ({
         assistants: state.assistants.map((a) =>
-          a.id === assistantId ? updated : a
+          a.id === assistantId ? updated : a,
         ),
         selectedAssistant:
           state.selectedAssistant?.id === assistantId
@@ -303,7 +322,7 @@ export const createAssistantSlice = (set, get) => ({
       cacheService.set(
         CACHE_KEYS.THREADS,
         get().threads[selectedAssistant.id],
-        selectedAssistant.id
+        selectedAssistant.id,
       );
 
       return thread;
@@ -319,7 +338,7 @@ export const createAssistantSlice = (set, get) => ({
     const state = get();
     return await UnifiedOpenAIService.threads.runs.createAndRun(
       assistantId,
-      params
+      params,
     );
   },
 
@@ -327,7 +346,7 @@ export const createAssistantSlice = (set, get) => ({
     const state = get();
     const stream = await UnifiedOpenAIService.threads.runs.createAndStreamRun(
       assistantId,
-      params
+      params,
     );
     return stream;
   },
@@ -345,7 +364,7 @@ export const createAssistantSlice = (set, get) => ({
         if (!state.threadMessages[threadId]) {
           await state.fetchMessagesForThread(threadId);
         }
-      })
+      }),
     ).catch(console.error);
   },
 
@@ -362,7 +381,7 @@ export const createAssistantSlice = (set, get) => ({
       const run = await UnifiedOpenAIService.threads.runs.create(
         threadId,
         state.selectedAssistant.id,
-        options
+        options,
       );
 
       if (options.stream) {
@@ -402,7 +421,7 @@ export const createAssistantSlice = (set, get) => ({
       try {
         const run = await UnifiedOpenAIService.threads.runs.retrieve(
           threadId,
-          runId
+          runId,
         );
 
         if (run.status === "completed") {
@@ -435,7 +454,7 @@ export const createAssistantSlice = (set, get) => ({
         threads: {
           ...state.threads,
           [assistantId]: state.threads[assistantId]?.filter(
-            (t) => t.id !== threadId
+            (t) => t.id !== threadId,
           ),
         },
         threadMessages: {
@@ -492,7 +511,7 @@ export const createAssistantSlice = (set, get) => ({
     await UnifiedOpenAIService.threads.messages.submitFeedback(
       state.selectedThread.id,
       messageId,
-      type
+      type,
     );
   },
 

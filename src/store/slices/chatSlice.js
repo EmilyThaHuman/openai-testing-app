@@ -27,6 +27,7 @@ const MODEL_DESCRIPTIONS = {
 };
 
 const SETTING_DESCRIPTIONS = {
+  model: "The AI model to use for the chat.",
   temperature:
     "Controls randomness in responses. Higher values make output more creative but less focused.",
   maxTokens:
@@ -35,10 +36,15 @@ const SETTING_DESCRIPTIONS = {
   frequencyPenalty: "Reduces repetition by penalizing frequently used words.",
   presencePenalty: "Encourages the model to talk about new topics.",
   systemPrompt: "Sets the behavior and role of the AI assistant.",
+  streaming: "Whether to stream the response or not.",
 };
 
 export const createChatSlice = (set, get) => ({
+  // --- State --- //
   chats: cacheService.get(CACHE_KEYS.CHATS) || [],
+  chatMessages: [],
+  streamingChatMessages: [],
+  selectedChat: null,
   activeChatId: cacheService.get(CACHE_KEYS.ACTIVE_CHAT_ID) || null,
   isLoading: false,
   error: null,
@@ -51,10 +57,10 @@ export const createChatSlice = (set, get) => ({
   selectedPreset:
     cacheService.get(CACHE_KEYS.SELECTED_PRESET) || DEFAULT_CHAT_SETTINGS,
 
-  // Keep existing computed values
+  // --- Computed values --- //
   activeChat: () => get().chats.find((chat) => chat.id === get().activeChatId),
 
-  // Update setters to use cache
+  // --- Setters --- //
   setModel: (model) => {
     set({ model });
     cacheService.set(CACHE_KEYS.MODEL, model);
@@ -66,8 +72,14 @@ export const createChatSlice = (set, get) => ({
   },
 
   setActiveChat: (chat) => {
+    console.log("setActiveChat", chat);
     set({ activeChat: chat });
     cacheService.set(CACHE_KEYS.ACTIVE_CHAT, chat);
+  },
+
+  setSelectedChat: (chat) => {
+    console.log("setSelectedChat", chat);
+    set({ selectedChat: chat });
   },
 
   setChatSettings: (settings) => {
@@ -79,6 +91,10 @@ export const createChatSlice = (set, get) => ({
     set({ chats });
     cacheService.set(CACHE_KEYS.CHATS, chats);
   },
+
+  setChatMessages: (messages) => set({ chatMessages: messages }),
+  setStreamingChatMessages: (messages) =>
+    set({ streamingChatMessages: messages }),
 
   setLoading: (isLoading) => set({ isLoading }),
   setError: (error) => set({ error }),
@@ -101,6 +117,7 @@ export const createChatSlice = (set, get) => ({
           chats: updatedChats,
           activeChatId: newChat.id,
           activeChat: newChat,
+          selectedChat: newChat,
         };
       });
 
@@ -147,6 +164,16 @@ export const createChatSlice = (set, get) => ({
               }
             : c
         ),
+        selectedChat: {
+          ...chat,
+          messages: [...chat.messages, userMessage],
+          updatedAt: new Date().toISOString(),
+        },
+        activeChat: {
+          ...chat,
+          messages: [...chat.messages, userMessage],
+          updatedAt: new Date().toISOString(),
+        },
       }));
 
       // Prepare messages array for API
@@ -204,17 +231,29 @@ export const createChatSlice = (set, get) => ({
           timestamp: new Date().toISOString(),
         };
 
-        // Add initial empty message
+        // Add initial empty message with safety check
         set((state) => ({
-          chats: state.chats.map((c) =>
-            c.id === chat.id
-              ? {
-                  ...c,
-                  messages: [...c.messages, assistantMessage],
-                  updatedAt: new Date().toISOString(),
-                }
-              : c
-          ),
+          chats: Array.isArray(state.chats)
+            ? state.chats.map((c) =>
+                c.id === chat.id
+                  ? {
+                      ...c,
+                      messages: [...c.messages, assistantMessage],
+                      updatedAt: new Date().toISOString(),
+                    }
+                  : c
+              )
+            : [],
+          selectedChat: {
+            ...chat,
+            messages: [...chat.messages, assistantMessage],
+            updatedAt: new Date().toISOString(),
+          },
+          activeChat: {
+            ...chat,
+            messages: [...chat.messages, assistantMessage],
+            updatedAt: new Date().toISOString(),
+          },
         }));
 
         // Process the stream
@@ -237,6 +276,16 @@ export const createChatSlice = (set, get) => ({
                   }
                 : c
             ),
+            selectedChat: {
+              ...chat,
+              messages: [...chat.messages, assistantMessage],
+              updatedAt: new Date().toISOString(),
+            },
+            activeChat: {
+              ...chat,
+              messages: [...chat.messages, assistantMessage],
+              updatedAt: new Date().toISOString(),
+            },
           }));
         }
 
@@ -261,6 +310,16 @@ export const createChatSlice = (set, get) => ({
                 }
               : c
           ),
+          selectedChat: {
+            ...chat,
+            messages: [...chat.messages, assistantMessage],
+            updatedAt: new Date().toISOString(),
+          },
+          activeChat: {
+            ...chat,
+            messages: [...chat.messages, assistantMessage],
+            updatedAt: new Date().toISOString(),
+          },
         }));
 
         localStorage.setItem("chats", JSON.stringify(get().chats));
@@ -367,14 +426,16 @@ export const createChatSlice = (set, get) => ({
     };
   },
 
+  // 3. Add safety checks in loadChatsFromCache
   loadChatsFromCache: () => {
     const chats = cacheService.get(CACHE_KEYS.CHATS) || [];
     const activeChatId = cacheService.get(CACHE_KEYS.ACTIVE_CHAT_ID) || null;
     const chatSettings =
       cacheService.get(CACHE_KEYS.CHAT_SETTINGS) || DEFAULT_CHAT_SETTINGS;
 
+    // Ensure chats is always an array
     set({
-      chats,
+      chats: Array.isArray(chats) ? chats : [],
       activeChatId,
       chatSettings,
     });

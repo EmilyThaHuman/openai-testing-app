@@ -9,8 +9,14 @@ import FileTesting from './tabs/FileTesting';
 import FineTuneTesting from './tabs/FineTuneTesting';
 
 export const OpenAITestingTabs = () => {
+    const [activeMainTab, setActiveMainTab] = useState("assistants");
+
   return (
-    <Tabs defaultValue="assistants" className="w-full">
+    <Tabs 
+      value={activeMainTab} 
+      onValueChange={setActiveMainTab} 
+      className="w-full"
+    >
       <TabsList className="grid grid-cols-7 w-full">
         <TabsTrigger value="assistants">Assistants</TabsTrigger>
         <TabsTrigger value="chat">Chat</TabsTrigger>

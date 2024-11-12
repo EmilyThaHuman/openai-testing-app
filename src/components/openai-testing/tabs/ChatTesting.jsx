@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useChat } from "@/context/ChatContext";
 import { ChatMessage } from "@/components/chat/ChatMessage";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { Button } from "@/components/ui/button";
@@ -33,6 +32,9 @@ import { Info, Trash2, Settings2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useInView } from "react-intersection-observer";
 import SystemInstructions from "@/components/chat/SystemInstructions";
+import { useStoreShallow } from "@/store/useStore";
+import EmptyChat from "@/components/chat/EmptyChat";
+import EmptySidebar from "@/components/chat/EmptySidebar";
 
 // Define your settings groups
 const SETTINGS_GROUPS = {
@@ -64,8 +66,9 @@ const SETTINGS_GROUPS = {
 
 // Component to handle individual settings controls
 const SettingControl = ({ settingKey, type, onSettingChange }) => {
-  const { getSettingInfo, models } = useChat();
-  const setting = getSettingInfo(settingKey);
+  const store = useStoreShallow();
+
+  const setting = store.getSettingInfo(settingKey);
 
   if (!setting) return null;
 
@@ -85,7 +88,7 @@ const SettingControl = ({ settingKey, type, onSettingChange }) => {
           <SelectValue placeholder={`Select ${setting.label}`} />
         </SelectTrigger>
         <SelectContent>
-          {models &&
+          {store.models &&
             Object.entries(models).map(([value, label]) => (
               <SelectItem key={value} value={value}>
                 {label}
@@ -146,24 +149,58 @@ export default function ChatTesting() {
   const [uploadProgress, setUploadProgress] = useState({});
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
+  const store = useStoreShallow((state) => ({
+    // State
+    chats: state.chats,
+    activeChat: state.activeChat,
+    activeChatId: state.activeChatId,
+    isLoading: state.isLoading,
+    error: state.error,
+    model: state.model,
+    models: state.models,
+    modelDescriptions: state.modelDescriptions,
+    // Setters
+    setModel: state.setModel,
+    setActiveChatId: state.setActiveChatId,
+    setActiveChat: state.setActiveChat,
+    setChats: state.setChats,
+    setLoading: state.setLoading,
+    setError: state.setError,
+    // Actions
+    createChat: state.createChat,
+    deleteChat: state.deleteChat,
+    updateChatTitle: state.updateChatTitle,
+    clearChat: state.clearChat,
+    updateChatSettings: state.updateChatSettings,
+    getSettingInfo: state.getSettingInfo,
+    sendMessage: state.sendChatMessage,
+    loadChatsFromCache: state.loadChatsFromCache,
+    addMessage: state.addMessage,
+  }));
+
+  // Initialize chat state
+  React.useEffect(() => {
+    store.loadChatsFromCache();
+  }, []);
+
   const {
+    chats,
     activeChat,
-    setActiveChatId,
-    setActiveChat,
+    activeChatId,
+    models,
     isLoading,
     error,
+    setActiveChatId,
+    setActiveChat,
     sendMessage,
     updateChatSettings,
-    models,
     getSettingInfo,
     clearChat,
-    chats,
     createNewChat,
     addMessage,
     createChat,
     deleteChat,
-    activeChatId,
-  } = useChat();
+  } = store;
 
   useEffect(() => {
     if (!inView && activeChat?.messages?.length) {
@@ -361,114 +398,131 @@ export default function ChatTesting() {
   return (
     <div className="flex h-screen">
       {/* Sidebar for Chat History */}
+      {/* Sidebar for Chat History */}
       {isSidebarOpen && (
         <div className="w-56 p-4 overflow-auto border-r">
-          {" "}
-          {/* Adjusted width */}
-          <Button className="w-full mb-4" onClick={() => createChat()}>
-            New Chat
-          </Button>
-          <ScrollArea className="flex-1">
-            <div className="space-y-2">
-              {chats?.map((chat) => (
-                <Card
-                  key={chat.id}
-                  className={`p-3 cursor-pointer hover:bg-accent ${
-                    chat.id === activeChatId ? "bg-accent" : ""
-                  }`}
-                  onClick={() => setActiveChatId(chat.id)}
-                >
-                  <div className="flex justify-between items-center">
-                    <p className="text-sm font-medium truncate">{chat.title}</p>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteChat(chat.id);
-                      }}
-                    >
-                      ×
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(chat.updatedAt).toLocaleDateString()}
-                  </p>
-                </Card>
-              ))}
-            </div>
-          </ScrollArea>
+          {chats?.length === 0 ? (
+            <EmptySidebar onNewChat={() => createChat()} />
+          ) : (
+            <>
+              <Button className="w-full mb-4" onClick={() => createChat()}>
+                New Chat
+              </Button>
+              <ScrollArea className="flex-1">
+                <div className="space-y-2">
+                  {Array.isArray(chats) && chats.length > 0 ? (
+                    chats.map((chat) => (
+                      <Card
+                        key={chat.id}
+                        className={`p-3 cursor-pointer hover:bg-accent ${
+                          chat.id === activeChatId ? "bg-accent" : ""
+                        }`}
+                        onClick={() => setActiveChatId(chat.id)}
+                      >
+                        <div className="flex justify-between items-center">
+                          <p className="text-sm font-medium truncate">
+                            {chat.title}
+                          </p>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteChat(chat.id);
+                            }}
+                          >
+                            ×
+                          </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(chat.updatedAt).toLocaleDateString()}
+                        </p>
+                      </Card>
+                    ))
+                  ) : (
+                    <EmptySidebar />
+                  )}
+                </div>
+              </ScrollArea>
+            </>
+          )}
         </div>
       )}
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col">
-        {/* Header with Toggle Buttons */}
-        <div className="flex justify-between items-center p-4 border-b">
-          {/* Toggle Sidebar Button */}
-          <Button onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
-            {isSidebarOpen ? "Hide Chats" : "Show Chats"}
-          </Button>
+        {!activeChat ? (
+          <EmptyChat onNewChat={() => createChat()} />
+        ) : (
+          <>
+            {/* Header with Toggle Buttons */}
+            <div className="flex justify-between items-center p-4 border-b">
+              {/* Toggle Sidebar Button */}
+              <Button onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
+                {isSidebarOpen ? "Hide Chats" : "Show Chats"}
+              </Button>
 
-          {/* Action Buttons */}
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={clearChat}
-              title="Clear chat"
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-              title="Toggle settings"
-            >
-              <Settings2 className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-
-        {/* System Instructions */}
-        <SystemInstructions
-          value={activeChat?.settings?.systemPrompt || ""}
-          onChange={(newInstructions) =>
-            handleSettingChange("systemPrompt", newInstructions)
-          }
-        />
-
-        {/* Chat Messages */}
-        <ScrollArea className="flex-1 p-4">
-          <div className="space-y-4">
-            {activeChat?.messages?.map((message) => (
-              <ChatMessage
-                key={message.id}
-                message={message}
-                isUser={message.role === "user"}
-                files={message.files}
-              />
-            ))}
-            {isLoading && (
-              <div className="flex justify-center">
-                <Loading />
+              {/* Action Buttons */}
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearChat}
+                  title="Clear chat"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                  title="Toggle settings"
+                >
+                  <Settings2 className="w-4 h-4" />
+                </Button>
               </div>
-            )}
-            <div ref={scrollRef} />
-          </div>
-        </ScrollArea>
+            </div>
 
-        {/* Chat Input */}
-        <div className="p-4 border-t">
-          <ChatInput
-            onSend={handleSend}
-            onFileUpload={handleFileUpload}
-            disabled={isLoading}
-            placeholder="Send a message or upload files..."
-            uploadedFiles={uploadedFiles}
-          />
-        </div>
+            {/* System Instructions */}
+            <SystemInstructions
+              value={activeChat?.settings?.systemPrompt || ""}
+              onChange={(newInstructions) =>
+                handleSettingChange("systemPrompt", newInstructions)
+              }
+            />
+
+            {/* Chat Messages */}
+            <ScrollArea className="flex-1 p-4">
+              <div className="space-y-4">
+                {activeChat?.messages?.map((message) => (
+                  <ChatMessage
+                    key={message.id}
+                    message={message}
+                    isUser={message.role === "user"}
+                    files={message.files}
+                  />
+                ))}
+                {isLoading && (
+                  <div className="flex justify-center">
+                    <Loading />
+                  </div>
+                )}
+                <div ref={scrollRef} />
+              </div>
+            </ScrollArea>
+
+            {/* Chat Input */}
+            <div className="p-4 border-t">
+              <ChatInput
+                onSend={handleSend}
+                onFileUpload={handleFileUpload}
+                disabled={isLoading}
+                placeholder="Send a message or upload files..."
+                uploadedFiles={uploadedFiles}
+              />
+            </div>
+          </>
+        )}
       </div>
 
       {/* Settings Sidebar */}

@@ -9,23 +9,31 @@ export const useAssistants = () => {
     // Core state
     assistants: state.assistants,
     selectedAssistant: state.selectedAssistant,
+
     streaming: state.streaming,
     loading: state.loading,
     error: state.error,
     expandedThreads: state.expandedThreads,
+    threadMessages: state.threadMessages,
+    streamingAssistantChatMessages: state.streamingAssistantChatMessages,
+    streamingAssistantChat: state.streamingAssistantChat,
 
     setLoading: state.setLoading,
     setError: state.setError,
 
-    // Actions
+    // Setters
     setStreaming: state.setStreaming,
     streamingChatMessages: state.streamingChatMessages,
     assistantChatMessages: state.assistantChatMessages,
     setStreamingChatMessages: state.setStreamingChatMessages,
     setAssistantChatMessages: state.setAssistantChatMessages,
     setSelectedAssistant: state.setSelectedAssistant,
+    setSelectedThread: state.setSelectedThread,
     setExpandedThreads: state.setExpandedThreads,
     setAssistants: state.setAssistants,
+    setThreads: state.setThreads,
+
+    // Actions
     fetchAssistants: state.fetchAssistants,
     createAssistant: state.createAssistant,
     updateAssistant: state.updateAssistant,
@@ -35,6 +43,8 @@ export const useAssistants = () => {
     toggleThread: state.toggleThread,
     sendMessage: state.sendMessage,
     createStreamedThreadWithMessage: state.createStreamedThreadWithMessage,
+    submitFeedback: state.submitFeedback,
+    regenerateResponse: state.regenerateResponse,
 
     // Selectors
     getThreads: state.getThreads,
@@ -87,16 +97,6 @@ export const useAssistants = () => {
     }
   }, [store.setAssistants, store.setLoading, store.setError, toast]);
 
-  // const loadAssistants = useCallback(async () => {
-  //   await store.fetchAssistants();
-  // }, [store.fetchAssistants]);
-
-  // useEffect(() => {
-  //   if (store.assistants.length === 0) {
-  //     loadAssistants();
-  //   }
-  // }, [loadAssistants, store.assistants.length]);
-
   return {
     // Core state
     assistants: store.assistants,
@@ -105,16 +105,23 @@ export const useAssistants = () => {
     loading: store.loading,
     error: store.error,
     expandedThreads: store.expandedThreads,
+    threadMessages: store.threadMessages,
+    streamingAssistantChatMessages: store.streamingAssistantChatMessages,
+    streamingAssistantChat: store.streamingAssistantChat,
 
-    // Actions
+    // Setters
     setStreaming: store.setStreaming,
     streamingChatMessages: store.streamingChatMessages,
     assistantChatMessages: store.assistantChatMessages,
     setStreamingChatMessages: store.setStreamingChatMessages,
     setAssistantChatMessages: store.setAssistantChatMessages,
     setSelectedAssistant: store.setSelectedAssistant,
+    setSelectedThread: store.setSelectedThread,
     setExpandedThreads: store.setExpandedThreads,
     setAssistants: store.setAssistants,
+    setThreads: store.setThreads,
+
+    // Actions
     fetchAssistants,
     createAssistant: (data) =>
       safeOperation(
@@ -136,8 +143,13 @@ export const useAssistants = () => {
         () => store.fetchThreadsForAssistant(force),
         "Error fetching threads"
       ),
-    createThread: store.createThread,
-    toggleThread: store.toggleThread,
+    createThread: (data) =>
+      safeOperation(() => store.createThread(data), "Error creating thread"),
+    toggleThread: (threadId) =>
+      safeOperation(
+        () => store.toggleThread(threadId),
+        "Error toggling thread"
+      ),
     sendMessage: (threadId, content, options) =>
       safeOperation(
         () => store.sendMessage(threadId, content, options),

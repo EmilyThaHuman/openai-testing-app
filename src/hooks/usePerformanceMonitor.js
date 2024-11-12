@@ -1,36 +1,19 @@
-// import { useEffect, useRef } from 'react';
-// import { useStore } from '@/store/useStore';
+import { useEffect, useRef } from 'react';
 
-// export const usePerformanceMonitor = (componentId) => {
-//   const { trackRenderTime, addApiLatency } = useStore(state => ({
-//     trackRenderTime: state.trackRenderTime,
-//     addApiLatency: state.addApiLatency
-//   }));
-  
-//   const renderStartTime = useRef(performance.now());
+export function usePerformanceMonitor(componentName) {
+  const renderCount = useRef(0);
+  const lastRenderTime = useRef(performance.now());
 
-//   useEffect(() => {
-//     const duration = performance.now() - renderStartTime.current;
-//     trackRenderTime(componentId, duration);
+  useEffect(() => {
+    renderCount.current += 1;
+    const currentTime = performance.now();
+    const renderTime = currentTime - lastRenderTime.current;
 
-//     return () => {
-//       renderStartTime.current = performance.now();
-//     };
-//   });
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[${componentName}] Render #${renderCount.current}`);
+      console.log(`Render time: ${renderTime.toFixed(2)}ms`);
+    }
 
-//   const trackApiCall = async (endpoint, promise) => {
-//     const startTime = performance.now();
-//     try {
-//       const result = await promise;
-//       const duration = performance.now() - startTime;
-//       addApiLatency(endpoint, duration);
-//       return result;
-//     } catch (error) {
-//       const duration = performance.now() - startTime;
-//       addApiLatency(endpoint, duration);
-//       throw error;
-//     }
-//   };
-
-//   return { trackApiCall };
-// }; 
+    lastRenderTime.current = currentTime;
+  });
+} 

@@ -1,7 +1,14 @@
 import { useState } from "react";
 import PropTypes from "prop-types";
-import { useToast } from "../components/ui/use-toast";
-import { Code } from "lucide-react";
+import { useToast } from "../ui/use-toast";
+import { Code, Settings2 } from "lucide-react";
+import { Button } from "../ui/button";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog";
+import { Textarea } from "../ui/textarea";
+import { Plus } from "lucide-react";
+import { Wand2 } from "lucide-react";
+import GenerateDialog from "./GenerateDialog";
+
 
 export const FunctionsList = ({ functions }) => {
   if (functions.length === 0) return null;

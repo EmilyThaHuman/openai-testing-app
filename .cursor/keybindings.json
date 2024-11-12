@@ -1,0 +1,88 @@
+[
+  {
+    "key": "ctrl+c",
+    "command": "editor.action.clipboardCopyAction"
+  },
+  {
+    "key": "ctrl+insert",
+    "command": "-editor.action.clipboardCopyAction"
+  },
+  {
+    "key": "ctrl+g ctrl+a",
+    "command": "prettier.forceFormatDocument"
+  },
+  {
+    "key": "alt+g alt+a",
+    "command": "prettier.forceFormatDocument"
+  },
+  {
+    "key": "ctrl+f",
+    "command": "references-view.findReferences",
+    "when": "editorHasReferenceProvider"
+  },
+  {
+    "key": "shift+alt+f12",
+    "command": "-references-view.findReferences",
+    "when": "editorHasReferenceProvider"
+  },
+  {
+    "key": "ctrl+a",
+    "command": "editor.action.selectAll"
+  },
+  {
+    "key": "alt+k alt+0",
+    "command": "editor.foldAll"
+  },
+  {
+    "key": "ctrl+f",
+    "command": "actions.find"
+  },
+  {
+    "key": "ctrl+g ctrl+a",
+    "command": "editor.action.formatDocument",
+    "when": "editorHasDocumentFormattingProvider && editorTextFocus && !editorReadonly && !inCompositeEditor"
+  },
+  {
+    "key": "shift+alt+f",
+    "command": "-editor.action.formatDocument",
+    "when": "editorHasDocumentFormattingProvider && editorTextFocus && !editorReadonly && !inCompositeEditor"
+  },
+  {
+    "key": "ctrl+up",
+    "command": "editor.action.moveLinesUpAction",
+    "when": "editorTextFocus && !editorReadonly"
+  },
+  {
+    "key": "ctrl+down",
+    "command": "editor.action.moveLinesDownAction",
+    "when": "editorTextFocus && !editorReadonly"
+  },
+  {
+    "key": "ctrl+shift+1",
+    "command": "workbench.action.chat.openInEditor",
+    "args": {
+      "message": "Review this code and suggest improvements:"
+    }
+  },
+  {
+    "key": "ctrl+shift+2",
+    "command": "workbench.action.chat.openInEditor",
+    "args": {
+      "message": "Refactor this code for better readability and performance:"
+    }
+  },
+  {
+    "key": "ctrl+shift+3",
+    "command": "workbench.action.chat.openInEditor",
+    "args": {
+      "message": "Convert this code from TSX to regular JavaScript:"
+    }
+  },
+  {
+    "key": "ctrl+shift+4",
+    "command": "workbench.action.chat.openInEditor",
+    "args": {
+      "message": "Convert Tailwind styles in this code to use Material UI instead:"
+    }
+  }
+]

@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { UnifiedOpenAIService } from '@/services/openai/unifiedOpenAIService'
 import { useOpenAI } from '@/context/OpenAIContext'
 import { useStoreShallow } from '@/store/useStore'
+import { AssistantStream } from "openai/lib/AssistantStream";
 
 export function AssistantsPage() {
   const { apiKey } = useOpenAI()

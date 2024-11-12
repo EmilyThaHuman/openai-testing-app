@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
+import { Input } from "../ui/input";
 
 const ThreadList = ({
   threads,
@@ -39,6 +40,7 @@ const ThreadList = ({
   const [selectedAssistantId, setSelectedAssistantId] = useState(
     selectedAssistant?.id || ""
   );
+  const [initialMessage, setInitialMessage] = useState("");
 
   useEffect(() => {
     setSelectedAssistantId(selectedAssistant?.id || "");
@@ -112,7 +114,7 @@ const ThreadList = ({
                   Create a new thread to start a conversation with an assistant
                 </p>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="space-y-4 w-full max-w-md">
                 <Select
                   value={selectedAssistantId}
                   onValueChange={(value) => {
@@ -121,7 +123,7 @@ const ThreadList = ({
                     setSelectedAssistant(assistant);
                   }}
                 >
-                  <SelectTrigger className="w-64">
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select an assistant" />
                   </SelectTrigger>
                   <SelectContent>
@@ -132,70 +134,90 @@ const ThreadList = ({
                     ))}
                   </SelectContent>
                 </Select>
+
+                <Input
+                  placeholder="Type your initial message..."
+                  value={initialMessage}
+                  onChange={(e) => setInitialMessage(e.target.value)}
+                  className="w-full"
+                />
+
                 <Button
-                  onClick={() => onCreateThread(selectedAssistantId)}
-                  disabled={!selectedAssistantId}
+                  onClick={() =>
+                    onCreateThread(selectedAssistantId, initialMessage)
+                  }
+                  disabled={!selectedAssistantId || !initialMessage.trim()}
+                  className="w-full"
                 >
-                  Create New Thread
+                  Start Conversation
                 </Button>
               </div>
             </motion.div>
           ) : (
             <div className="space-y-3">
-              {threadArray.map((thread) => (
-                <motion.div
-                  key={thread.id}
-                  layout
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                >
-                  <Card
-                    className={`
+              {Array.isArray(threadArray) &&
+                threads
+                  .filter(Boolean) // Filter out null/undefined threads
+                  .map((thread) => {
+                    if (!thread) return null; // Additional safety check
+
+                    return (
+                      <motion.div
+                        key={thread.id}
+                        layout
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                      >
+                        <Card
+                          className={`
                       p-4 transition-all duration-200 ease-in-out cursor-pointer
                       hover:shadow-md hover:border-primary/20
                       ${selectedThread?.id === thread.id ? "bg-accent" : "hover:bg-accent/50"}
                     `}
-                    onClick={() => onThreadSelect(thread)}
-                  >
-                    <div className="flex justify-between items-start space-x-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-2">
-                          <h3 className="text-sm font-medium truncate">
-                            Thread {thread.id.slice(-8)}
-                          </h3>
-                          {thread.status && (
-                            <Badge
-                              variant={
-                                thread.status === "completed"
-                                  ? "success"
-                                  : thread.status === "running"
-                                    ? "default"
-                                    : "secondary"
-                              }
-                            >
-                              {thread.status}
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {formatRelativeTime(thread.created_at)}
-                        </p>
-                        {thread.metadata?.lastMessage && (
-                          <p className="text-sm text-muted-foreground truncate mt-2">
-                            {thread.metadata.lastMessage}
-                          </p>
-                        )}
-                      </div>
-                      <ChevronRight
-                        className={`h-5 w-5 text-muted-foreground/50 transition-transform ${
-                          selectedThread?.id === thread.id ? "rotate-90" : ""
-                        }`}
-                      />
-                    </div>
-                  </Card>
-                </motion.div>
-              ))}
+                          onClick={() => onThreadSelect(thread)}
+                        >
+                          <div className="flex justify-between items-start space-x-4">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center space-x-2">
+                                <h3 className="text-sm font-medium truncate">
+                                  Thread {thread.id.slice(-8)}
+                                </h3>
+                                {thread.status && (
+                                  <Badge
+                                    variant={
+                                      thread.status === "completed"
+                                        ? "success"
+                                        : thread.status === "running"
+                                          ? "default"
+                                          : "secondary"
+                                    }
+                                  >
+                                    {thread.status}
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {formatRelativeTime(thread.created_at)}
+                              </p>
+                              {thread.metadata?.lastMessage && (
+                                <p className="text-sm text-muted-foreground truncate mt-2">
+                                  {thread.metadata.lastMessage}
+                                </p>
+                              )}
+                            </div>
+                            <ChevronRight
+                              className={`h-5 w-5 text-muted-foreground/50 transition-transform ${
+                                selectedThread?.id === thread.id
+                                  ? "rotate-90"
+                                  : ""
+                              }`}
+                            />
+                          </div>
+                        </Card>
+                      </motion.div>
+                    );
+                  })}
             </div>
           )}
         </AnimatePresence>
@@ -207,11 +229,11 @@ const ThreadList = ({
           <DialogHeader>
             <DialogTitle>Create New Thread</DialogTitle>
             <DialogDescription>
-              Select an assistant to start a new conversation thread
+              Select an assistant and start your conversation
             </DialogDescription>
           </DialogHeader>
 
-          <div className="py-6">
+          <div className="py-6 space-y-4">
             <Select
               value={selectedAssistantId}
               onValueChange={setSelectedAssistantId}
@@ -235,20 +257,29 @@ const ThreadList = ({
                 </SelectGroup>
               </SelectContent>
             </Select>
+
+            <Input
+              placeholder="Type your initial message..."
+              value={initialMessage}
+              onChange={(e) => setInitialMessage(e.target.value)}
+            />
           </div>
 
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setIsCreateDialogOpen(false)}
+              onClick={() => {
+                setIsCreateDialogOpen(false);
+                setInitialMessage("");
+              }}
             >
               Cancel
             </Button>
             <Button
               onClick={handleCreateThread}
-              disabled={!selectedAssistantId}
+              disabled={!selectedAssistantId || !initialMessage.trim()}
             >
-              Create Thread
+              Start Conversation
             </Button>
           </DialogFooter>
         </DialogContent>

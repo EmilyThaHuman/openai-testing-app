@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { PlayCircle } from "lucide-react";
 
 const AssistantCard = React.memo(
-  ({ assistant, isSelected, onSelect, onStartRun, isRunning }) => (
+  ({ assistant, isSelected, onSelect, onStartRun, onStartEdit, isRunning }) => (
     <Card
       className={`p-4 hover:bg-gray-50 transition-colors ${
         isSelected ? "bg-gray-100" : ""
@@ -20,6 +20,16 @@ const AssistantCard = React.memo(
           <h3 className="font-medium">{assistant.name}</h3>
           <p className="text-sm text-gray-500">{assistant.id}</p>
         </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="ml-2"
+          onClick={() => onStartEdit(assistant)}
+          disabled={isRunning || !isSelected}
+        >
+          <PlayCircle className="h-4 w-4 mr-1" />
+          Start Edit
+        </Button>
         <Button
           variant="ghost"
           size="sm"
@@ -47,6 +57,7 @@ const AssistantList = ({
   selectedAssistant,
   onAssistantSelect,
   onStartRun,
+  onStartEdit,
   isRunning,
   loading,
 }) => {
@@ -82,6 +93,7 @@ const AssistantList = ({
                 isSelected={selectedAssistant?.id === assistant.id}
                 onSelect={onAssistantSelect}
                 onStartRun={onStartRun}
+                onStartEdit={onStartEdit}
                 isRunning={isRunning}
               />
             ))

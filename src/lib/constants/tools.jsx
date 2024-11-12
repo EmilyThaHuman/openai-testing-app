@@ -44,20 +44,6 @@ const searchStyledComponentsTool = {
     },
   },
 };
-const searchStyledComponents = {
-  name: "searchStyledComponents",
-  description: "Searches for styled-components based on a query.",
-  parameters: {
-    type: "object",
-    properties: {
-      query: {
-        type: "string",
-        description: "The search query.",
-      },
-    },
-    required: ["query"],
-  },
-};
 /* -------------------------------------------------------------------------- */
 /*                                PreProcess                                  */
 /* -------------------------------------------------------------------------- */
@@ -415,7 +401,6 @@ const openLivePreview = {
 // Tool definitions
 const toolDefinitions = [
   searchStyledComponentsTool,
-  searchStyledComponents,
   extractKeyWords,
   generateChatTitle,
   categorizeUserQuery,

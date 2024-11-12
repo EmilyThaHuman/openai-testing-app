@@ -18,6 +18,7 @@ export const VectorStoreManagement = ({
   onSelect,
   onBack,
   onCancel,
+  onFileUpload,
 }) => {
   const [vectorStoreId, setVectorStoreId] = useState("");
   const [loading, setLoading] = useState(false);
@@ -40,11 +41,6 @@ export const VectorStoreManagement = ({
       setLoading(false);
     }
   };
-
-  // useEffect(() => {
-  //   listVectorStores();
-  //   console.log("Listed vector stores");
-  // }, []);
 
   return (
     <div className="w-[440px] bg-zinc-900 rounded-lg p-6">

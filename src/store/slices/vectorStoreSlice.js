@@ -53,8 +53,24 @@ export const createVectorStoreSlice = (set, get) => ({
     }
   },
 
-  addVectorStoreFile: (file) =>
-    set((state) => ({ vectorStoreFiles: [...state.vectorStoreFiles, file] })),
+  addVectorStoreFile: async (vectorStoreId, params) => {
+    try {
+      const file_id = params.file.name;
+      const response = await UnifiedOpenAIService.vectorStoreFiles.create(
+        vectorStoreId,
+        {
+          file_id,
+          chunking_strategy: params.chunking_strategy,
+        }
+      );
+      set((state) => ({
+        vectorStoreFiles: [...state.vectorStoreFiles, response],
+      }));
+    } catch (error) {
+      set({ error: error.message, loading: false });
+      throw error;
+    }
+  },
   removeVectorStoreFile: (fileId) =>
     set((state) => ({
       vectorStoreFiles: state.vectorStoreFiles.filter((f) => f.id !== fileId),

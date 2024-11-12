@@ -21,8 +21,6 @@ export const useStore = createWithEqualityFn(
       ...createUISlice(...args),
       ...createVectorStoreSlice(...args),
       ...createToolsSlice(...args),
-      // Global state
-      // apiKey: localStorage.getItem("openai_api_key") || "",
 
       // Helper to get all chats (both regular and assistant)
       getAllChats: () => {
@@ -37,6 +35,11 @@ export const useStore = createWithEqualityFn(
         const state = args[1]();
         return state.activeChat || state.activeAssistantChat;
       },
+
+      setChats: (chats) => {
+        // Ensure chats is always an array
+        set({ chats: Array.isArray(chats) ? chats : [] });
+      },
     }),
     {
       name: "app-storage",
@@ -47,19 +50,28 @@ export const useStore = createWithEqualityFn(
         // --- chat state --- //
         chatSettings: state.chatSettings,
         chats: state.chats,
+        chatMessages: state.chatMessages,
+        streamingChatMessages: state.streamingChatMessages,
         activeChatId: state.activeChatId,
         activeChat: state.activeChat,
+        selectedChat: state.selectedChat,
         savedPresets: state.savedPresets,
         selectedPreset: state.selectedPreset,
 
         // --- assistant state --- //
         assistantSettings: state.assistantSettings,
         assistantChats: state.assistantChats,
+        assistantChatMessages: state.assistantChatMessages,
+        assistantChatMessageAttachments: state.assistantChatMessageAttachments,
+        streamingAssistantChatMessages: state.streamingAssistantChatMessages,
+        streamingAssistantChat: state.streamingAssistantChat,
         threads: state.threads,
         threadMessages: state.threadMessages,
         expandedThreads: Array.from(state.expandedThreads),
         assistants: state.assistants,
         selectedAssistant: state.selectedAssistant,
+        selectedThread: state.selectedThread,
+
 
         // --- file state --- //
         files: state.files,

@@ -1,0 +1,9 @@
+{
+  "*.{js,jsx,ts,tsx}": [
+    "prettier --write",
+    "eslint --fix --max-warnings=0",
+    "vitest related --run --passWithNoTests"
+  ],
+  "*.{css,scss,md,html,json}": "prettier --write",
+  "*.{png,jpeg,jpg,gif,svg}": "imagemin-lint-staged"
+} 

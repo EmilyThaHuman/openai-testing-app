@@ -28,9 +28,9 @@ export const useActiveRun = (options = {}) => {
    * Create a new thread and set it as the current thread
    * @returns {Promise<Object>} The created thread
    */
-  const createThread = useCallback(async () => {
+  const createThread = useCallback(async (messages) => {
     try {
-      const thread = await UnifiedOpenAIService.threads.create();
+      const thread = await UnifiedOpenAIService.threads.create(messages);
       setCurrentThread(thread);
       return thread;
     } catch (err) {

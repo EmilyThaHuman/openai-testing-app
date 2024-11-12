@@ -22,11 +22,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useStoreShallow } from "@/store/useStore";
+import { uniqueId } from "lodash";
 
 export function ThreadsManager({ onThreadSelect, selectedThread }) {
   const store = useStoreShallow();
   const selectedAssistantId = store.selectedAssistant?.id;
   const threads = store?.threads?.[selectedAssistantId] || [];
+  const setThreads = store.setThreads;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const { toast } = useToast();
@@ -226,89 +228,97 @@ export function ThreadsManager({ onThreadSelect, selectedThread }) {
           ) : (
             // Thread list
             <div className="space-y-3">
-              {threads?.map((thread) => (
-                <motion.div
-                  key={uniqueId()}
-                  layout
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                >
-                  <Card
-                    className={`
-                      p-4 transition-all duration-200 ease-in-out cursor-pointer
-                      hover:shadow-md hover:border-primary/20
-                      ${selectedThread?.id === thread.id ? "bg-accent" : "hover:bg-accent/50"}
-                    `}
-                    onClick={() => onThreadSelect?.(thread)}
-                  >
-                    <div className="flex justify-between items-start space-x-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-2">
-                          <h3 className="text-sm font-medium truncate">
-                            Thread {thread.id.slice(-8)}
-                          </h3>
-                          <Badge variant="secondary">
-                            {thread.metadata?.messageCount || 0} messages
-                          </Badge>
-                        </div>
-                        {thread.metadata?.lastMessage && (
-                          <p className="text-sm text-muted-foreground truncate mt-1">
-                            {thread.metadata.lastMessage}
-                          </p>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-2">
-                          Last active:{" "}
-                          {formatRelativeTime(
-                            thread.metadata?.lastActivity || thread.created_at
-                          )}
-                        </p>
-                      </div>
+              {Array.isArray(threads) &&
+                threads
+                  .filter(Boolean) // Filter out null/undefined threads
+                  .map((thread) => {
+                    if (!thread) return null; // Additional safety check
 
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteThread(thread.id);
-                            }}
-                            className="text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete Thread
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-
-                    {/* Add a visual indicator if the thread is selected */}
-                    {selectedThread?.id === thread.id && (
+                    return (
                       <motion.div
-                        layoutId="selectedIndicator"
-                        className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-l-md"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                      />
-                    )}
-                  </Card>
-                </motion.div>
-              ))}
+                        key={uniqueId()}
+                        layout
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                      >
+                        <Card
+                          className={`
+              p-4 transition-all duration-200 ease-in-out cursor-pointer
+              hover:shadow-md hover:border-primary/20
+              ${selectedThread?.id === thread?.id ? "bg-accent" : "hover:bg-accent/50"}
+            `}
+                          onClick={() => onThreadSelect(thread)}
+                        >
+                          <div className="flex justify-between items-start space-x-4">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center space-x-2">
+                                <h3 className="text-sm font-medium truncate">
+                                  Thread {thread.id.slice(-8)}
+                                </h3>
+                                <Badge variant="secondary">
+                                  {thread.metadata?.messageCount || 0} messages
+                                </Badge>
+                              </div>
+                              {thread.metadata?.lastMessage && (
+                                <p className="text-sm text-muted-foreground truncate mt-1">
+                                  {thread.metadata.lastMessage}
+                                </p>
+                              )}
+                              <p className="text-xs text-muted-foreground mt-2">
+                                Last active:{" "}
+                                {formatRelativeTime(
+                                  thread.metadata?.lastActivity ||
+                                    thread.created_at
+                                )}
+                              </p>
+                            </div>
+
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteThread(thread.id);
+                                  }}
+                                  className="text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete Thread
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+
+                          {/* Add a visual indicator if the thread is selected */}
+                          {selectedThread?.id === thread.id && (
+                            <motion.div
+                              layoutId="selectedIndicator"
+                              className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-l-md"
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                            />
+                          )}
+                        </Card>
+                      </motion.div>
+                    );
+                  })}
             </div>
           )}
         </AnimatePresence>
       </ScrollArea>
 
-      {error && (
+      {/* {error && (
         <div className="p-4 text-sm text-destructive bg-destructive/10 rounded-md">
           {error.message || "An error occurred while loading threads"}
         </div>
-      )}
+      )} */}
     </div>
   );
 }

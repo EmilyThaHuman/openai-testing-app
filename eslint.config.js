@@ -10,7 +10,28 @@ export default [
     files: ['**/*.{js,jsx}'],
     languageOptions: {
       ecmaVersion: 2020,
-      globals: globals.browser,
+      globals: {
+        ...globals.browser,
+        process: 'readonly',
+        require: 'readonly',
+        Buffer: 'readonly',
+        module: 'readonly',
+        logger: 'readonly',
+        fs: 'readonly',
+        path: 'readonly',
+        PromptTemplate: 'readonly',
+        PuppeteerWebBaseLoader: 'readonly',
+        args: 'readonly',
+        options: 'readonly',
+        HoverCard: 'readonly',
+        HoverCardTrigger: 'readonly',
+        HoverCardContent: 'readonly',
+        models: 'readonly',
+        setSelectedVectorStore: 'readonly',
+        setSelectedAssistant: 'readonly',
+        setAssistants: 'readonly',
+        setLoading: 'readonly'
+      },
       parserOptions: {
         ecmaVersion: 'latest',
         ecmaFeatures: { jsx: true },
@@ -42,7 +63,6 @@ export default [
         caughtErrorsIgnorePattern: '^_'
       }],
       'no-undef': 'error',
-      'no-unused-imports': 'warn',
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
       'react/prop-types': 'warn',
