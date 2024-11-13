@@ -1,8 +1,9 @@
 import React from 'react'
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@/test/utils'
+import { render, screen, fireEvent, waitFor } from '@/__tests__/utils'
 import FileTesting from '../FileTesting'
 import { UnifiedOpenAIService } from '@/services/openai/unifiedOpenAIService'
+import { beforeEach } from 'vitest'
 
 // Mock the UnifiedOpenAIService
 vi.mock('@/services/openai/unifiedOpenAIService', () => ({

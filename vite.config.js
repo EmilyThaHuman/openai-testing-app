@@ -15,25 +15,34 @@ const MONACO_WORKERS = ['json', 'css', 'html', 'typescript'];
 const PWA_CACHE_DURATION = 60 * 60 * 24 * 30; // 30 days in seconds
 
 const DIRECTORIES = [
+  '__tests__',
+  'actions',
+  'ai',
   'api',
-  'app',
   'assets',
   'components',
   'config',
-  'contexts',
+  'constants',
+  'context',
   'hooks',
-  'layouts',
   'lib',
-  'routes',
-  'store',
-  'styles',
-  'types',
-  'utils',
-  'views',
-  'humanIcons',
+  'middleware',
+  'pages',
+  'router',
   'services',
-  'colors',
+  'store',
+  'utils',
+  'workers',
 ];
+
+const createAliases = (basePath, dirs) => {
+  const aliases = { '@': basePath };
+  dirs.forEach(dir => {
+    aliases[`@/${dir}`] = path.join(basePath, dir);
+    aliases[dir] = path.join(basePath, dir);
+  });
+  return aliases;
+};
 
 export default defineConfig({
   plugins: [
@@ -52,7 +61,7 @@ export default defineConfig({
       },
     }),
     svgr(), 
-    monacoEditorPlugin({ languageWorkers: MONACO_WORKERS }),
+    monacoEditorPlugin({ languageWorkers: ['editorWorkerService'] }),
     VitePWA({
       registerType: "autoUpdate",
       workbox: {
@@ -67,9 +76,10 @@ export default defineConfig({
       open: true,
     }),
   ],
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
+    resolve: {
+      alias:{ 
+        ...createAliases(path.resolve(__dirname, 'src'), DIRECTORIES),
+      '@/humanIcons': path.resolve(__dirname, 'src/assets/humanIcons'),
     },
   },
   build: {

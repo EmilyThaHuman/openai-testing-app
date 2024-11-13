@@ -1,6 +1,6 @@
 // MetricsDashboard.jsx
 import React, { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion';
 import { apiTracker } from './ApiTracker';
 import {
   LineChart, Line, AreaChart, Area, PieChart, Pie,
@@ -40,7 +40,7 @@ const MetricCard = ({ title, value, change, icon: Icon, color = "blue" }) => {
   const rounded = useTransform(count, latest => Math.round(latest));
 
   useEffect(() => {
-    const controls = animate(count, value, { 
+    const controls = animate(count, Number(value), {
       duration: 1,
       ease: "easeOut" 
     });
@@ -60,7 +60,7 @@ const MetricCard = ({ title, value, change, icon: Icon, color = "blue" }) => {
         <div className="space-y-1">
           <p className="text-sm text-muted-foreground">{title}</p>
           <div className="flex items-baseline space-x-2">
-            <h3 className="text-2xl font-bold">{rounded}</h3>
+            <h3 className="text-2xl font-bold">{rounded.get()}</h3>
             {change && (
               <span className={`text-sm font-medium ${change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                 {change >= 0 ? <ArrowUp className="inline h-4 w-4" /> : <ArrowDown className="inline h-4 w-4" />}
@@ -175,6 +175,39 @@ const EndpointMetrics = ({ metrics }) => {
         )}
       </TabsContent>
     </Tabs>
+  );
+};
+
+// Add this component definition before MetricsDashboard
+// Add the missing EndpointList component
+const EndpointList = ({ endpoints, selectedEndpoint, onSelect }) => {
+  return (
+    <div className="space-y-2">
+      {endpoints.map((endpoint) => (
+        <motion.div
+          key={endpoint.path}
+          whileHover={{ scale: 1.02 }}
+          onClick={() => onSelect(endpoint.path)}
+          className={`p-3 rounded-lg cursor-pointer ${
+            selectedEndpoint === endpoint.path
+              ? 'bg-primary/10 border border-primary'
+              : 'bg-card hover:bg-accent'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium">{endpoint.path}</p>
+              <p className="text-sm text-muted-foreground">
+                {endpoint.method} • {endpoint.metrics.calls} calls
+              </p>
+            </div>
+            <Badge variant={endpoint.metrics.errors.length > 0 ? 'destructive' : 'secondary'}>
+              {endpoint.metrics.errors.length} errors
+            </Badge>
+          </div>
+        </motion.div>
+      ))}
+    </div>
   );
 };
 

@@ -4,6 +4,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { PlayCircle } from "lucide-react";
+import PropTypes from 'prop-types';
 
 const AssistantCard = React.memo(
   ({ assistant, isSelected, onSelect, onStartRun, onStartEdit, isRunning }) => (
@@ -51,6 +52,17 @@ const AssistantCard = React.memo(
     );
   }
 );
+
+AssistantCard.displayName = "AssistantCard";
+
+AssistantCard.propTypes = {
+  assistant: PropTypes.object.isRequired,
+  isSelected: PropTypes.bool.isRequired,
+  onSelect: PropTypes.func.isRequired,
+  onStartRun: PropTypes.func.isRequired,
+  onStartEdit: PropTypes.func.isRequired,
+  isRunning: PropTypes.bool.isRequired
+};
 
 const AssistantList = ({
   assistants,

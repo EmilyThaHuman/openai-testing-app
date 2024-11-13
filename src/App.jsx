@@ -16,6 +16,18 @@ const ApiDashboard = React.lazy(() =>
   })),
 );
 
+const OpenCanvasPage = React.lazy(() =>
+  import("./pages/OpenCanvas").then((module) => ({
+    default: module.default || module.OpenCanvasPage,
+  })),
+);
+
+const AssistantInstancesTestPage = React.lazy(() =>
+  import("./pages/AssistantInstancesTestPage").then((module) => ({
+    default: module.default || module.AssistantInstancesTestPage,
+  })),
+);
+
 const OpenAITestPage = React.lazy(() =>
   import("./pages/OpenAiTestPage").then((module) => ({
     default: module.default || module.OpenAITestPage,
@@ -63,6 +75,8 @@ function App() {
                 <Routes>
                   <Route path="/" element={<Layout />}>
                     <Route path="api" element={<ApiDashboard />} /> 
+                    <Route path="open-canvas" element={<OpenCanvasPage />} />
+                    <Route path="assistant-instances" element={<AssistantInstancesTestPage />} /> 
                     <Route index element={<OpenAITestPage />} />
                     <Route path="chat" element={<ChatPage />} />
                     <Route path="assistants" element={<AssistantsPage />} />

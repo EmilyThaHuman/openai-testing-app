@@ -1,35 +1,31 @@
-const axios = require('axios');
-const { ChatOpenAI, OpenAIEmbeddings } = require('@langchain/openai');
-const { SystemMessage, HumanMessage } = require('@langchain/core/messages');
-const throttle = require('lodash/throttle');
-const { exec } = require('child_process');
+import { ChatOpenAI } from "langchain/chat_models/openai";
+import { SystemMessage, HumanMessage } from "langchain/schema";
+import { PromptTemplate } from "langchain/prompts";
+import { OpenAI } from "langchain/openai";
+import axios from "axios";
+import fs from "fs";
+import path from "path";
+import { exec } from "child_process";
+import { PuppeteerWebBaseLoader } from "langchain/document_loaders/web/puppeteer";
 
-// Custom utilities and configurations
-const { getEnv } = require('@utils/processing/api');
-const { logger } = require('@config/logging');
-const { logChatDataError } = require('@utils/processing/utils/loggingFunctions');
+const logger = console;
 
-// Configuration for Perplexity AI
+const logChatDataError = (functionName, chatData, error) => {
+  logger.error(`Error in ${functionName}:`, error);
+  logger.error(`Chat data:`, chatData);
+};
+
+const chatOpenAI = new ChatOpenAI({
+  modelName: import.meta.env.VITE_OPENAI_API_CHAT_COMPLETION_MODEL || 'gpt-3.5-turbo',
+  openAIApiKey: import.meta.env.VITE_OPENAI_API_PROJECT_KEY,
+});
+
 const perplexityConfig = {
-  model: 'llama-3.1-sonar-small-128k-online',
-  return_citations: true,
-  return_images: false,
-  search_recency_filter: 'month',
-  stream: false,
-  max_tokens: 1024,
-  temperature: 0.5,
+  model: 'llama3-8b-8192',
+  apiKey: import.meta.env.PERPLEXITY_API_KEY,
 };
 
-// OpenAI Chat Model Configuration
-const openAIConfig = {
-  modelName: getEnv('OPENAI_API_CHAT_COMPLETION_MODEL') || 'gpt-3.5-turbo',
-  temperature: 0.2,
-  maxTokens: 500,
-  openAIApiKey: process.env.OPENAI_API_PROJECT_KEY,
-};
 
-// Instantiate the ChatOpenAI model
-const chatOpenAI = new ChatOpenAI(openAIConfig);
 
 /**
  * Helper function to create chat completions.
@@ -41,10 +37,10 @@ const chatOpenAI = new ChatOpenAI(openAIConfig);
 async function createChatCompletion(messages, maxTokens = 150, temperature = 0.7) {
   try {
     const chatModel = new ChatOpenAI({
-      modelName: getEnv('OPENAI_API_CHAT_COMPLETION_MODEL') || 'gpt-3.5-turbo',
+      modelName: import.meta.env.VITE_OPENAI_API_CHAT_COMPLETION_MODEL || 'gpt-3.5-turbo',
       temperature,
       maxTokens,
-      openAIApiKey: process.env.OPENAI_API_PROJECT_KEY,
+      openAIApiKey: import.meta.env.VITE_OPENAI_API_PROJECT_KEY,
     });
     const response = await chatModel.call(messages);
     return response.content.trim();
@@ -81,7 +77,7 @@ async function extractKeywords(text) {
  * @returns {Promise<string>} - The generated chat title.
  */
 async function generateChatTitle(firstPrompt) {
-  if (!process.env.OPENAI_API_PROJECT_KEY) {
+  if (!import.meta.env.OPENAI_API_PROJECT_KEY) {
     throw new Error('OpenAI API key is not configured.');
   }
 
@@ -223,7 +219,7 @@ async function rephraseInput(inputString) {
   logger.info('Rephrasing input');
   const chatModel = new ChatOpenAI({
     modelName: 'mixtral-8x7b-32768',
-    openAIApiKey: process.env.OPENAI_API_PROJECT_KEY,
+    openAIApiKey: import.meta.env.OPENAI_API_PROJECT_KEY,
   });
 
   const systemMessage = new SystemMessage(
@@ -353,7 +349,7 @@ async function searchStyledComponents(query) {
       },
       {
         headers: {
-          Authorization: `Bearer ${process.env.LLM_API_KEY}`,
+          Authorization: `Bearer ${import.meta.env.LLM_API_KEY}`,
           'Content-Type': 'application/json',
         },
       }
@@ -377,11 +373,13 @@ async function searchStyledComponents(query) {
 }
 const analyzeTextWithGPT = async text => {
   try {
-    const openai = await getOpenaiLangChainClient();
+    const openai = new OpenAI({
+      apiKey: import.meta.env.VITE_OPENAI_API_PROJECT_KEY,
+    });
     const response = await openai.Completion.create({
-      model: getEnv('OPENAI_API_CHAT_COMPLETION_MODEL'),
+      model: import.meta.env.VITE_OPENAI_API_CHAT_COMPLETION_MODEL,
       prompt: `You are a PI, Extract relevant information about the following content:\n\n${text}`,
-      max_tokens: 200, // Adjust as needed
+      max_tokens: 200,
     });
     return response.choices[0].text.trim();
   } catch (error) {
@@ -389,8 +387,7 @@ const analyzeTextWithGPT = async text => {
     return 'Could not analyze content.';
   }
 };
-
-const openApp = async app => {
+const openApp = async options => {
   try {
     const { appName } = options;
     return new Promise((resolve, reject) => {
@@ -504,9 +501,7 @@ const openLivePreview = async ({ url }) => {
 
     // For this example, we'll just return a mock result
     return {
-      preview_url: `https://example.com/live-preview/${user_id}`,
       status: 'success',
-      message: 'Live preview opened successfully',
     };
   } catch (error) {
     console.error('Error occurred while opening live preview:', error);
@@ -522,7 +517,7 @@ const evalCodeInBrowser = async ({ code }) => {
   }
 };
 
-module.exports = {
+export {
   extractKeywords,
   generateChatTitle,
   categorizeUserQuery,
@@ -539,3 +534,18 @@ module.exports = {
   evalCodeInBrowser,
   analyzeTextWithGPT,
 };
+
+// module.exports = {
+//   extractKeywords,
+//   generateChatTitle,
+//   categorizeUserQuery,
+//   generateActionItems,
+//   summarizeMessages,
+//   rephraseInput,
+//   generateOptimizedPrompt,
+//   performPerplexityCompletion,
+//   searchStyledComponents,
+//   openAIFunctions,
+//   evalCodeInBrowser,
+//   analyzeTextWithGPT,
+// };

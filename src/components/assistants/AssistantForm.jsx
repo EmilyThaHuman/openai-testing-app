@@ -1,31 +1,31 @@
-import React, { useEffect } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
-  SelectTrigger,
-  SelectValue,
   SelectContent,
   SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { MODELS, TOOLS } from "../../constants/assistantConstants";
-import InstructionsGenerator from "../shared/InstructionsGenerator";
-import { GENERATOR_TYPES } from "@/utils/instructionsGenerator";
-import { Switch } from "../ui/switch";
-import { FileUp } from "lucide-react";
-import { FunctionsSection } from "../functions/FunctionsSection";
-import { FileUploader } from "../shared/FileUploader";
-import { FileList } from "../shared/FileList";
-import { z } from "zod";
-import { Controller, useForm } from "react-hook-form";
-import { DEFAULT_ASSISTANT } from "@/store/slices/assistantSlice";
 import { UnifiedOpenAIService } from "@/services/openai/unifiedOpenAIService";
+import { DEFAULT_ASSISTANT } from "@/store/slices/assistantSlice";
 import { useStoreShallow } from "@/store/useStore";
+import { GENERATOR_TYPES } from "@/utils/instructionsGenerator";
+import { FileUp } from "lucide-react";
+import { useEffect } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { z } from "zod";
+import { MODELS, TOOLS } from "../../constants/assistantConstants";
+import { FileList } from "../shared/FileList";
+import { FileUploader } from "../shared/FileUploader";
+import InstructionsGenerator from "../shared/InstructionsGenerator";
+import { FunctionsSection } from "../tools/functions/FunctionsSection";
+import { Switch } from "../ui/switch";
+import { toast } from "sonner";
 
 const assistantSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -109,7 +109,7 @@ const AssistantForm = ({
   const fileSearchEnabled = watch("fileSearchEnabled");
   const codeInterpreterEnabled = watch("codeInterpreterEnabled");
   const tools = watch("tools") || [];
-  const fileIds = watch("file_ids") || [];
+  const file_ids = watch('file_ids') || [];
 
   const toggleTool = (toolId) => {
     const currentTools = watch("tools") || [];
@@ -218,7 +218,7 @@ const AssistantForm = ({
   return (
     <Card className="p-4">
       <h2 className="text-xl font-bold mb-4">
-        {isEdit ? "Edit Assistant" : "Create Assistant"}
+        {isEdit ? 'Edit Assistant' : 'Create Assistant'}
       </h2>
       <form onSubmit={handleSubmit(handleFormSubmit)}>
         <div className="space-y-4">
@@ -290,7 +290,7 @@ const AssistantForm = ({
 
             <div className="space-y-2">
               <Label>Files</Label>
-              <FileList files={fileIds} onRemove={handleFileRemove} />
+              <FileList files={file_ids} onRemove={handleFileRemove} />
             </div>
           </div>
 
@@ -299,8 +299,8 @@ const AssistantForm = ({
             <div className="flex items-center gap-2">
               <Label>Code Interpreter</Label>
               <Switch
-                checked={tools.some((t) => t.type === "code_interpreter")}
-                onCheckedChange={() => toggleTool("code_interpreter")}
+                checked={tools.some(t => t.type === 'code_interpreter')}
+                onCheckedChange={() => toggleTool('code_interpreter')}
               />
             </div>
           </div>
@@ -349,7 +349,7 @@ const AssistantForm = ({
                 <Badge
                   key={id}
                   variant={
-                    tools.some((t) => t.type === id) ? "default" : "outline"
+                    tools.some(t => t.type === id) ? 'default' : 'outline'
                   }
                   className="cursor-pointer"
                   onClick={() => toggleTool(id)}
@@ -435,11 +435,11 @@ const AssistantForm = ({
           <Button type="submit" disabled={loading} className="w-full">
             {loading
               ? isEdit
-                ? "Updating..."
-                : "Creating..."
+                ? 'Updating...'
+                : 'Creating...'
               : isEdit
-              ? "Update Assistant"
-              : "Create Assistant"}
+                ? 'Update Assistant'
+                : 'Create Assistant'}
           </Button>
         </div>
       </form>
@@ -452,7 +452,7 @@ const AssistantForm = ({
         accept={{
           'application/pdf': ['.pdf'],
           'text/plain': ['.txt'],
-          'text/markdown': ['.md']
+          'text/markdown': ['.md'],
         }}
         multiple
       />

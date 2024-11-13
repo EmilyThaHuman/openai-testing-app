@@ -104,7 +104,7 @@ export const useActiveRun = (options = {}) => {
         const run = await createRun(runOptions);
 
         // Update the current thread state
-        const updatedThread = await UnifiedOpenAIService.threads.get(thread.id);
+        const updatedThread = await UnifiedOpenAIService.threads.retrieve(thread.id);
         setCurrentThread(updatedThread);
 
         return {

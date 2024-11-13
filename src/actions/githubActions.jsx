@@ -47,7 +47,6 @@ export const GitHubRelease = {
 
 // src/lib/github/client.ts
 import axios from 'axios';
-import { GitHubConfig } from './types';
 
 export class GitHubClient {
   constructor(config) {
@@ -79,15 +78,6 @@ export class GitHubClient {
 }
 
 // src/lib/github/actions.ts
-import { GitHubClient } from './client';
-import {
-  GitHubRepository,
-  GitHubFile,
-  GitHubIssue,
-  GitHubPullRequest,
-  GitHubWorkflow,
-  GitHubRelease,
-} from './types';
 
 export class GitHubActions {
   constructor(client) {
@@ -236,16 +226,16 @@ export class GitHubActions {
 }
 
 // src/lib/github/index.ts
-export * from './types';
-export * from './client';
 export * from './actions';
+export * from './client';
+export * from './types';
 
 // src/config/github.config.ts
 export const githubConfig = {
-  baseUrl: process.env.GITHUB_API_URL || 'https://api.github.com',
-  version: process.env.GITHUB_API_VERSION || 'v3',
+  baseUrl: import.meta.env.GITHUB_API_URL || 'https://api.github.com',
+  version: import.meta.env.GITHUB_API_VERSION || 'v3',
   auth: {
-    apiKey: process.env.GITHUB_API_KEY || '',
+    apiKey: import.meta.env.GITHUB_API_KEY || '',
   },
   headers: {
     Accept: 'application/vnd.github.v3+json',
@@ -282,7 +272,7 @@ export const githubEnvs = {
   ],
   validate() {
     for (const env of this.required) {
-      if (!process.env[env]) {
+      if (!import.meta.env[env]) {
         throw new Error(`Missing required environment variable: ${env}`);
       }
     }

@@ -1,9 +1,10 @@
 // src/__tests__/ChatMessage.test.jsx
 import { render, screen } from "@testing-library/react";
 import { ChatMessage } from "../components/chat/ChatMessage";
+import { describe, it, expect } from 'vitest';
 
-describe("ChatMessage", () => {
-  it("renders message content correctly", () => {
+describe('ChatMessage', () => {
+  it('renders message content correctly', () => {
     const message = {
       role: "user",
       content: "Test message",

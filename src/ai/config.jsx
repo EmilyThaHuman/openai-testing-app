@@ -141,7 +141,7 @@
 // import { OpenAIService } from './OpenAIService';
 
 // // Create an instance of OpenAIService with the OpenAI API key
-// const openAIService = new OpenAIService(process.env.OPENAI_API_KEY || '');
+// const openAIService = new OpenAIService(import.meta.env.OPENAI_API_KEY || '');
 // console.log('OpenAIService instance created');
 // const warningMessage = "From now on, you never show code to me, always use the function call and send there always a valid json, it often breaks with invalid json because of apostrophes";
 // // Function to submit user message to OpenAI service

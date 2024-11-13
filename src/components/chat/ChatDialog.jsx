@@ -36,6 +36,8 @@ import { MODELS, TOOLS } from "@/constants/assistantConstants";
 import { InstructionsGenerator } from "@/components/shared/InstructionsGenerator";
 import { GENERATOR_TYPES } from "@/utils/instructionsGenerator";
 import { toast } from "@/components/ui/use-toast";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "../ui/hover-card";
+import PropTypes from "prop-types";
 
 const AssistantInstructions = ({ instructions }) => {
   if (!instructions) return null;
@@ -68,6 +70,7 @@ export function ChatDialog({
   onRegenerate,
   onFeedback,
   onUpdateAssistant,
+
 }) {
   const scrollRef = useRef(null);
   const isNearBottomRef = useRef(true);
@@ -452,5 +455,18 @@ export function ChatDialog({
 }
 
 ChatDialog.displayName = "ChatDialog";
+
+ChatDialog.propTypes = {
+  open: PropTypes.bool.isRequired,
+  onOpenChange: PropTypes.func.isRequired,
+  messages: PropTypes.arrayOf(PropTypes.object).isRequired,
+  onSendMessage: PropTypes.func.isRequired,
+  onFileUpload: PropTypes.func.isRequired,
+  isLoading: PropTypes.bool.isRequired, 
+  assistant: PropTypes.object,
+  error: PropTypes.object,
+  onRegenerate: PropTypes.func.isRequired,
+  onFeedback: PropTypes.func.isRequired,
+};
 
 export default React.memo(ChatDialog);

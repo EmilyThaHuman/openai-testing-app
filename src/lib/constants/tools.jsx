@@ -139,39 +139,22 @@ const summarizeMessages = {
     },
   },
 };
-const summarizeFunction = {
+const summarizeFunctions = {
   type: "function",
   function: {
-    name: "summarize_messages",
+    name: "summarizeFunctions",
     description:
-      "Summarize a list of chat messages with an overall summary and individual message summaries including their IDs",
+      "Summarize a list of functions with their names, descriptions, parameters, and examples",
     parameters: {
       type: "object",
       properties: {
-        overallSummary: {
-          type: "string",
-          description: "An overall summary of the chat messages",
-        },
-        individualSummaries: {
+        functions: {
           type: "array",
-          items: {
-            type: "object",
-            properties: {
-              id: {
-                type: "string",
-                description: "The ID of the chat message",
-              },
-              summary: {
-                type: "string",
-                description: "A summary of the individual chat message",
-              },
-            },
-            required: ["id", "summary"],
-          },
+          description: "The functions to summarize",
         },
       },
-      required: ["overallSummary", "individualSummaries"],
-    },
+      required: ["functions"],
+    },  
   },
 };
 const rephraseInput = {
@@ -400,16 +383,16 @@ const openLivePreview = {
 
 // Tool definitions
 const toolDefinitions = [
-  searchStyledComponentsTool,
   extractKeyWords,
   generateChatTitle,
   categorizeUserQuery,
   generateActionItems,
   summarizeMessages,
-  summarizeFunction,
+  summarizeFunctions,
   rephraseInput,
   generateOptimizedPrompt,
   performPerplexityCompletion,
+  searchStyledComponentsTool,
   fetchSearchResults,
   analyzeImage,
   codeInterpreter,

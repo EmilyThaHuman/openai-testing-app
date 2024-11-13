@@ -224,7 +224,7 @@ export default function AssistantTesting() {
         setSelectedThread(thread);
 
         // Fetch the full thread details if we haven't already
-        const threadDetails = await UnifiedOpenAIService.threads.get(thread.id);
+        const threadDetails = await UnifiedOpenAIService.threads.retrieve(thread.id);
         console.log("threadDetails", threadDetails);
         // Update thread messages in state
         const messages = threadDetails.messages?.data || [];
@@ -602,7 +602,7 @@ export default function AssistantTesting() {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidde">
           <ScrollArea className="h-full">
             <div className="p-6">
               {error && <ErrorDisplay error={error} />}

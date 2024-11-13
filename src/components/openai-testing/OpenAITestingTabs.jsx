@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AssistantTesting from './tabs/AssistantTesting';
 import ChatTesting from './tabs/ChatTesting';
@@ -9,7 +9,7 @@ import FileTesting from './tabs/FileTesting';
 import FineTuneTesting from './tabs/FineTuneTesting';
 
 export const OpenAITestingTabs = () => {
-    const [activeMainTab, setActiveMainTab] = useState("assistants");
+  const [activeMainTab, setActiveMainTab] = useState('assistants');
 
   return (
     <Tabs 

@@ -116,7 +116,7 @@ export function AssistantsPage() {
     setSelectedThread(null);
     setLoading(true);
     try {
-      const threadData = await UnifiedOpenAIService.threads.get(thread.id);
+      const threadData = await UnifiedOpenAIService.threads.retrieve(thread.id);
       setSelectedThread(threadData);
     } catch (error) {
       console.error('Error fetching thread messages:', error);
@@ -146,7 +146,7 @@ export function AssistantsPage() {
       setInput('');
       
       // Refresh thread messages
-      const updatedThread = await UnifiedOpenAIService.threads.get(selectedThread.id);
+      const updatedThread = await UnifiedOpenAIService.threads.retrieve(selectedThread.id);
       setSelectedThread(updatedThread);
     } catch (error) {
       console.error('Error sending message:', error);
