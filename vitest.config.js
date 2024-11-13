@@ -2,6 +2,8 @@ import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react-swc'
 import path from 'path'
 
+const __dirname = path.resolve()
+
 export default defineConfig({
   plugins: [react()],
   test: {
@@ -22,3 +24,4 @@ export default defineConfig({
     },
   },
 }) 
+

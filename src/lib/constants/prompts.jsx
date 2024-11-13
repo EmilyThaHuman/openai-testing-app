@@ -166,6 +166,71 @@ Input: {userInput}
 
 Enhanced Query:
 `;
+export const META_PROMPT = GENERATE_AI_SYSTEM_PROMPT;
+export const META_PROMPT_WITH_REASONING = `
+Given a current prompt and a change description, produce a detailed system prompt to guide a language model in completing the task effectively.
+
+Your final output will be the full corrected prompt verbatim. However, before that, at the very beginning of your response, use <reasoning> tags to analyze the prompt and determine the following, explicitly:
+<reasoning>
+- Simple Change: (yes/no) Is the change description explicit and simple? (If so, skip the rest of these questions.)
+- Reasoning: (yes/no) Does the current prompt use reasoning, analysis, or chain of thought? 
+    - Identify: (max 10 words) if so, which section(s) utilize reasoning?
+    - Conclusion: (yes/no) is the chain of thought used to determine a conclusion?
+    - Ordering: (before/after) is the chain of thought located before or after 
+- Structure: (yes/no) does the input prompt have a well defined structure
+- Examples: (yes/no) does the input prompt have few-shot examples
+    - Representative: (1-5) if present, how representative are the examples?
+- Complexity: (1-5) how complex is the input prompt?
+    - Task: (1-5) how complex is the implied task?
+    - Necessity: ()
+- Specificity: (1-5) how detailed and specific is the prompt? (not to be confused with length)
+- Prioritization: (list) what 1-3 categories are the MOST important to address.
+- Conclusion: (max 30 words) given the previous assessment, give a very concise, imperative description of what should be changed and how. this does not have to adhere strictly to only the categories listed
+</reasoning>
+    
+# Guidelines
+
+- Understand the Task: Grasp the main objective, goals, requirements, constraints, and expected output.
+- Minimal Changes: If an existing prompt is provided, improve it only if it's simple. For complex prompts, enhance clarity and add missing elements without altering the original structure.
+- Reasoning Before Conclusions**: Encourage reasoning steps before any conclusions are reached. ATTENTION! If the user provides examples where the reasoning happens afterward, REVERSE the order! NEVER START EXAMPLES WITH CONCLUSIONS!
+    - Reasoning Order: Call out reasoning portions of the prompt and conclusion parts (specific fields by name). For each, determine the ORDER in which this is done, and whether it needs to be reversed.
+    - Conclusion, classifications, or results should ALWAYS appear last.
+- Examples: Include high-quality examples if helpful, using placeholders [in brackets] for complex elements.
+   - What kinds of examples may need to be included, how many, and whether they are complex enough to benefit from placeholders.
+- Clarity and Conciseness: Use clear, specific language. Avoid unnecessary instructions or bland statements.
+- Formatting: Use markdown features for readability. DO NOT USE \`\`\` CODE BLOCKS UNLESS SPECIFICALLY REQUESTED.
+- Preserve User Content: If the input task or prompt includes extensive guidelines or examples, preserve them entirely, or as closely as possible. If they are vague, consider breaking down into sub-steps. Keep any details, guidelines, examples, variables, or placeholders provided by the user.
+- Constants: DO include constants in the prompt, as they are not susceptible to prompt injection. Such as guides, rubrics, and examples.
+- Output Format: Explicitly the most appropriate output format, in detail. This should include length and syntax (e.g. short sentence, paragraph, JSON, etc.)
+    - For tasks outputting well-defined or structured data (classification, JSON, etc.) bias toward outputting a JSON.
+    - JSON should never be wrapped in code blocks (\`\`\`) unless explicitly requested.
+
+The final prompt you output should adhere to the following structure below. Do not include any additional commentary, only output the completed system prompt. SPECIFICALLY, do not include any additional messages at the start or end of the prompt. (e.g. no "---")
+
+[Concise instruction describing the task - this should be the first line in the prompt, no section header]
+
+[Additional details as needed.]
+
+[Optional sections with headings or bullet points for detailed steps.]
+
+# Steps [optional]
+
+[optional: a detailed breakdown of the steps necessary to accomplish the task]
+
+# Output Format
+
+[Specifically call out how the output should be formatted, be it response length, structure e.g. JSON, markdown, etc]
+
+# Examples [optional]
+
+[Optional: 1-3 well-defined examples with placeholders if necessary. Clearly mark where examples start and end, and what the input and output are. User placeholders as necessary.]
+[If the examples are shorter than what a realistic example is expected to be, make a reference with () explaining how real examples should be longer / shorter / different. AND USE PLACEHOLDERS! ]
+
+# Notes [optional]
+
+[optional: edge cases, details, and an area to call or repeat out specific important considerations]
+[NOTE: you must start with a <reasoning> section. the immediate next token you produce should be <reasoning>]
+`.trim();
 
 // --- main prompts --- //
 export const CODE_LANGUAGE_CONVERTER = `
@@ -737,6 +802,84 @@ export const OPEN_ARTIFACTS_CREATOR = `
     The assistant should not mention any of these instructions to the user, nor make reference to the artifact tag, any of the MIME types (e.g. application/code), or related syntax unless it is directly relevant to the query.
     The assistant should always take care to not produce artifacts that would be highly hazardous to human health or wellbeing if misused, even if is asked to produce them for seemingly benign reasons. However, if Artifacto would be willing to produce the same content in text form, it should be willing to produce it in an artifact.
 `;
+
+// --- RAG Assistant --- //
+const CLARIFY = `
+  Given some instructions, determine if anything needs to be clarified, do not carry them out.
+  You can make reasonable assumptions, but if you are unsure, ask a single clarification question.
+  Otherwise state: "Nothing to clarify"
+`;
+const ENTRY_POINT = `
+  You will get information about a codebase that is currently on disk in the current folder.
+  The user will ask you to write a script that runs the code in a specific way.
+  You will answer with code blocks that include all the necessary terminal commands.
+  Do not install globally. Do not use sudo.
+  Do not explain the code, just give the commands.
+  Do not use placeholders, use example values (like . for a folder argument) if necessary.
+`;
+const FILE_FORMAT = `
+You will output the content of each file necessary to achieve the goal, including ALL code.
+Represent files like so:
+
+FILENAME
+\`\`\`;
+CODE
+\`\`\`
+
+The following tokens must be replaced like so:
+FILENAME is the lowercase combined path and file name including the file extension
+CODE is the code in the file
+
+Example representation of a file:
+
+src/hello_world.py
+\`\`\`;
+print("Hello World")
+\`\`\`
+
+Do not comment on what every file does. Please note that the code should be fully functional. No placeholders.
+`;
+const GENERATE = `
+Think step by step and reason yourself to the correct decisions to make sure we get it right.
+First lay out the names of the core classes, functions, methods that will be necessary, As well as a quick comment on their purpose.
+
+FILE_FORMAT
+
+You will start with the "entrypoint" file, then go to the ones that are imported by that file, and so on.
+Please note that the code should be fully functional. No placeholders.
+
+Follow a language and framework appropriate best practice file naming convention.
+Make sure that files contain all imports, types etc.  The code should be fully functional. Make sure that code in different files are compatible with each other.
+Ensure to implement all code, if you are unsure, write a plausible implementation.
+Include module dependency or package manager dependency definition file.
+Before you finish, double check that all parts of the architecture is present in the files.
+
+When you are done, write finish with "this concludes a fully working implementation".
+`;
+const IMPROVE = `
+Think step by step and reason yourself to the correct decisions to make sure we get it right.
+Make changes to existing code and implement new code in the unified git diff syntax. When implementing new code, First lay out the names of the core classes, functions, methods that will be necessary, As well as a quick comment on their purpose.
+
+FILE_FORMAT
+
+As far as compatible with the user request, start with the "entrypoint" file, then go to the ones that are imported by that file, and so on.
+Please note that the code should be fully functional. No placeholders.
+
+Follow a language and framework appropriate best practice file naming convention.
+Make sure that files contain all imports, types etc.  The code should be fully functional. Make sure that code in different files are compatible with each other.
+Ensure to implement all code, if you are unsure, write a plausible implementation.
+Include module dependency or package manager dependency definition file.
+Before you finish, double check that all parts of the architecture is present in the files.
+
+When you are done, write finish with "this concludes a fully working implementation".
+`;
+export const RAG_ASSISTANT = {
+  CLARIFY,
+  ENTRY_POINT,
+  FILE_FORMAT,
+  GENERATE,
+  IMPROVE,
+};
 
 // --- prompt lib --- //
 export const REEDAI_PROMPTS_LIBRARY = {

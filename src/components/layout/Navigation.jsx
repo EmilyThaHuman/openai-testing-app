@@ -15,6 +15,7 @@ export function Navigation() {
   const dropdownItems = [
     { path: "/", label: "All APIs" },
     { path: "/assistants", label: "Assistants" },
+    { path: "/assistant-instances", label: "Assistant Instances" },
     { path: "/images", label: "Images" },
     { path: "/audio", label: "Audio" },
   ];
@@ -28,7 +29,17 @@ export function Navigation() {
           </Link>
         </div>
         <nav className="flex items-center space-x-4">
-          {/* Main Chat Button */}
+          {/* Main */}
+          <Link to="/api">
+            <Button variant="default">
+              API Dashboard
+            </Button>
+          </Link>
+          <Link to="/open-canvas">
+            <Button variant="default">
+              Open Canvas
+            </Button>
+          </Link>
           <Link to="/chat">
             <Button variant="default">Chat</Button>
           </Link>

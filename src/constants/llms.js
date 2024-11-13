@@ -1,5 +1,6 @@
 // OpenAI Models
 export const OPENAI_MODELS = {
+  GPT_4O_MINI: "gpt-4o-mini",
   GPT_4O: "gpt-4o",
   GPT_4_TURBO_PREVIEW: "gpt-4-turbo-preview",
   GPT_4_VISION_PREVIEW: "gpt-4-vision-preview",

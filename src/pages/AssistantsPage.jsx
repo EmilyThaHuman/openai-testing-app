@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -6,14 +6,29 @@ import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { UnifiedOpenAIService } from '@/services/openai/unifiedOpenAIService'
 import { useOpenAI } from '@/context/OpenAIContext'
+import { useStoreShallow } from '@/store/useStore'
+import { AssistantStream } from "openai/lib/AssistantStream";
 
 export function AssistantsPage() {
   const { apiKey } = useOpenAI()
-  const [assistants, setAssistants] = useState([])
+  const {
+    assistants,
+    selectedAssistant,
+    loading,
+    fetchAssistants,
+    setSelectedAssistant,
+    createAssistant
+  } = useStoreShallow((state) => ({
+    assistants: state.assistants,
+    selectedAssistant: state.selectedAssistant,
+    loading: state.loading,
+    fetchAssistants: state.fetchAssistants,
+    setSelectedAssistant: state.setSelectedAssistant,
+    createAssistant: state.createAssistant
+  }));
+
   const [threads, setThreads] = useState([])
-  const [selectedAssistant, setSelectedAssistant] = useState(null)
   const [selectedThread, setSelectedThread] = useState(null)
-  const [loading, setLoading] = useState(false)
   const [input, setInput] = useState('')
   const [newAssistant, setNewAssistant] = useState({
     name: '',
@@ -21,20 +36,15 @@ export function AssistantsPage() {
     model: 'gpt-4-turbo-preview'
   })
 
-  useEffect(() => {
-    if (apiKey) {
-      fetchAssistants()
-    }
-  }, [apiKey])
+  // Use a ref to prevent multiple fetches
+  const initRef = useRef(false);
 
-  const fetchAssistants = async () => {
-    try {
-      const response = await UnifiedOpenAIService.assistants.list()
-      setAssistants(response.data)
-    } catch (error) {
-      console.error('Error fetching assistants:', error)
+  useEffect(() => {
+    if (apiKey && !initRef.current) {
+      initRef.current = true;
+      fetchAssistants();
     }
-  }
+  }, [apiKey]);
 
   const createNewAssistant = async () => {
     setLoading(true)
@@ -106,7 +116,7 @@ export function AssistantsPage() {
     setSelectedThread(null);
     setLoading(true);
     try {
-      const threadData = await UnifiedOpenAIService.threads.get(thread.id);
+      const threadData = await UnifiedOpenAIService.threads.retrieve(thread.id);
       setSelectedThread(threadData);
     } catch (error) {
       console.error('Error fetching thread messages:', error);
@@ -136,7 +146,7 @@ export function AssistantsPage() {
       setInput('');
       
       // Refresh thread messages
-      const updatedThread = await UnifiedOpenAIService.threads.get(selectedThread.id);
+      const updatedThread = await UnifiedOpenAIService.threads.retrieve(selectedThread.id);
       setSelectedThread(updatedThread);
     } catch (error) {
       console.error('Error sending message:', error);

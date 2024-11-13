@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -18,6 +18,7 @@ export const VectorStoreManagement = ({
   onSelect,
   onBack,
   onCancel,
+  onFileUpload,
 }) => {
   const [vectorStoreId, setVectorStoreId] = useState("");
   const [loading, setLoading] = useState(false);

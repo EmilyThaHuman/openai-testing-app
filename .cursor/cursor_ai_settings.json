@@ -1,0 +1,143 @@
+{
+  "aiCodeAssistance": {
+    "enableAISuggestions": true,
+    "suggestionFrequency": "high",
+    "customTriggerWords": [
+      "help",
+      "assist",
+      "generate",
+      "todo",
+      "fix",
+      "optimize",
+      "refactor"
+    ],
+    "autoComplete": {
+      "enabled": true,
+      "triggerCharacters": [".", "(", "[", "{", ",", ":"],
+      "snippetInsertion": true
+    },
+    "inlineHints": {
+      "enabled": true,
+      "parameterHints": true,
+      "typeHints": true,
+      "documentationHints": true
+    }
+  },
+  "personalization": {
+    "primaryLanguages": ["javascript", "python", "typescript"],
+    "frameworks": ["react", "django", "next.js", "tailwind"],
+    "theme": "dark",
+    "customUILayout": {
+      "sidebarPosition": "left",
+      "editorFontSize": 14,
+      "fontFamily": "JetBrains Mono, monospace",
+      "lineHeight": 1.5,
+      "minimap": {
+        "enabled": true,
+        "maxColumn": 120
+      },
+      "breadcrumbs": true,
+      "indentGuides": true
+    }
+  },
+  "codeAnalysis": {
+    "realTimeErrorDetection": true,
+    "lintingRules": {
+      "eslint": {
+        "extends": [
+          "eslint:recommended",
+          "plugin:react/recommended",
+          "plugin:@typescript-eslint/recommended"
+        ],
+        "rules": {
+          "semi": ["error", "always"],
+          "quotes": ["error", "double"],
+          "no-unused-vars": "warn",
+          "react-hooks/rules-of-hooks": "error",
+          "react-hooks/exhaustive-deps": "warn"
+        }
+      },
+      "pylint": {
+        "disable": ["C0111"],
+        "max-line-length": 120,
+        "good-names": ["i", "j", "k", "ex", "Run", "_"]
+      }
+    },
+    "autoFormatting": {
+      "onSave": true,
+      "formatter": "prettier",
+      "formatOnPaste": true,
+      "formatOnType": true
+    },
+    "codeMetrics": {
+      "complexity": true,
+      "duplicateCode": true,
+      "unusedCode": true
+    }
+  },
+  "productivity": {
+    "snippets": {
+      "enabled": true,
+      "customSnippets": {
+        "react-component": {
+          "prefix": "rfc",
+          "body": [
+            "import React from 'react';",
+            "",
+            "export default function ${1:ComponentName}() {",
+            "  return (",
+            "    <div>",
+            "      $0",
+            "    </div>",
+            "  );",
+            "}"
+          ]
+        }
+      }
+    },
+    "shortcuts": {
+      "moveLineUp": "ctrl+up",
+      "moveLineDown": "ctrl+down",
+      "multiCursorSelect": "ctrl+d",
+      "selectAllOccurrences": "ctrl+shift+l",
+      "quickFileSwitch": "ctrl+p"
+    },
+    "autoImports": {
+      "enabled": true,
+      "organizeImportsOnSave": true,
+      "removeUnusedImports": true
+    },
+    "gitIntegration": {
+      "enabled": true,
+      "inlineBlame": true,
+      "changeMarkers": true,
+      "pullRequestPreview": true
+    }
+  },
+  "performance": {
+    "codeIndexing": {
+      "enabled": true,
+      "excludeFolders": ["node_modules", "dist", "build", "__pycache__"],
+      "fileTypes": [".js", ".jsx", ".ts", ".tsx", ".py", ".json"]
+    },
+    "caching": {
+      "enabled": true,
+      "maxSize": "1GB",
+      "ttl": 3600
+    },
+    "memoryManagement": {
+      "maxMemory": "4GB",
+      "garbageCollection": "aggressive"
+    }
+  },
+  "collaboration": {
+    "liveshare": {
+      "enabled": true,
+      "autoAcceptInvites": false
+    },
+    "comments": {
+      "enabled": true,
+      "highlightCommented": true
+    }
+  }
+}

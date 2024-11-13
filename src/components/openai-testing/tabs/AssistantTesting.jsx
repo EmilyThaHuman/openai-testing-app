@@ -20,65 +20,105 @@ import {
 } from "lucide-react";
 import { DEFAULT_ASSISTANT } from "../../../constants/assistantConstants";
 import { useAssistants } from "@/hooks/use-assistants";
-import { useThreads } from "@/hooks/use-threads";
 import ThreadMessages from "../../assistants/ThreadMessages";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import useRuns from "@/hooks/use-runs";
 import { useActiveRun } from "@/hooks/use-active-run";
-import { ChatDialog } from "@/components/chat/ChatDialog";
+import ChatDialog from "@/components/chat/ChatDialog";
 import { UnifiedOpenAIService } from "@/services/openai/unifiedOpenAIService";
 import { FileUploadDialog } from "@/components/shared/FileUploadDialog";
-import ErrorBoundary from "@/components/shared/ErrorBoundary";
-import { LoadingState } from "@/components/shared/LoadingState";
 import { ErrorDisplay } from "@/components/shared/ErrorDisplay";
 import { motion, AnimatePresence } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
-import AssistantToolsManager from "@/components/assistants/AssistantToolsManager";
-import VectorStoreManagement from "@/components/vector-store/VectorStoreManagement";
-import FileManagement from "@/components/shared/FileManagement";
-import { useVectorStore } from "@/hooks/use-vector-store";
+import { AssistantToolsManager } from "@/components/assistants/AssistantToolsManager";
+import { VectorStoreManagement } from "@/components/vector-store/VectorStoreManagement";
+import { FileManagement } from "@/components/shared/FileManagement";
+import { useStore, useStoreShallow } from "@/store/useStore";
+import { ThreadsManager } from "@/components/assistants/ThreadsManager";
+import { Input } from "@/components/ui/input";
 
 export default function AssistantTesting() {
-  const { apiKey } = useOpenAI();
+  const { apiKey } = useOpenAI() || {};
   const { toast } = useToast();
-
+  const vectorStore = useStoreShallow((state) => ({
+    vectorStores: state.vectorStores,
+    loading: state.loading,
+    error: state.error,
+    fetchVectorStores: state.fetchVectorStores,
+    createVectorStore: state.createVectorStore,
+    deleteVectorStore: state.deleteVectorStore,
+    selectedVectorStore: state.selectedVectorStore,
+    setSelectedVectorStore: state.setSelectedVectorStore,
+  }));
   // State
+  const [activeAssistantTab, setActiveAssistantTab] = useState("assistants");
+  const [assistantFormMode, setAssistantFormMode] = useState("create");
+  const [isEditing, setIsEditing] = useState(false);
   const [newAssistant, setNewAssistant] = useState(DEFAULT_ASSISTANT);
   const [newMessage, setNewMessage] = useState("");
-  const [streaming, setStreaming] = useState(false);
-  const [streamingMessages, setStreamingMessages] = useState({});
+
   const [chatOpen, setChatOpen] = useState(false);
   const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
-  const [chatMessages, setChatMessages] = useState([]);
   const [uploadingFiles, setUploadingFiles] = useState(new Map());
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null); // Add error state
 
+  const fetchRef = React.useRef(false);
+
   // Custom hooks
   const {
+    // Core state
     assistants,
+    selectedAssistant,
     loading: assistantsLoading,
     error: assistantsError,
-    createAssistant,
-    fetchAssistants,
-    selectedAssistant,
-    setSelectedAssistant,
-  } = useAssistants(apiKey);
-
-  const {
-    threads,
+    streaming,
+    streamingChatMessages,
+    assistantChatMessages,
     threadMessages,
-    loading: threadsLoading,
+    selectedThread,
     expandedThreads,
+
+    // Setters
+    setStreaming,
+    setAssistantChatMessages,
+    setStreamingChatMessages,
+    setSelectedThread,
+    setSelectedAssistant,
+    setThreads,
+
+    // Actions
+    fetchAssistants,
+    createAssistant,
+    updateAssistant,
+    handleFileUpload: uploadAssistantFile,
+    sendMessage,
     createThread,
     deleteThread,
     toggleThread,
-    sendMessage,
-    fetchThreadMessages,
-    selectedThread,
-    setSelectedThread,
-  } = useThreads(selectedAssistant);
+    createStreamedThreadWithMessage,
+    fetchThreadsForAssistant,
+    submitFeedback,
+    regenerateResponse,
+
+    // Selectors
+    getThreads,
+    getThreadMessages,
+    isThreadExpanded,
+  } = useAssistants();
+
+  useEffect(() => {
+    if (apiKey && !fetchRef.current) {
+      fetchRef.current = true;
+      fetchAssistants().catch((err) => {
+        setError(err.message);
+      });
+    }
+  }, [apiKey, fetchAssistants]);
+
+  useEffect(() => {
+    setError(assistantsError);
+  }, [assistantsError]);
 
   const {
     submitMessage,
@@ -100,22 +140,10 @@ export default function AssistantTesting() {
     },
   });
 
-  const {
-    vectorStores,
-    loading: vectorStoresLoading,
-    error: vectorStoresError,
-    fetchVectorStores,
-    createVectorStore,
-    deleteVectorStore,
-    files,
-  } = useVectorStore();
-
-  useEffect(() => {
-    fetchVectorStores();
-  }, [fetchVectorStores]);
-
   // Combine loading states
-  const loading = threadsLoading || assistantsLoading;
+  const loading = assistantsLoading;
+
+  const threads = getThreads(selectedAssistant?.id);
 
   const handleStartRun = useCallback(
     async (assistant) => {
@@ -128,7 +156,7 @@ export default function AssistantTesting() {
         console.log("Run:", run);
         console.log("Thread:", thread);
         console.log("Messages:", messages);
-        setChatMessages(messages);
+        setAssistantChatMessages(messages);
         setChatOpen(true);
       } catch (error) {
         // Handle error
@@ -142,6 +170,7 @@ export default function AssistantTesting() {
     },
     [startNewRun]
   );
+
   const handleChatMessage = useCallback(
     async (message, fileIds = []) => {
       if (!currentThread?.id || !selectedAssistant?.id) {
@@ -152,7 +181,7 @@ export default function AssistantTesting() {
       try {
         const { run, thread, messages } = await submitMessage(message);
         setSelectedThread(thread);
-        setChatMessages(messages);
+        setAssistantChatMessages(messages);
         console.log("Run:", run);
       } catch (err) {
         setError(err);
@@ -166,15 +195,6 @@ export default function AssistantTesting() {
     setError(assistantsError);
   }, [assistantsError]);
 
-  const filteredThreads = useMemo(() => {
-    const threadsArray = Array.isArray(threads) ? threads : [];
-    return selectedAssistant
-      ? threadsArray.filter(
-          (thread) => thread.metadata?.assistantId === selectedAssistant.id
-        )
-      : [];
-  }, [threads, selectedAssistant]);
-
   const handleCreateEmptyThread = async () => {
     try {
       const thread = await createThread();
@@ -186,152 +206,158 @@ export default function AssistantTesting() {
     }
   };
 
-  const handleCreateThread = useCallback(async () => {
-    if (!selectedAssistant) return;
+  const handleThreadSelect = useCallback(
+    async ({ thread, assistant }) => {
+      // Reset selected thread
+      setSelectedThread(null);
+      console.log("Selecting thread:", thread);
+      console.log("Selecting assistant:", assistant);
+      // Save previous selection state
+      const previousThread = selectedThread;
+      try {
+        if (!thread.id) {
+          console.error("Invalid thread ID");
+          return;
+        }
 
-    try {
-      const thread = await createThread();
-      const threads = JSON.parse(
-        localStorage.getItem("openai_threads") || "[]"
-      );
-      const updatedThreads = [...threads, thread];
-      localStorage.setItem("openai_threads", JSON.stringify(updatedThreads));
-      await startNewRun(selectedAssistant.id, {
-        threadId: thread.id,
-        initialMessage: "Hello!",
-      });
-    } catch (err) {
-      setError(err);
-      console.error("Failed to create thread:", err);
-    }
-  }, [selectedAssistant, createThread, startNewRun]);
+        // Update selection immediately for UI responsiveness
+        setSelectedThread(thread);
 
-  const handleFileUpload = useCallback(
+        // Fetch the full thread details if we haven't already
+        const threadDetails = await UnifiedOpenAIService.threads.retrieve(thread.id);
+        console.log("threadDetails", threadDetails);
+        // Update thread messages in state
+        const messages = threadDetails.messages?.data || [];
+        setAssistantChatMessages(messages);
+
+        // Start a new run if assistant is selected
+        if (assistant && !isRunning) {
+          await startNewRun(assistant, {
+            threadId: thread.id,
+          });
+        }
+
+        // Open chat dialog if we have messages
+        if (messages.length > 0) {
+          setChatOpen(true);
+        }
+      } catch (error) {
+        console.error("Error selecting thread:", error);
+        setError(error);
+        if (previousThread) {
+          // Revert selection on error
+          setSelectedThread(previousThread);
+        }
+        toast({
+          title: "Error selecting thread",
+          description: error.message || "Failed to load thread details",
+          variant: "destructive",
+        });
+      }
+    },
+    [
+      selectedThread,
+      setSelectedThread,
+      setAssistantChatMessages,
+      startNewRun,
+      isRunning,
+      toast,
+    ]
+  );
+
+  const handleCreateThread = useCallback(
+    async (selectedAssistantId, initialMessage) => {
+      if (!selectedAssistantId) return;
+
+      try {
+        const thread = await createThread();
+        await startNewRun(selectedAssistantId, {
+          threadId: thread.id,
+          initialMessage: initialMessage,
+        });
+      } catch (err) {
+        setError(err);
+        console.error("Failed to create thread:", err);
+      }
+    },
+    [selectedAssistant, createThread, startNewRun]
+  );
+
+  const handleFileUpload = useCallback( 
     async (filesInput) => {
-      // Normalize input to array
       const files = Array.isArray(filesInput) ? filesInput : [filesInput];
 
       try {
         setUploading(true);
+        setUploadingFiles(new Map(
+          files.map((file) => [file.name, { progress: 0, status: "pending" }])
+        ));
 
-        // Initialize upload tracking for new files
-        setUploadingFiles(
-          new Map(
-            files.map((file) => [file.name, { progress: 0, status: "pending" }])
-          )
-        );
+        const uploadResults = await Promise.all(files.map(async (file) => {
+          try {
+            setUploadingFiles((prev) => new Map(prev).set(file.name, {
+              progress: 0, status: "uploading"
+            }));
 
-        const uploadResults = await Promise.all(
-          files.map(async (file) => {
-            try {
-              // Update status to uploading
-              setUploadingFiles((prev) =>
-                new Map(prev).set(file.name, {
-                  progress: 0,
-                  status: "uploading",
-                })
-              );
-
-              // Upload to OpenAI
-              const openAIFile = await UnifiedOpenAIService.files.create({
-                file,
-                purpose: "assistants",
-                onProgress: (progress) => {
-                  setUploadingFiles((prev) =>
-                    new Map(prev).set(file.name, {
-                      progress,
-                      status: "uploading",
-                    })
-                  );
-                },
-              });
-
-              // Update status to attaching
-              setUploadingFiles((prev) =>
-                new Map(prev).set(file.name, {
-                  progress: 100,
-                  status: "attaching",
-                })
-              );
-
-              // Attach to assistant if one is selected
-              if (selectedAssistant?.id) {
-                await UnifiedOpenAIService.assistants.files.create(
-                  selectedAssistant.id,
-                  openAIFile.id
-                );
-              }
-
-              // Update status to complete
-              setUploadingFiles((prev) =>
-                new Map(prev).set(file.name, {
-                  progress: 100,
-                  status: "complete",
-                })
-              );
-
-              return { success: true, file: openAIFile };
-            } catch (error) {
-              // Update status to error
-              setUploadingFiles((prev) =>
-                new Map(prev).set(file.name, {
-                  progress: 0,
-                  status: "error",
-                  error: error.message,
-                })
-              );
-
-              return { success: false, error, fileName: file.name };
-            }
-          })
-        );
-
-        // Process results
-        const successful = uploadResults.filter((result) => result.success);
-        const failed = uploadResults.filter((result) => !result.success);
-
-        // Update assistant data if any files were successfully attached
-        if (selectedAssistant?.id && successful.length > 0) {
-          const updatedAssistant =
-            await UnifiedOpenAIService.assistants.retrieve(
-              selectedAssistant.id
-            );
-          setSelectedAssistant(updatedAssistant);
-          await fetchAssistants(); // Refresh assistants list
-        }
-
-        // Show appropriate toast messages
-        if (successful.length > 0) {
-          toast({
-            title: "Files Uploaded",
-            description: `Successfully uploaded ${successful.length} file${successful.length === 1 ? "" : "s"}`,
-          });
-        }
-
-        if (failed.length > 0) {
-          failed.forEach(({ fileName, error }) => {
-            toast({
-              title: `Failed to upload ${fileName}`,
-              description: error.message,
-              variant: "destructive",
+            const openAIFile = await UnifiedOpenAIService.files.create({
+              file,
+              purpose: "assistants",
+              onProgress: (progress) => {
+                setUploadingFiles((prev) => new Map(prev).set(file.name, {
+                  progress, status: "uploading"
+                }));
+              },
             });
-          });
+
+            if (selectedAssistant?.id) {
+              await UnifiedOpenAIService.assistants.files.create(selectedAssistant.id, openAIFile.id);
+            }
+
+            setUploadingFiles((prev) => new Map(prev).set(file.name, {
+              progress: 100, status: "complete"
+            }));
+
+            return { success: true, file: openAIFile };
+          } catch (error) {
+            setUploadingFiles((prev) => new Map(prev).set(file.name, {
+              progress: 0, status: "error", error: error.message
+            }));
+            return { success: false, error, fileName: file.name };
+          }
+        }));
+
+        const successfulUploads = uploadResults.filter((result) => result.success);
+        if (selectedAssistant?.id && successfulUploads.length > 0) {
+          const updatedAssistant = await UnifiedOpenAIService.assistants.retrieve(selectedAssistant.id);
+          setSelectedAssistant(updatedAssistant);
+          await fetchAssistants();
         }
 
-        return successful.map((result) => result.file);
+        successfulUploads.length > 0 && toast({
+          title: "Files Uploaded",
+          description: `Successfully uploaded ${successfulUploads.length} file(s)`,
+        });
+
+        uploadResults.filter(({ success }) => !success).forEach(({ fileName, error }) => {
+          toast({
+            title: `Failed to upload ${fileName}`,
+            description: error.message,
+            variant: "destructive",
+          });
+        });
+
+        return successfulUploads.map((result) => result.file);
       } catch (error) {
         console.error("File upload error:", error);
         toast({
           title: "Error",
-          description:
-            error instanceof Error ? error.message : "Failed to upload files",
+          description: error instanceof Error ? error.message : "Failed to upload files",
           variant: "destructive",
         });
         setError(error);
         return [];
       } finally {
         setUploading(false);
-        // Clear upload tracking after a delay
         setTimeout(() => setUploadingFiles(new Map()), 2000);
       }
     },
@@ -347,29 +373,43 @@ export default function AssistantTesting() {
     [handleFileUpload]
   );
 
-  const handleCreateStore = async () => {
+  const handleCreateStore = async (name) => {
     try {
-      await createVectorStore({
-        name: "My Vector Store",
-        description: "Description here",
+      await vectorStore.createVectorStore({
+        name: name || "My Vector Store",
       });
     } catch (error) {
       console.error("Failed to create vector store:", error);
     }
   };
 
-  const handleVectorStoreFileUpload = async (vectorStoreId, file) => {
+  const handleVectorStoreFileUpload = async (vectorStoreId, files) => {
     try {
-      await files.upload(vectorStoreId, {
-        file,
-        purpose: "assistants",
-      });
+      if (files.length === 0) return;
+      if (files.length === 1) {
+         const file = await UnifiedOpenAIService.files.create({
+          file: files[0],
+          purpose: "fine-tune",
+        });
+      }
+      if (files.length > 1) {
+        const fileStreams = files.map(path => fs.createReadStream(path));
+        await UnifiedOpenAIService.beta.vectorStores.fileBatches.uploadAndPoll({
+          vector_store_id: vectorStoreId,
+          file_batches: fileStreams,
+        });
+        await UnifiedOpenAIService.beta.assistants.update(selectedAssistant.id, { 
+          tool_resources: { file_search: { vector_store_ids: [vectorStoreId] } },
+        });
+      }
     } catch (error) {
       console.error("Failed to upload file:", error);
     }
   };
+
   const handleThreadExpand = (threadId) => {
     toggleThread(new Set([threadId]));
+    console.log("Thread expanded:", threadId);
   };
   // Handlers
   const handleAssistantSelect = async (assistant) => {
@@ -386,12 +426,11 @@ export default function AssistantTesting() {
       return;
     }
 
-    const formattedTools = newAssistant.tools.map((tool) => ({ type: tool }));
     const assistantData = {
       name: newAssistant.name.trim(),
       instructions: newAssistant.instructions.trim(),
       model: newAssistant.model,
-      tools: formattedTools,
+      tools: newAssistant.tools.map((tool) => ({ type: tool })),
       file_ids: newAssistant.file_ids,
       metadata: newAssistant.metadata,
       ...(newAssistant.temperature !== 0.7 && {
@@ -409,12 +448,33 @@ export default function AssistantTesting() {
       }),
     };
 
-    await createAssistant(assistantData);
-    setNewAssistant(DEFAULT_ASSISTANT);
+    try {
+      await createAssistant(assistantData);
+      setNewAssistant(DEFAULT_ASSISTANT);
+    } catch (error) {
+      setError(error);
+      console.error("Failed to create assistant:", error);
+    }
+  };
+
+  const handleUpdateAssistant = async (assistantId, updateData) => {
+    console.log("Updating assistant:", assistantId, updateData);
+    await updateAssistant(assistantId, updateData);
+  };
+
+  const handleStartEdit = async (assistant) => {
+    setSelectedAssistant(assistant);
+    setAssistantFormMode("edit");
+    setIsEditing(true);
+    setActiveAssistantTab("create");
+  };
+
+  const handleAssistantFormSubmit = async (assistant) => {
+    assistantFormMode === "create" ? handleCreateAssistant(assistant) : handleUpdateAssistant(assistant.id, assistant);
   };
 
   const handleSendMessage = async (threadId) => {
-    if (!newMessage.trim() || threadsLoading) return;
+    if (!newMessage.trim() || loading) return;
 
     try {
       if (streaming) {
@@ -423,7 +483,7 @@ export default function AssistantTesting() {
         });
         for await (const chunk of stream) {
           if (chunk.choices?.[0]?.delta?.content) {
-            setStreamingMessages((prev) => ({
+            setStreamingChatMessages((prev) => ({
               ...prev,
               [threadId]:
                 (prev[threadId] || "") + chunk.choices[0].delta.content,
@@ -443,129 +503,14 @@ export default function AssistantTesting() {
     }
   };
 
-  const handleRegenerate = useCallback(
-    async (message) => {
-      if (!currentThread?.id || !selectedAssistant?.id) {
-        toast({
-          title: "Error",
-          description: "No active conversation",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      try {
-        // First, we'll create a new run that starts from this message
-        const run = await UnifiedOpenAIService.threads.runs.create(
-          currentThread.id,
-          selectedAssistant.id,
-          {
-            instructions: `Please regenerate your response to the user's message: "${message.content}"`,
-          }
-        );
-
-        // Wait for the run to complete and get updated messages
-        const updatedMessages =
-          await UnifiedOpenAIService.threads.messages.list(currentThread.id);
-
-        setChatMessages(updatedMessages.data);
-        return run;
-      } catch (error) {
-        setError(error);
-        toast({
-          title: "Error",
-          description: "Failed to regenerate response",
-          variant: "destructive",
-        });
-      }
-    },
-    [currentThread?.id, selectedAssistant?.id, toast]
-  );
-
-  const handleFeedback = useCallback(
-    async (message, type) => {
-      if (!currentThread?.id || !message?.id) {
-        toast({
-          title: "Error",
-          description: "Invalid message or thread",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      try {
-        // Create feedback for the message
-        await UnifiedOpenAIService.threads.messages.feedback.create(
-          currentThread.id,
-          message.id,
-          {
-            rating: type === "positive" ? "good" : "poor",
-            feedback_text:
-              type === "positive"
-                ? "This response was helpful"
-                : "This response needs improvement",
-          }
-        );
-
-        toast({
-          title: "Success",
-          description: "Feedback submitted successfully",
-        });
-
-        // Optionally, you can update the UI to show the feedback has been recorded
-        setChatMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === message.id ? { ...msg, feedback: type } : msg
-          )
-        );
-      } catch (error) {
-        setError(error);
-        toast({
-          title: "Error",
-          description: "Failed to submit feedback",
-          variant: "destructive",
-        });
-      }
-    },
-    [currentThread?.id, toast]
-  );
-
-  const toggleTool = (tool) => {
-    setNewAssistant((prev) => ({
-      ...prev,
-      tools: prev.tools.includes(tool)
-        ? prev.tools.filter((t) => t !== tool)
-        : [...prev.tools, tool],
-    }));
-  };
-
-  // Update the renderError function
-  const renderError = (error) => {
-    if (!error) return null;
-
-    // Handle different error types
-    if (typeof error === "string") {
-      return error;
-    }
-
-    if (error instanceof Error) {
-      return error.message;
-    }
-
-    if (typeof error === "object" && error !== null) {
-      return error.message || "An unknown error occurred";
-    }
-
-    return "An unknown error occurred";
-  };
-
-  // Update the error display in the JSX
-  {
-    error && (
-      <Alert variant="destructive" className="mb-4">
+  if (!apiKey) {
+    return (
+      <Alert variant="destructive">
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>Error</AlertTitle>
-        <AlertDescription>{renderError(error)}</AlertDescription>
+        <AlertDescription>
+          OpenAI API key is not configured. Please add your API key in settings.
+        </AlertDescription>
       </Alert>
     );
   }
@@ -573,12 +518,12 @@ export default function AssistantTesting() {
   return (
     <div className="flex h-[calc(100vh-4rem)]">
       <Tabs
+        value={activeAssistantTab}
         defaultValue="assistants"
         orientation="vertical"
         className="flex w-full"
-        onValueChange={(value) => {
-          document.querySelector(`[data-tab-value="${value}"]`)?.click();
-        }}
+        onValueChange={setActiveAssistantTab} // Update state directly
+
       >
         {/* Sidebar */}
         <div className="w-64 border-r bg-muted/30">
@@ -639,11 +584,25 @@ export default function AssistantTesting() {
               <Database className="h-5 w-5" />
               Tools
             </TabsTrigger>
+            <TabsTrigger
+              value="threads"
+              className="w-full justify-start gap-2 px-4 py-2"
+            >
+              <MessageSquare className="h-5 w-5" />
+              Threads
+            </TabsTrigger>
+            <TabsTrigger
+              value="chat"
+              className="w-full justify-start gap-2 px-4 py-2"
+            >
+              <MessageSquare className="h-5 w-5" />
+              Assistant Chat
+            </TabsTrigger>
           </TabsList>
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidde">
           <ScrollArea className="h-full">
             <div className="p-6">
               {error && <ErrorDisplay error={error} />}
@@ -653,16 +612,17 @@ export default function AssistantTesting() {
                     Create New Assistant
                   </h2>
                   <AssistantForm
+                    mode={assistantFormMode}
                     newAssistant={newAssistant}
+                    loading={assistantsLoading}
+                    assistant={selectedAssistant}
+                    setSelectedAssistant={setSelectedAssistant}
+                    isFileDialogOpen={isFileDialogOpen}
+                    handleAssistantSelect={handleAssistantSelect}
                     setNewAssistant={setNewAssistant}
                     createAssistant={handleCreateAssistant}
-                    loading={assistantsLoading}
-                    toggleTool={toggleTool}
-                    selectedAssistant={selectedAssistant}
-                    setSelectedAssistant={setSelectedAssistant}
-                    handleAssistantSelect={handleAssistantSelect}
-                    isFileDialogOpen={isFileDialogOpen}
                     setIsFileDialogOpen={setIsFileDialogOpen}
+                    onSubmit={handleAssistantFormSubmit}
                   />
                 </Card>
               </TabsContent>
@@ -674,6 +634,7 @@ export default function AssistantTesting() {
                     assistants={assistants}
                     selectedAssistant={selectedAssistant}
                     onAssistantSelect={handleAssistantSelect}
+                    onStartEdit={handleStartEdit}
                     onStartRun={handleStartRun}
                     isRunning={isRunning}
                     loading={loading}
@@ -685,30 +646,17 @@ export default function AssistantTesting() {
                 <Card className="p-6">
                   <div className="flex justify-between items-center mb-6">
                     <h2 className="text-2xl font-bold">Threads</h2>
-                    <Button
-                      onClick={handleCreateThread}
-                      disabled={!selectedAssistant || loading}
-                    >
-                      Create Thread
-                    </Button>
                   </div>
                   <ThreadList
-                    threads={filteredThreads}
-                    expandedThreads={expandedThreads}
-                    toggleThread={toggleThread}
-                    threadMessages={threadMessages}
-                    fetchThreadMessages={fetchThreadMessages}
-                    newMessage={newMessage}
-                    setNewMessage={setNewMessage}
-                    sendMessage={handleSendMessage}
-                    createThread={createThread}
-                    deleteThread={deleteThread}
-                    selectedAssistant={selectedAssistant}
+                    threads={threads}
                     loading={loading}
-                    streaming={streaming}
-                    setStreaming={setStreaming}
-                    streamingMessages={streamingMessages}
+                    selectedAssistant={selectedAssistant}
+                    selectedThread={selectedThread}
+                    expandedThreads={expandedThreads}
+                    assistants={assistants}
+                    onThreadSelect={handleThreadSelect}
                     onThreadExpand={handleThreadExpand}
+                    onCreateThread={handleCreateThread}
                   />
                 </Card>
               </TabsContent>
@@ -716,12 +664,7 @@ export default function AssistantTesting() {
               <TabsContent value="messages" className="mt-0 border-0">
                 <Card className="p-6">
                   <h2 className="text-2xl font-bold mb-6">Thread Messages</h2>
-                  <ThreadMessages
-                    threadMessages={threadMessages}
-                    loading={threadsLoading}
-                    selectedAssistant={selectedAssistant}
-                    streamingMessages={streamingMessages}
-                  />
+                  <ThreadMessages />
                 </Card>
               </TabsContent>
               <TabsContent value="files" className="mt-0 border-0">
@@ -744,12 +687,14 @@ export default function AssistantTesting() {
                   <h2 className="text-2xl font-bold mb-6">Vector Store</h2>
                   <VectorStoreManagement
                     createVectorStore={handleCreateStore}
-                    listVectorStores={vectorStores}
-                    vectorStoresLoading={vectorStoresLoading}
-                    vectorStoresError={vectorStoresError}
+                    listVectorStores={vectorStore.fetchVectorStores}
+                    vectorStoresLoading={vectorStore.loading}
+                    vectorStoresError={vectorStore.error}
                     onFileUpload={handleVectorStoreFileUpload}
                     onSelect={(storeId) => {
                       // Handle store selection
+                      console.log("Store selected:", storeId);
+                      setSelectedVectorStore(storeId);
                     }}
                     onBack={() => {
                       // Handle back navigation
@@ -771,20 +716,48 @@ export default function AssistantTesting() {
                   <AssistantToolsManager />
                 </Card>
               </TabsContent>
+              <TabsContent value="threads" className="mt-0 border-0">
+                <Card className="p-6">
+                  <ThreadsManager
+                    onThreadSelect={handleThreadSelect}
+                    selectedThread={selectedThread}
+                  />
+                </Card>
+              </TabsContent>
+              <TabsContent value="chat" className="mt-0 border-0">
+                <Card className="p-6">
+                  <h2 className="text-2xl font-bold mb-6">Assistant Chat</h2>
+                  <p>
+                    This is the assistant chat tab. Here you can chat with the
+                    assistant.
+                  </p>
+                  <div className="flex gap-2">
+                    <Input
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                    />
+                    <Button
+                      onClick={() => handleSendMessage(selectedThread.id)}
+                    >
+                      Send Message
+                    </Button>
+                  </div>
+                </Card>
+              </TabsContent>
             </div>
           </ScrollArea>
         </div>
       </Tabs>
-      {error && <div className="text-red-500 p-4">{renderError(error)}</div>}
+      {/* {error && <div className="text-red-500 p-4">{renderError(error)}</div>} */}
       {/* Chat Dialog */}
       <ChatDialog
         open={chatOpen}
         onOpenChange={setChatOpen}
-        messages={chatMessages}
+        messages={assistantChatMessages}
         onSendMessage={handleChatMessage}
         onFileUpload={handleSingleFileUpload}
-        onRegenerate={handleRegenerate}
-        onFeedback={handleFeedback}
+        onRegenerate={regenerateResponse}
+        onFeedback={submitFeedback}
         isLoading={status === "polling"}
         assistant={selectedAssistant}
         error={error}
