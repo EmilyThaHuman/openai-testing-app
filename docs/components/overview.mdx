@@ -1,0 +1,349 @@
+---
+title: 'Components Overview'
+description: 'Overview of the UI components in the OpenAI Testing App'
+---
+
+# Components Overview
+
+The OpenAI Testing App uses a comprehensive set of reusable components built with React and styled using Tailwind CSS and shadcn/ui. This guide provides an overview of the available components and their usage.
+
+## Component Categories
+
+### Core Components
+
+1. **Layout Components**
+```jsx
+// components/layout/Layout.jsx
+import { Outlet } from 'react-router-dom';
+import { AppSidebar } from '../app-sidebar';
+import { NavUser } from '../nav-user';
+
+export const Layout = () => {
+  return (
+    <div className="flex h-screen">
+      <AppSidebar />
+      <main className="flex-1 overflow-auto">
+        <NavUser />
+        <div className="container p-6">
+          <Outlet />
+        </div>
+      </main>
+    </div>
+  );
+};
+```
+
+2. **Navigation Components**
+```jsx
+// components/app-sidebar.jsx
+export const AppSidebar = () => {
+  return (
+    <aside className="w-64 bg-sidebar-background text-sidebar-foreground">
+      {/* Navigation items */}
+    </aside>
+  );
+};
+```
+
+### Form Components
+
+1. **Input Fields**
+```jsx
+// components/ui/input.jsx
+export const Input = React.forwardRef(({ className, type, ...props }, ref) => {
+  return (
+    <input
+      type={type}
+      className={cn(
+        "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2",
+        "text-sm ring-offset-background file:border-0 file:bg-transparent",
+        "file:text-sm file:font-medium placeholder:text-muted-foreground",
+        "focus-visible:outline-none focus-visible:ring-2",
+        "focus-visible:ring-ring focus-visible:ring-offset-2",
+        "disabled:cursor-not-allowed disabled:opacity-50",
+        className
+      )}
+      ref={ref}
+      {...props}
+    />
+  );
+});
+```
+
+2. **Buttons**
+```jsx
+// components/ui/button.jsx
+export const Button = React.forwardRef(({ className, variant, size, ...props }, ref) => {
+  return (
+    <button
+      className={cn(
+        "inline-flex items-center justify-center rounded-md text-sm font-medium",
+        "ring-offset-background transition-colors focus-visible:outline-none",
+        "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        "disabled:pointer-events-none disabled:opacity-50",
+        buttonVariants({ variant, size, className })
+      )}
+      ref={ref}
+      {...props}
+    />
+  );
+});
+```
+
+### Chat Components
+
+1. **Chat Container**
+```jsx
+// components/chat/ChatContainer.jsx
+export const ChatContainer = () => {
+  const { messages, sendMessage } = useChat();
+
+  return (
+    <div className="flex flex-col h-full">
+      <ChatMessages messages={messages} />
+      <ChatInput onSend={sendMessage} />
+    </div>
+  );
+};
+```
+
+2. **Message Components**
+```jsx
+// components/chat/ChatMessage.jsx
+export const ChatMessage = ({ message }) => {
+  const { role, content } = message;
+
+  return (
+    <div className={cn("flex", role === 'user' ? 'justify-end' : 'justify-start')}>
+      <div className="max-w-[80%] rounded-lg p-4">
+        {content}
+      </div>
+    </div>
+  );
+};
+```
+
+### Assistant Components
+
+1. **Assistant Form**
+```jsx
+// components/assistants/AssistantForm.jsx
+export const AssistantForm = ({ onSubmit }) => {
+  const { register, handleSubmit } = useForm();
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <Input {...register('name')} placeholder="Assistant Name" />
+      <Textarea {...register('instructions')} placeholder="Instructions" />
+      <Button type="submit">Create Assistant</Button>
+    </form>
+  );
+};
+```
+
+2. **Assistant Card**
+```jsx
+// components/assistants/AssistantCard.jsx
+export const AssistantCard = ({ assistant }) => {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{assistant.name}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p>{assistant.instructions}</p>
+      </CardContent>
+      <CardFooter>
+        <Button>Start Chat</Button>
+      </CardFooter>
+    </Card>
+  );
+};
+```
+
+### UI Components
+
+1. **Dialog**
+```jsx
+// components/ui/dialog.jsx
+export const Dialog = DialogPrimitive.Root;
+export const DialogTrigger = DialogPrimitive.Trigger;
+export const DialogContent = React.forwardRef(({ className, children, ...props }, ref) => {
+  return (
+    <DialogPrimitive.Portal>
+      <DialogPrimitive.Overlay className="fixed inset-0 bg-black/50" />
+      <DialogPrimitive.Content
+        ref={ref}
+        className={cn(
+          "fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%]",
+          "w-full max-w-lg rounded-lg bg-background p-6 shadow-lg",
+          className
+        )}
+        {...props}
+      >
+        {children}
+      </DialogPrimitive.Content>
+    </DialogPrimitive.Portal>
+  );
+});
+```
+
+2. **Toast**
+```jsx
+// components/ui/toast.jsx
+export const Toast = React.forwardRef(({ className, ...props }, ref) => {
+  return (
+    <ToastPrimitive.Root
+      ref={ref}
+      className={cn(
+        "group pointer-events-auto relative flex w-full items-center justify-between",
+        "space-x-4 overflow-hidden rounded-md border p-6 pr-8 shadow-lg transition-all",
+        "data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)]",
+        "data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)]",
+        "data-[state=open]:animate-in data-[state=closed]:animate-out",
+        "data-[swipe=end]:animate-out data-[state=closed]:fade-out-80",
+        "data-[state=closed]:slide-out-to-right-full",
+        "data-[state=open]:slide-in-from-top-full",
+        className
+      )}
+      {...props}
+    />
+  );
+});
+```
+
+## Component Usage
+
+### Basic Example
+
+```jsx
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogTrigger, DialogContent } from '@/components/ui/dialog';
+
+const ExampleComponent = () => {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button>Open Dialog</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <h2>Dialog Title</h2>
+        <Input placeholder="Enter something..." />
+        <Button>Submit</Button>
+      </DialogContent>
+    </Dialog>
+  );
+};
+```
+
+### Complex Example
+
+```jsx
+import { ChatContainer } from '@/components/chat/ChatContainer';
+import { AssistantCard } from '@/components/assistants/AssistantCard';
+import { Toast } from '@/components/ui/toast';
+
+const ComplexExample = () => {
+  return (
+    <div className="grid grid-cols-12 gap-4">
+      <div className="col-span-8">
+        <ChatContainer />
+      </div>
+      <div className="col-span-4">
+        <AssistantCard
+          assistant={{
+            name: "Example Assistant",
+            instructions: "Example instructions"
+          }}
+        />
+      </div>
+      <Toast>Action completed successfully</Toast>
+    </div>
+  );
+};
+```
+
+## Best Practices
+
+1. **Component Organization**
+   - Keep components small and focused
+   - Use composition over inheritance
+   - Follow the single responsibility principle
+
+2. **Styling**
+   - Use Tailwind CSS utility classes
+   - Maintain consistent spacing
+   - Follow the design system
+
+3. **Performance**
+   - Memoize expensive components
+   - Lazy load when appropriate
+   - Optimize re-renders
+
+4. **Accessibility**
+   - Include proper ARIA attributes
+   - Ensure keyboard navigation
+   - Maintain proper contrast ratios
+
+## Testing Components
+
+```jsx
+// __tests__/components/Button.test.jsx
+import { render, fireEvent } from '@testing-library/react';
+import { Button } from '@/components/ui/button';
+
+describe('Button', () => {
+  it('renders correctly', () => {
+    const { getByRole } = render(<Button>Click me</Button>);
+    expect(getByRole('button')).toBeInTheDocument();
+  });
+
+  it('handles click events', () => {
+    const handleClick = jest.fn();
+    const { getByRole } = render(
+      <Button onClick={handleClick}>Click me</Button>
+    );
+    
+    fireEvent.click(getByRole('button'));
+    expect(handleClick).toHaveBeenCalled();
+  });
+});
+```
+
+## Component Documentation
+
+When creating new components:
+
+1. **Props Documentation**
+```jsx
+/**
+ * @param {Object} props
+ * @param {string} props.variant - Button variant (primary, secondary, ghost)
+ * @param {string} props.size - Button size (sm, md, lg)
+ * @param {ReactNode} props.children - Button content
+ */
+```
+
+2. **Usage Examples**
+```jsx
+// Example usage in documentation
+<Button variant="primary" size="md">
+  Click me
+</Button>
+```
+
+3. **Component Stories**
+```jsx
+// Example story
+export default {
+  title: 'Components/Button',
+  component: Button,
+};
+
+export const Primary = {
+  args: {
+    variant: 'primary',
+    children: 'Primary Button',
+  },
+};

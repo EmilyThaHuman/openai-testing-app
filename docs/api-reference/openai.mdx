@@ -1,0 +1,386 @@
+---
+title: 'OpenAI Integration'
+description: 'Comprehensive guide for OpenAI API integration'
+---
+
+# OpenAI Integration
+
+The OpenAI Testing App provides comprehensive integration with OpenAI's services, including chat completions, assistants, image generation, and more.
+
+## Configuration
+
+### Setup
+
+```javascript
+// lib/openai/config.js
+import OpenAI from 'openai';
+
+export const openai = new OpenAI({
+  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
+  dangerouslyAllowBrowser: true,
+});
+```
+
+## Chat Completions
+
+### Basic Usage
+
+```javascript
+// services/openai/chat.js
+export const createChatCompletion = async ({
+  messages,
+  model = 'gpt-4-turbo-preview',
+  temperature = 0.7,
+}) => {
+  try {
+    const completion = await openai.chat.completions.create({
+      messages,
+      model,
+      temperature,
+    });
+    
+    return completion.choices[0].message;
+  } catch (error) {
+    console.error('Chat completion error:', error);
+    throw error;
+  }
+};
+```
+
+### Stream Response
+
+```javascript
+// services/openai/streamChat.js
+export const streamChatCompletion = async ({
+  messages,
+  model = 'gpt-4-turbo-preview',
+  onMessage,
+}) => {
+  try {
+    const stream = await openai.chat.completions.create({
+      messages,
+      model,
+      stream: true,
+    });
+
+    for await (const chunk of stream) {
+      const content = chunk.choices[0]?.delta?.content || '';
+      onMessage(content);
+    }
+  } catch (error) {
+    console.error('Stream chat error:', error);
+    throw error;
+  }
+};
+```
+
+## Assistants
+
+### Assistant Management
+
+```javascript
+// services/openai/assistants.js
+export const assistantsService = {
+  // Create a new assistant
+  create: async ({ name, instructions, model = 'gpt-4-turbo-preview' }) => {
+    return await openai.beta.assistants.create({
+      name,
+      instructions,
+      model,
+    });
+  },
+
+  // List assistants
+  list: async ({ limit = 20, order = 'desc' } = {}) => {
+    return await openai.beta.assistants.list({
+      limit,
+      order,
+    });
+  },
+
+  // Delete an assistant
+  delete: async (assistantId) => {
+    return await openai.beta.assistants.del(assistantId);
+  },
+
+  // Update an assistant
+  update: async (assistantId, updates) => {
+    return await openai.beta.assistants.update(assistantId, updates);
+  },
+};
+```
+
+### Thread Management
+
+```javascript
+// services/openai/threads.js
+export const threadsService = {
+  // Create a new thread
+  create: async (messages = []) => {
+    return await openai.beta.threads.create({
+      messages,
+    });
+  },
+
+  // Add message to thread
+  addMessage: async (threadId, content) => {
+    return await openai.beta.threads.messages.create(threadId, {
+      role: 'user',
+      content,
+    });
+  },
+
+  // Run assistant on thread
+  run: async (threadId, assistantId) => {
+    return await openai.beta.threads.runs.create(threadId, {
+      assistant_id: assistantId,
+    });
+  },
+
+  // Get messages from thread
+  getMessages: async (threadId) => {
+    return await openai.beta.threads.messages.list(threadId);
+  },
+};
+```
+
+## Image Generation
+
+### Create Images
+
+```javascript
+// services/openai/images.js
+export const imageService = {
+  // Generate images
+  generate: async ({
+    prompt,
+    model = 'dall-e-3',
+    size = '1024x1024',
+    quality = 'standard',
+    n = 1,
+  }) => {
+    return await openai.images.generate({
+      prompt,
+      model,
+      size,
+      quality,
+      n,
+    });
+  },
+
+  // Edit existing image
+  edit: async ({
+    image,
+    mask,
+    prompt,
+    size = '1024x1024',
+    n = 1,
+  }) => {
+    return await openai.images.edit({
+      image,
+      mask,
+      prompt,
+      size,
+      n,
+    });
+  },
+
+  // Create image variations
+  createVariation: async ({
+    image,
+    size = '1024x1024',
+    n = 1,
+  }) => {
+    return await openai.images.createVariation({
+      image,
+      size,
+      n,
+    });
+  },
+};
+```
+
+## Function Calling
+
+### Function Definition
+
+```javascript
+// lib/openai/functions.js
+export const functions = [
+  {
+    name: 'get_weather',
+    description: 'Get the current weather for a location',
+    parameters: {
+      type: 'object',
+      properties: {
+        location: {
+          type: 'string',
+          description: 'City name or coordinates',
+        },
+        unit: {
+          type: 'string',
+          enum: ['celsius', 'fahrenheit'],
+          description: 'Temperature unit',
+        },
+      },
+      required: ['location'],
+    },
+  },
+];
+```
+
+### Implementation
+
+```javascript
+// services/openai/functionCalling.js
+export const handleFunctionCall = async (message) => {
+  const completion = await openai.chat.completions.create({
+    messages: [message],
+    model: 'gpt-4-turbo-preview',
+    functions,
+    function_call: 'auto',
+  });
+
+  const response = completion.choices[0].message;
+
+  if (response.function_call) {
+    const functionName = response.function_call.name;
+    const args = JSON.parse(response.function_call.arguments);
+    
+    // Execute the function
+    const result = await executeFunctionByName(functionName, args);
+    
+    return result;
+  }
+
+  return response;
+};
+```
+
+## Error Handling
+
+### API Error Handler
+
+```javascript
+// utils/openai-error-handler.js
+export const handleOpenAIError = (error) => {
+  if (error.response) {
+    switch (error.response.status) {
+      case 401:
+        return {
+          type: 'auth',
+          message: 'Invalid API key',
+        };
+      case 429:
+        return {
+          type: 'rate_limit',
+          message: 'Rate limit exceeded',
+        };
+      case 500:
+        return {
+          type: 'server',
+          message: 'OpenAI server error',
+        };
+      default:
+        return {
+          type: 'unknown',
+          message: error.response.data.error.message,
+        };
+    }
+  }
+  
+  return {
+    type: 'network',
+    message: 'Network error occurred',
+  };
+};
+```
+
+## Rate Limiting
+
+### Rate Limiter Implementation
+
+```javascript
+// utils/rate-limiter.js
+export class RateLimiter {
+  constructor(maxRequests, timeWindow) {
+    this.maxRequests = maxRequests;
+    this.timeWindow = timeWindow;
+    this.requests = [];
+  }
+
+  async throttle(fn) {
+    this.cleanup();
+    
+    if (this.requests.length >= this.maxRequests) {
+      const oldestRequest = this.requests[0];
+      const timeToWait = this.timeWindow - (Date.now() - oldestRequest);
+      
+      if (timeToWait > 0) {
+        await new Promise(resolve => setTimeout(resolve, timeToWait));
+      }
+    }
+
+    this.requests.push(Date.now());
+    return fn();
+  }
+
+  cleanup() {
+    const cutoff = Date.now() - this.timeWindow;
+    this.requests = this.requests.filter(time => time > cutoff);
+  }
+}
+```
+
+## Testing
+
+### Mock Responses
+
+```javascript
+// __tests__/mocks/openai.js
+export const mockOpenAIResponses = {
+  chatCompletion: {
+    choices: [
+      {
+        message: {
+          role: 'assistant',
+          content: 'Mock response content',
+        },
+      },
+    ],
+  },
+  imageGeneration: {
+    data: [
+      {
+        url: 'https://example.com/image.png',
+      },
+    ],
+  },
+};
+```
+
+### Test Examples
+
+```javascript
+// __tests__/openai.test.js
+describe('OpenAI Service', () => {
+  it('should create chat completion', async () => {
+    const messages = [{ role: 'user', content: 'Hello' }];
+    const response = await createChatCompletion({ messages });
+    
+    expect(response).toBeDefined();
+    expect(response.content).toBe('Mock response content');
+  });
+
+  it('should handle rate limiting', async () => {
+    const rateLimiter = new RateLimiter(3, 60000); // 3 requests per minute
+    
+    const requests = Array(5).fill().map(() => 
+      rateLimiter.throttle(() => createChatCompletion({ 
+        messages: [{ role: 'user', content: 'Test' }]
+      }))
+    );
+    
+    await expect(Promise.all(requests)).resolves.toBeDefined();
+  });
+});

@@ -1,0 +1,228 @@
+---
+title: 'Architecture'
+description: 'Technical architecture and design patterns of the OpenAI Testing App'
+---
+
+# Architecture Overview
+
+The OpenAI Testing App follows a modern React application architecture with a focus on modularity, scalability, and maintainability.
+
+## Core Architecture
+
+### Directory Structure
+
+```
+src/
+├── actions/          # Action creators for complex operations
+├── ai/              # AI-specific configurations and utilities
+├── api/             # API integration and endpoints
+├── components/      # Reusable UI components
+├── config/          # Application configuration
+├── constants/       # Global constants and enums
+├── context/         # React context providers
+├── hooks/           # Custom React hooks
+├── lib/             # Core utilities and helpers
+├── pages/           # Page components
+├── services/        # Service layer implementations
+├── store/           # State management
+└── utils/           # Utility functions
+```
+
+## Key Components
+
+### Frontend Architecture
+
+1. **Component Layer**
+   - Utilizes functional components with hooks
+   - Implements shadcn/ui for consistent UI elements
+   - Follows atomic design principles
+   - Uses Tailwind CSS for styling
+
+2. **State Management**
+   - Zustand for global state
+   - React Context for feature-specific state
+   - Local component state where appropriate
+
+3. **Routing**
+   - React Router v6
+   - Lazy-loaded components
+   - Protected routes with authentication
+
+### Backend Integration
+
+1. **API Layer**
+   - Axios for HTTP requests
+   - Custom middleware for request/response handling
+   - Error boundary implementation
+   - Rate limiting and caching
+
+2. **Database Integration**
+   - Supabase for data persistence
+   - Real-time subscriptions
+   - Row Level Security (RLS)
+   - Custom hooks for database operations
+
+## Design Patterns
+
+### Component Patterns
+
+1. **Container/Presenter Pattern**
+```jsx
+// Container Component
+const ChatContainer = () => {
+  const messages = useMessages();
+  return <ChatPresenter messages={messages} />;
+};
+
+// Presenter Component
+const ChatPresenter = ({ messages }) => {
+  return <div>{/* UI rendering */}</div>;
+};
+```
+
+2. **Compound Components**
+```jsx
+const Assistant = {
+  Root: AssistantRoot,
+  Header: AssistantHeader,
+  Content: AssistantContent,
+  Footer: AssistantFooter,
+};
+```
+
+3. **Custom Hooks**
+```jsx
+const useAssistant = (assistantId) => {
+  // Hook implementation
+};
+```
+
+### State Management Patterns
+
+1. **Store Slices**
+```javascript
+// store/slices/chatSlice.js
+export const createChatSlice = (set) => ({
+  messages: [],
+  addMessage: (message) => 
+    set((state) => ({ 
+      messages: [...state.messages, message] 
+    })),
+});
+```
+
+2. **Context Providers**
+```jsx
+// context/OpenAIContext.jsx
+export const OpenAIProvider = ({ children }) => {
+  // Provider implementation
+};
+```
+
+## Performance Optimizations
+
+1. **Code Splitting**
+   - Route-based splitting
+   - Component-level splitting
+   - Dynamic imports
+
+2. **Caching Strategy**
+   - API response caching
+   - Service worker implementation
+   - Local storage utilization
+
+3. **Resource Loading**
+   - Lazy loading of images
+   - Progressive loading of content
+   - Prefetching of critical resources
+
+## Security Measures
+
+1. **Authentication**
+   - JWT-based auth flow
+   - Secure token storage
+   - Refresh token rotation
+
+2. **API Security**
+   - Rate limiting
+   - Request validation
+   - CORS configuration
+
+3. **Data Protection**
+   - Environment variable management
+   - API key encryption
+   - Sensitive data handling
+
+## Testing Strategy
+
+1. **Unit Tests**
+   - Component testing with Vitest
+   - Hook testing
+   - Utility function testing
+
+2. **Integration Tests**
+   - API integration tests
+   - Component interaction tests
+   - State management tests
+
+3. **End-to-End Tests**
+   - User flow testing
+   - Critical path testing
+   - Performance testing
+
+## Error Handling
+
+1. **Global Error Boundary**
+```jsx
+class ErrorBoundary extends React.Component {
+  // Error boundary implementation
+}
+```
+
+2. **API Error Handling**
+```javascript
+const apiClient = axios.create({
+  // Error interceptor configuration
+});
+```
+
+## Development Workflow
+
+1. **Code Quality**
+   - ESLint configuration
+   - Prettier formatting
+   - Husky pre-commit hooks
+
+2. **CI/CD Pipeline**
+   - Automated testing
+   - Build verification
+   - Deployment automation
+
+## Monitoring and Analytics
+
+1. **Performance Monitoring**
+   - Custom performance hooks
+   - Metric collection
+   - Error tracking
+
+2. **Usage Analytics**
+   - API usage tracking
+   - User behavior analytics
+   - Performance metrics
+
+## Future Considerations
+
+1. **Scalability**
+   - Microservices architecture
+   - Server-side rendering
+   - Edge computing integration
+
+2. **Feature Expansion**
+   - Additional AI providers
+   - Enhanced analytics
+   - Advanced caching strategies
+
+3. **Performance Improvements**
+   - Web worker implementation
+   - Stream processing
+   - Bundle optimization

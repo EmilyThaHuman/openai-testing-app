@@ -1,38 +1,38 @@
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
-import { UnifiedOpenAIService } from "@/services/openai/unifiedOpenAIService";
-import { DEFAULT_ASSISTANT } from "@/store/slices/assistantSlice";
-import { useStoreShallow } from "@/store/useStore";
-import { GENERATOR_TYPES } from "@/utils/instructionsGenerator";
-import { FileUp } from "lucide-react";
-import { useEffect } from "react";
-import { Controller, useForm } from "react-hook-form";
-import { z } from "zod";
-import { MODELS, TOOLS } from "../../constants/assistantConstants";
-import { FileList } from "../shared/FileList";
-import { FileUploader } from "../shared/FileUploader";
-import InstructionsGenerator from "../shared/InstructionsGenerator";
-import { FunctionsSection } from "../tools/functions/FunctionsSection";
-import { Switch } from "../ui/switch";
-import { toast } from "sonner";
+} from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
+import { UnifiedOpenAIService } from '@/services/openai/unifiedOpenAIService';
+import { DEFAULT_ASSISTANT } from '@/store/slices/assistantSlice';
+import { useStoreShallow } from '@/store/useStore';
+import { GENERATOR_TYPES } from '@/utils/instructionsGenerator';
+import { FileUp } from 'lucide-react';
+import { useEffect } from 'react';
+import { Controller, useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { MODELS, TOOLS } from '../../constants/assistantConstants';
+import { FileList } from '../shared/FileList';
+import { FileUploader } from '../shared/FileUploader';
+import InstructionsGenerator from '../shared/InstructionsGenerator';
+import { FunctionsSection } from '../tools/functions/FunctionsSection';
+import { Switch } from '../ui/switch';
+import { useToast } from '@/components/ui/use-toast';
 
 const assistantSchema = z.object({
-  name: z.string().min(1, "Name is required"),
+  name: z.string().min(1, 'Name is required'),
   model: z.string(),
   instructions: z.string(),
   temperature: z.number().min(0).max(1),
-  assistantType: z.enum(["text-return", "code-assistant"]),
+  assistantType: z.enum(['text-return', 'code-assistant']),
   file_ids: z.array(z.string()).optional(),
   fileSearchEnabled: z.boolean().default(false),
   max_tokens: z.number().min(1).max(32000),
@@ -48,30 +48,42 @@ const assistantSchema = z.object({
   stop: z.array(z.string()),
   top_p: z.number().min(0).max(1),
   presence_penalty: z.number().min(-2).max(2),
-  tools: z.array(
-    z.object({
-      type: z.enum(["code_interpreter", "retrieval", "function", "file_search"]),
-      function: z.object({
-        name: z.string(),
-        description: z.string().optional(),
-        parameters: z.object({
-          type: z.literal("object"),
-          properties: z.record(z.object({
-            type: z.string(),
+  tools: z
+    .array(
+      z.object({
+        type: z.enum([
+          'code_interpreter',
+          'retrieval',
+          'function',
+          'file_search',
+        ]),
+        function: z
+          .object({
+            name: z.string(),
             description: z.string().optional(),
-            enum: z.array(z.string()).optional(),
-            items: z.object({
-              type: z.string(),
-              properties: z.record(z.unknown()).optional()
-            }).optional()
-          })),
-          required: z.array(z.string()).optional()
-        })
-      }).optional()
-    })
-  ).optional(),
+            parameters: z.object({
+              type: z.literal('object'),
+              properties: z.record(
+                z.object({
+                  type: z.string(),
+                  description: z.string().optional(),
+                  enum: z.array(z.string()).optional(),
+                  items: z
+                    .object({
+                      type: z.string(),
+                      properties: z.record(z.unknown()).optional(),
+                    })
+                    .optional(),
+                })
+              ),
+              required: z.array(z.string()).optional(),
+            }),
+          })
+          .optional(),
+      })
+    )
+    .optional(),
 });
-
 
 const AssistantForm = ({
   mode,
@@ -83,17 +95,18 @@ const AssistantForm = ({
 }) => {
   const store = useStoreShallow();
   const selectedVectorStore = store.selectedVectorStore;
-  const isEdit = mode === "edit";
-  
+  const isEdit = mode === 'edit';
+  const { toast } = useToast();
+
   const {
     control,
     handleSubmit,
     reset,
     watch,
     setValue,
-    formState: { errors, isDirty }
+    formState: { errors, isDirty },
   } = useForm({
-    defaultValues: DEFAULT_ASSISTANT
+    defaultValues: DEFAULT_ASSISTANT,
   });
 
   // Load existing assistant data when in edit mode
@@ -106,26 +119,26 @@ const AssistantForm = ({
     }
   }, [isEdit, assistant, reset]);
 
-  const fileSearchEnabled = watch("fileSearchEnabled");
-  const codeInterpreterEnabled = watch("codeInterpreterEnabled");
-  const tools = watch("tools") || [];
+  const fileSearchEnabled = watch('fileSearchEnabled');
+  const codeInterpreterEnabled = watch('codeInterpreterEnabled');
+  const tools = watch('tools') || [];
   const file_ids = watch('file_ids') || [];
 
-  const toggleTool = (toolId) => {
-    const currentTools = watch("tools") || [];
+  const toggleTool = toolId => {
+    const currentTools = watch('tools') || [];
     const newTools = currentTools.includes(toolId)
       ? currentTools.filter(t => t !== toolId)
       : [...currentTools, toolId];
-    setValue("tools", newTools, { shouldDirty: true });
+    setValue('tools', newTools, { shouldDirty: true });
   };
-    // File handling
-  const handleFileUpload = async (files) => {
+  // File handling
+  const handleFileUpload = async files => {
     try {
       if (files.length === 0) return;
       if (files.length === 1) {
-         const file = await UnifiedOpenAIService.files.create({
+        const file = await UnifiedOpenAIService.files.create({
           file: files[0],
-          purpose: "fine-tune",
+          purpose: 'fine-tune',
         });
       }
       if (files.length > 1) {
@@ -134,66 +147,76 @@ const AssistantForm = ({
           vector_store_id: selectedVectorStore.id,
           file_batches: fileStreams,
         });
-        await UnifiedOpenAIService.beta.assistants.update(assistant.id, { 
-          tool_resources: { file_search: { vector_store_ids: [selectedVectorStore.id] } },
+        await UnifiedOpenAIService.beta.assistants.update(assistant.id, {
+          tool_resources: {
+            file_search: { vector_store_ids: [selectedVectorStore.id] },
+          },
         });
       }
-      
+
       // Update form with new file IDs
-      const currentFileIds = watch("file_ids") || [];
-      setValue("file_ids", [...currentFileIds, ...file_ids], { 
-        shouldDirty: true 
+      const currentFileIds = watch('file_ids') || [];
+      setValue('file_ids', [...currentFileIds, ...file_ids], {
+        shouldDirty: true,
       });
-      
+
       toast({
-        title: "Files uploaded successfully",
-        variant: "default"
+        title: 'Files uploaded successfully',
+        variant: 'default',
       });
     } catch (error) {
       toast({
-        title: "Failed to upload files",
+        title: 'Failed to upload files',
         description: error.message,
-        variant: "destructive"
+        variant: 'destructive',
       });
     }
   };
 
-  const handleFileRemove = (fileId) => {
-    const currentFileIds = watch("file_ids") || [];
-    setValue("file_ids", currentFileIds.filter(id => id !== fileId), { shouldDirty: true });
+  const handleFileRemove = fileId => {
+    const currentFileIds = watch('file_ids') || [];
+    setValue(
+      'file_ids',
+      currentFileIds.filter(id => id !== fileId),
+      { shouldDirty: true }
+    );
   };
 
   // Vector store handling
-  const handleVectorStoreAttachment = async (vectorStoreId) => {
+  const handleVectorStoreAttachment = async vectorStoreId => {
     try {
-      setValue("tools", [
-        ...watch("tools"),
-        {
-          type: "file_search",
-          vector_store_id: vectorStoreId
-        }
-      ], { shouldDirty: true });
-      
+      setValue(
+        'tools',
+        [
+          ...watch('tools'),
+          {
+            type: 'file_search',
+            vector_store_id: vectorStoreId,
+          },
+        ],
+        { shouldDirty: true }
+      );
+
       toast({
-        title: "Vector store attached successfully",
-        variant: "default"
+        title: 'Vector store attached successfully',
+        variant: 'default',
       });
     } catch (error) {
       toast({
-        title: "Failed to attach vector store",
+        title: 'Failed to attach vector store',
         description: error.message,
-        variant: "destructive"
+        variant: 'destructive',
       });
     }
   };
 
-  const handleFormSubmit = async (data) => {
+  const handleFormSubmit = async data => {
     setLoading(true);
     try {
       // Format the data for the API
       const formattedData = {
         ...data,
-        tools: data.tools.map((tool) => ({ type: tool.type })),
+        tools: data.tools.map(tool => ({ type: tool.type })),
       };
       await onSubmit(formattedData);
 
@@ -202,14 +225,14 @@ const AssistantForm = ({
       }
 
       toast({
-        title: `Assistant ${isEdit ? "updated" : "created"} successfully`,
-        variant: "default",
+        title: `Assistant ${isEdit ? 'updated' : 'created'} successfully`,
+        variant: 'default',
       });
     } catch (error) {
       toast({
-        title: `Failed to ${isEdit ? "update" : "create"} assistant`,
+        title: `Failed to ${isEdit ? 'update' : 'create'} assistant`,
         description: error.message,
-        variant: "destructive",
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);

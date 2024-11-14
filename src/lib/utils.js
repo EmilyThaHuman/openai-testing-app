@@ -15,11 +15,11 @@ export function formatDate(input) {
 }
 
 export function getMediaTypeFromDataURL(dataURL) {
-  const matches = dataURL.match(/^data:([A-Za-z-+\/]+);base64/);
+  const matches = dataURL.match(/^data:([A-Za-z-+/]+);base64/);
   return matches ? matches[1] : null;
 }
 
 export function getBase64FromDataURL(dataURL) {
-  const matches = dataURL.match(/^data:[A-Za-z-+\/]+;base64,(.*)$/);
+  const matches = dataURL.match(/^data:[A-Za-z-+/]+;base64,(.*)$/);
   return matches ? matches[1] : null;
 }

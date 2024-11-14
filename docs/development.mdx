@@ -1,0 +1,294 @@
+---
+title: 'Development Guide'
+description: 'Guidelines for developing and contributing to the OpenAI Testing App'
+---
+
+# Development Guide
+
+This guide outlines the development process, coding standards, and best practices for contributing to the OpenAI Testing App.
+
+## Development Setup
+
+### Environment Setup
+
+1. **Node.js and npm**
+   - Use Node.js version 18 or higher
+   - Use npm version 8 or higher
+
+2. **IDE Configuration**
+   - Recommended: Visual Studio Code
+   - Required Extensions:
+     - ESLint
+     - Prettier
+     - Tailwind CSS IntelliSense
+     - GitLens
+
+3. **Environment Variables**
+```bash
+# Required environment variables
+VITE_OPENAI_API_KEY=
+VITE_SUPABASE_URL=
+VITE_SUPABASE_ANON_KEY=
+VITE_PERPLEXITY_API_KEY=
+
+# Optional environment variables
+VITE_API_DEBUG=true
+VITE_ENABLE_MOCK_API=false
+```
+
+## Coding Standards
+
+### JavaScript/React Guidelines
+
+1. **File Naming**
+```
+components/           # React components
+├── Button.jsx       # Component files use PascalCase
+├── NavBar.jsx
+└── forms/           # Group related components in directories
+    ├── LoginForm.jsx
+    └── SignupForm.jsx
+```
+
+2. **Component Structure**
+```jsx
+// Single component per file
+import React from 'react';
+import PropTypes from 'prop-types';
+
+export const ComponentName = ({ prop1, prop2 }) => {
+  // Component logic
+  return (
+    <div>
+      {/* JSX */}
+    </div>
+  );
+};
+
+ComponentName.propTypes = {
+  prop1: PropTypes.string.required,
+  prop2: PropTypes.number,
+};
+```
+
+3. **Custom Hooks**
+```jsx
+// hooks/useCustomHook.js
+export const useCustomHook = (params) => {
+  // Hook logic
+  return {
+    // Return values
+  };
+};
+```
+
+### Styling Guidelines
+
+1. **Tailwind CSS**
+```jsx
+// Prefer composition of utility classes
+const Button = ({ variant = 'primary' }) => {
+  const baseClasses = 'px-4 py-2 rounded-md';
+  const variantClasses = {
+    primary: 'bg-blue-500 text-white',
+    secondary: 'bg-gray-500 text-white',
+  };
+
+  return (
+    <button className={`${baseClasses} ${variantClasses[variant]}`}>
+      {children}
+    </button>
+  );
+};
+```
+
+2. **CSS Modules (when needed)**
+```css
+/* styles.module.css */
+.customComponent {
+  /* Custom styles */
+}
+```
+
+### Testing Guidelines
+
+1. **Unit Tests**
+```jsx
+// Component.test.jsx
+import { render, screen } from '@testing-library/react';
+import { Component } from './Component';
+
+describe('Component', () => {
+  it('renders correctly', () => {
+    render(<Component />);
+    expect(screen.getByRole('button')).toBeInTheDocument();
+  });
+});
+```
+
+2. **Integration Tests**
+```jsx
+// Feature.test.jsx
+import { renderWithProviders } from '@/test-utils';
+import { Feature } from './Feature';
+
+describe('Feature', () => {
+  it('integrates with external services', async () => {
+    // Test implementation
+  });
+});
+```
+
+## Development Workflow
+
+### Git Workflow
+
+1. **Branch Naming**
+```bash
+feature/add-new-feature
+bugfix/fix-specific-issue
+hotfix/urgent-production-fix
+refactor/improve-component
+docs/update-documentation
+```
+
+2. **Commit Messages**
+```bash
+# Format: <type>(<scope>): <description>
+feat(chat): add real-time message updates
+fix(auth): resolve token refresh issue
+docs(api): update endpoint documentation
+refactor(store): improve state management
+test(components): add unit tests for Button
+```
+
+3. **Pull Request Process**
+   - Create feature branch from `main`
+   - Implement changes
+   - Run tests and linting
+   - Create pull request
+   - Address review comments
+   - Merge after approval
+
+### Code Review Guidelines
+
+1. **What to Look For**
+   - Code functionality
+   - Performance implications
+   - Security considerations
+   - Test coverage
+   - Documentation
+   - Code style consistency
+
+2. **Review Checklist**
+   - [ ] Code follows style guide
+   - [ ] Tests are included
+   - [ ] Documentation is updated
+   - [ ] No security vulnerabilities
+   - [ ] Performance is considered
+   - [ ] Error handling is implemented
+
+## Build and Deploy
+
+### Development Build
+```bash
+# Start development server
+npm run dev
+
+# Run tests
+npm test
+
+# Run linting
+npm run lint
+
+# Format code
+npm run format
+```
+
+### Production Build
+```bash
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+```
+
+## Debugging
+
+### Browser DevTools
+
+1. **React DevTools**
+   - Component inspection
+   - Props and state monitoring
+   - Performance profiling
+
+2. **Network Tab**
+   - API request monitoring
+   - Response inspection
+   - Performance tracking
+
+### Error Handling
+
+```jsx
+// Implement error boundaries
+class ErrorBoundary extends React.Component {
+  componentDidCatch(error, errorInfo) {
+    // Log error to monitoring service
+    logError(error, errorInfo);
+  }
+
+  render() {
+    // Render fallback UI
+  }
+}
+```
+
+## Performance Optimization
+
+1. **Code Splitting**
+```jsx
+// Lazy load components
+const LazyComponent = React.lazy(() => import('./LazyComponent'));
+```
+
+2. **Memoization**
+```jsx
+// Memoize expensive computations
+const memoizedValue = useMemo(() => computeExpensiveValue(a, b), [a, b]);
+```
+
+## Security Considerations
+
+1. **API Security**
+   - Use environment variables
+   - Implement rate limiting
+   - Validate input data
+   - Sanitize output
+
+2. **Authentication**
+   - Secure token storage
+   - Implement refresh flows
+   - Handle session expiry
+
+## Contributing
+
+1. **Getting Started**
+   - Fork the repository
+   - Set up development environment
+   - Create feature branch
+
+2. **Making Changes**
+   - Follow coding standards
+   - Add tests
+   - Update documentation
+
+3. **Submitting Changes**
+   - Create pull request
+   - Add description
+   - Reference issues
+
+4. **After Submission**
+   - Respond to reviews
+   - Make requested changes
+   - Update PR as needed

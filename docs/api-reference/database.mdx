@@ -1,0 +1,381 @@
+---
+title: 'Database Integration'
+description: 'Guide for database operations using Supabase'
+---
+
+# Database Integration
+
+The OpenAI Testing App uses Supabase as its primary database solution, providing real-time capabilities, authentication, and robust data management.
+
+## Configuration
+
+### Setup
+
+```javascript
+// lib/supabase.js
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+```
+
+## Database Schema
+
+### Core Tables
+
+```sql
+-- Database schema definition
+create table public.users (
+  id uuid references auth.users not null primary key,
+  email text not null unique,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+create table public.conversations (
+  id uuid default uuid_generate_v4() primary key,
+  user_id uuid references public.users(id) not null,
+  title text not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+create table public.messages (
+  id uuid default uuid_generate_v4() primary key,
+  conversation_id uuid references public.conversations(id) not null,
+  role text not null,
+  content text not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+create table public.assistants (
+  id uuid default uuid_generate_v4() primary key,
+  user_id uuid references public.users(id) not null,
+  name text not null,
+  instructions text,
+  model text not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+```
+
+## Database Operations
+
+### Custom Hook for Database Queries
+
+```javascript
+// hooks/useDatabaseQuery.js
+export const useDatabaseQuery = () => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const executeQuery = async (queryFn) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await queryFn();
+      return result;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { loading, error, executeQuery };
+};
+```
+
+### CRUD Operations
+
+```javascript
+// lib/database/crud.js
+export const databaseOperations = {
+  // Create operation
+  create: async (table, data) => {
+    const { data: result, error } = await supabase
+      .from(table)
+      .insert(data)
+      .select();
+
+    if (error) throw error;
+    return result;
+  },
+
+  // Read operation
+  read: async (table, query = {}) => {
+    const { data, error } = await supabase
+      .from(table)
+      .select(query.select || '*')
+      .match(query.match || {});
+
+    if (error) throw error;
+    return data;
+  },
+
+  // Update operation
+  update: async (table, match, updates) => {
+    const { data, error } = await supabase
+      .from(table)
+      .update(updates)
+      .match(match)
+      .select();
+
+    if (error) throw error;
+    return data;
+  },
+
+  // Delete operation
+  delete: async (table, match) => {
+    const { error } = await supabase
+      .from(table)
+      .delete()
+      .match(match);
+
+    if (error) throw error;
+    return true;
+  },
+};
+```
+
+## Real-time Subscriptions
+
+### Subscription Setup
+
+```javascript
+// hooks/useRealtimeSubscription.js
+export const useRealtimeSubscription = (table, filters = {}) => {
+  const [data, setData] = useState([]);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const subscription = supabase
+      .channel(`${table}-changes`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: table,
+          ...filters,
+        },
+        (payload) => {
+          handleChange(payload);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [table, JSON.stringify(filters)]);
+
+  const handleChange = (payload) => {
+    // Handle different types of changes
+    switch (payload.eventType) {
+      case 'INSERT':
+        setData((current) => [...current, payload.new]);
+        break;
+      case 'UPDATE':
+        setData((current) =>
+          current.map((item) =>
+            item.id === payload.new.id ? payload.new : item
+          )
+        );
+        break;
+      case 'DELETE':
+        setData((current) =>
+          current.filter((item) => item.id !== payload.old.id)
+        );
+        break;
+    }
+  };
+
+  return { data, error };
+};
+```
+
+## Database Context Provider
+
+```javascript
+// context/DatabaseProvider.jsx
+export const DatabaseContext = createContext();
+
+export const DatabaseProvider = ({ children }) => {
+  const [state, setState] = useState({
+    connected: false,
+    error: null,
+  });
+
+  useEffect(() => {
+    const setupDatabase = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        
+        setState({
+          connected: true,
+          error: null,
+        });
+      } catch (error) {
+        setState({
+          connected: false,
+          error,
+        });
+      }
+    };
+
+    setupDatabase();
+  }, []);
+
+  const value = {
+    ...state,
+    operations: databaseOperations,
+  };
+
+  return (
+    <DatabaseContext.Provider value={value}>
+      {children}
+    </DatabaseContext.Provider>
+  );
+};
+```
+
+## Row Level Security (RLS)
+
+### Policy Examples
+
+```sql
+-- Enable RLS
+alter table public.conversations enable row level security;
+
+-- Create policies
+create policy "Users can view own conversations"
+  on conversations for select
+  using (auth.uid() = user_id);
+
+create policy "Users can insert own conversations"
+  on conversations for insert
+  with check (auth.uid() = user_id);
+
+create policy "Users can update own conversations"
+  on conversations for update
+  using (auth.uid() = user_id);
+
+create policy "Users can delete own conversations"
+  on conversations for delete
+  using (auth.uid() = user_id);
+```
+
+## Error Handling
+
+### Database Error Handler
+
+```javascript
+// utils/database-error-handler.js
+export const handleDatabaseError = (error) => {
+  if (error.code) {
+    switch (error.code) {
+      case '23505': // unique_violation
+        return {
+          type: 'unique_violation',
+          message: 'A record with this value already exists',
+        };
+      case '23503': // foreign_key_violation
+        return {
+          type: 'foreign_key_violation',
+          message: 'Referenced record does not exist',
+        };
+      case '42P01': // undefined_table
+        return {
+          type: 'undefined_table',
+          message: 'Table does not exist',
+        };
+      default:
+        return {
+          type: 'unknown',
+          message: error.message,
+        };
+    }
+  }
+
+  return {
+    type: 'connection',
+    message: 'Database connection error',
+  };
+};
+```
+
+## Testing
+
+### Mock Setup
+
+```javascript
+// __tests__/mocks/database.js
+export const mockDatabaseResponses = {
+  select: {
+    data: [
+      {
+        id: 'mock-id',
+        created_at: new Date().toISOString(),
+      },
+    ],
+    error: null,
+  },
+  insert: {
+    data: {
+      id: 'new-mock-id',
+      created_at: new Date().toISOString(),
+    },
+    error: null,
+  },
+};
+```
+
+### Test Examples
+
+```javascript
+// __tests__/database.test.js
+describe('Database Operations', () => {
+  it('should create new record', async () => {
+    const data = { name: 'Test' };
+    const result = await databaseOperations.create('test_table', data);
+    
+    expect(result).toBeDefined();
+    expect(result.id).toBe('new-mock-id');
+  });
+
+  it('should handle database errors', async () => {
+    const error = new Error('Database error');
+    error.code = '23505';
+    
+    const handled = handleDatabaseError(error);
+    expect(handled.type).toBe('unique_violation');
+  });
+});
+```
+
+## Best Practices
+
+1. **Data Access**
+   - Use RLS policies for security
+   - Implement proper error handling
+   - Cache frequently accessed data
+
+2. **Real-time Updates**
+   - Use subscriptions efficiently
+   - Handle subscription cleanup
+   - Implement reconnection logic
+
+3. **Performance**
+   - Optimize queries
+   - Use appropriate indexes
+   - Monitor query performance
+
+4. **Security**
+   - Validate input data
+   - Sanitize user input
+   - Use prepared statements
