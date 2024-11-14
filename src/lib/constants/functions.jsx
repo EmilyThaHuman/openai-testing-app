@@ -1,7 +1,7 @@
 import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
-import { PuppeteerWebBaseLoader } from '@langchain/community/document_oaders/web/puppeteer';
+import { PuppeteerWebBaseLoader } from '@langchain/community/document_loaders/web/puppeteer';
 import { ChatOpenAI } from '@langchain/openai';
 import { HumanMessage } from '@langchain/core/messages';
 import { SystemMessage } from '@langchain/core/messages';

@@ -198,7 +198,7 @@ export function AssistantsPage() {
             <Card className="p-4">
               <h2 className="text-xl font-semibold mb-4">Assistants List</h2>
               <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                {assistants.map(assistant => (
+                {assistants?.map(assistant => (
                   <Card 
                     key={assistant.id} 
                     className={`p-4 cursor-pointer hover:bg-gray-100 ${

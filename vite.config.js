@@ -38,7 +38,6 @@ const DIRECTORIES = [
 const createAliases = (basePath, dirs) => {
   const aliases = { '@': basePath };
   dirs.forEach(dir => {
-    aliases[`@/${dir}`] = path.join(basePath, dir);
     aliases[dir] = path.join(basePath, dir);
   });
   return aliases;
@@ -52,52 +51,57 @@ export default defineConfig({
         jsc: {
           transform: {
             react: {
-              runtime: "automatic",
-              development: process.env.NODE_ENV === "development",
+              runtime: 'automatic',
+              development: process.env.NODE_ENV === 'development',
               refresh: true,
             },
           },
         },
       },
     }),
-    svgr(), 
+    svgr(),
     monacoEditorPlugin({ languageWorkers: ['editorWorkerService'] }),
     VitePWA({
-      registerType: "autoUpdate",
+      registerType: 'autoUpdate',
       workbox: {
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,json,vue,txt,woff2}"],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,json,vue,txt,woff2}'],
       },
     }),
     viteCompression({
-      algorithm: "brotliCompress",
+      algorithm: 'brotliCompress',
       threshold: 10240,
     }),
     analyzer({
       open: true,
     }),
   ],
-    resolve: {
-      alias:{ 
-        ...createAliases(path.resolve(__dirname, 'src'), DIRECTORIES),
-      '@/humanIcons': path.resolve(__dirname, 'src/assets/humanIcons'),
+  resolve: {
+    alias: {
+      ...createAliases(path.resolve(__dirname, 'src'), DIRECTORIES),
+      humanIcons: path.resolve(__dirname, 'src/assets/humanIcons'),
+      // Replace the constants alias with this:
+      constants: path.resolve(
+        __dirname,
+        'node_modules/rollup-plugin-node-polyfills/polyfills/constants.js'
+      ),
     },
   },
   build: {
-    target: "esnext",
-    minify: "terser",
+    target: 'esnext',
+    minify: 'terser',
     rollupOptions: {
       output: {
         manualChunks: {
-          "react-vendor": ["react", "react-dom"],
-          "ui-vendor": ["@radix-ui/react-icons", "@radix-ui/react-slot"],
-          "motion-vendor": ["framer-motion"],
+          'react-vendor': ['react', 'react-dom'],
+          'ui-vendor': ['@radix-ui/react-icons', '@radix-ui/react-slot'],
+          'motion-vendor': ['framer-motion'],
         },
       },
     },
     sourcemap: true,
   },
   optimizeDeps: {
-    include: ["react", "react-dom", "zustand"],
+    include: ['react', 'react-dom', 'zustand'],
   },
   server: {
     port: 3000,

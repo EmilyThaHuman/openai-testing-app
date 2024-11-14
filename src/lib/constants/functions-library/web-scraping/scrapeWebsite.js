@@ -1,13 +1,13 @@
-import { PuppeteerWebBaseLoader } from "langchain/document_loaders/web/puppeteer";
-import fs from "fs";
-import path from "path"; 
+import { PuppeteerWebBaseLoader } from '@langchain/community/document_loaders/web/puppeteer';
+import fs from 'fs';
+import path from 'path';
 
-export const execute = async (options) => {
+export const execute = async options => {
   const { url } = options;
   try {
     const websiteName = new URL(url).hostname;
-    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-    const outputDirectory = path.join(".", "output");
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const outputDirectory = path.join('.', 'output');
     if (!fs.existsSync(outputDirectory)) {
       fs.mkdirSync(outputDirectory, { recursive: true });
     }
@@ -18,7 +18,7 @@ export const execute = async (options) => {
         headless: 'new',
       },
       gotoOptions: {
-        waitUntil: "domcontentloaded",
+        waitUntil: 'domcontentloaded',
       },
       async evaluate(page, browser) {
         const html = await page.evaluate(
@@ -31,23 +31,23 @@ export const execute = async (options) => {
     await loader.load();
     return `Website HTML saved to ${saveFilePathWithDate}`;
   } catch (error) {
-    console.error("Error occurred while scraping HTML:", error);
+    console.error('Error occurred while scraping HTML:', error);
     throw error;
   }
 };
 
 export const details = {
-    name: "scrapeWebsite",
-    description: "Scrape the HTML of a website",
-    parameters: {
-      type: "object",
-      properties: {
-        url: {
-          type: "string",
-          description: "The URL of the website to scrape the HTML",
-        },
+  name: 'scrapeWebsite',
+  description: 'Scrape the HTML of a website',
+  parameters: {
+    type: 'object',
+    properties: {
+      url: {
+        type: 'string',
+        description: 'The URL of the website to scrape the HTML',
       },
-      required: ["url"],
     },
-    example: "Scrape the HTML for Google"
+    required: ['url'],
+  },
+  example: 'Scrape the HTML for Google',
 };

@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '@/store/useStore';
+import Sidebar from '@/components/ui/sidebar'; // Import Sidebar
 
 export function AnimatedLayout({ children }) {
   const { sidebarOpen } = useStore((state) => state.ui);
@@ -27,9 +28,10 @@ export function AnimatedLayout({ children }) {
           marginLeft: sidebarOpen ? "0" : "-18rem",
         }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        style={{ flexGrow: 1 }}
       >
         {children}
       </motion.main>
     </div>
   );
-} 
+}
