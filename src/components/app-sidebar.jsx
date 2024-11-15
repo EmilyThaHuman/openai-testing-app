@@ -1,11 +1,5 @@
-import * as React from "react"
-import { ArchiveX, Command, File, Inbox, Send, Trash2 } from "lucide-react"
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useTheme } from '@/context/ThemeContext';
+import { NavUser } from '@/components/nav-user';
 import { Button } from '@/components/ui/button';
-
-import { NavUser } from "@/components/nav-user"
-import { Label } from "@/components/ui/label"
 import {
   Sidebar,
   SidebarContent,
@@ -13,149 +7,244 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarHeader,
-  SidebarInput,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@/components/ui/sidebar"
-import { Switch } from "@/components/ui/switch"
+} from '@/components/ui/sidebar';
+import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
+import { cn } from '@/lib/utils';
+import { useStoreShallow } from '@/store';
+import {
+  ArchiveX,
+  Command,
+  File,
+  Image,
+  Inbox,
+  LogOut,
+  Music,
+  Send,
+  Settings,
+} from 'lucide-react';
+import * as React from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
-// Define navigation data structure
-const navigationData = {
-  user: {
-    name: "User",
-    email: "user@example.com",
-    avatar: "/avatars/default.jpg",
+const navigationData = [
+  {
+    title: 'All APIs',
+    url: '/openai-test',
+    icon: Command,
+    description: 'Test all OpenAI APIs',
   },
-  navMain: [
-    {
-      title: "All APIs",
-      url: "/",
-      icon: Command,
-      isActive: false,
-    },
-    {
-      title: "API Dashboard",
-      url: "/api",
-      icon: Inbox,
-      isActive: false,
-    },
-    {
-      title: "Open Canvas",
-      url: "/open-canvas",
-      icon: File,
-      isActive: false,
-    },
-    {
-      title: "Chat",
-      url: "/chat",
-      icon: Send,
-      isActive: false,
-    },
-    {
-      title: "Assistants",
-      url: "/assistants",
-      icon: ArchiveX,
-      isActive: false,
-    },
-    {
-      title: "Assistant Instances",
-      url: "/assistant-instances",
-      icon: Inbox,
-      isActive: false,
-    },
-    {
-      title: "Images",
-      url: "/images",
-      icon: File,
-      isActive: false,
-    },
-    {
-      title: "Audio",
-      url: "/audio",
-      icon: Send,
-      isActive: false,
-    },
-  ],
-};
+  {
+    title: 'API Dashboard',
+    url: '/dashboard',
+    icon: Inbox,
+    description: 'API usage metrics',
+  },
+  {
+    title: 'Open Canvas',
+    url: '/open-canvas',
+    icon: File,
+    description: 'Interactive coding environment',
+  },
+  {
+    title: 'Chat',
+    url: '/chat',
+    icon: Send,
+    description: 'Chat with AI',
+  },
+  {
+    title: 'Assistants',
+    url: '/assistants',
+    icon: ArchiveX,
+    description: 'Manage AI assistants',
+  },
+  {
+    title: 'Images',
+    url: '/images',
+    icon: Image,
+    description: 'Image generation',
+  },
+  {
+    title: 'Audio',
+    url: '/audio',
+    icon: Music,
+    description: 'Audio processing',
+  },
+];
 
-export function AppSidebar({ ...props }) {
+export function AppSidebar({ className, ...props }) {
+  const store = useStoreShallow();
   const navigate = useNavigate();
   const location = useLocation();
-  const { theme, toggleTheme } = useTheme();
-  
-  // Set active item based on current route
+  const { theme, setTheme } = useTheme();
+  const { user, signOut } = useAuth();
+  const { isCollapsed, setIsCollapsed } = useSidebar();
+  // let user;
+
+  // React.useEffect(() => {
+  //   const getUser = async () => {
+  //     const {
+  //       data: { user },
+  //     } = await supabase.auth.getUser();
+
+  //     if (user) {
+  //       setUser({
+  //         name: user.user_metadata.full_name || user.email,
+  //         email: user.email,
+  //         avatar: user.user_metadata.avatar_url || '/avatars/default.jpg',
+  //       });
+  //     } else {
+  //       setUser(navigationData.user);
+  //     }
+  //   };
+
+  //   getUser();
+
+  //   const {
+  //     data: { subscription },
+  //   } = supabase.auth.onAuthStateChange((event, session) => {
+  //     if (session && session.user) {
+  //       const user = session.user;
+  //       setUser({
+  //         name: user.user_metadata.full_name || user.email,
+  //         email: user.email,
+  //         avatar: user.user_metadata.avatar_url || '/avatars/default.jpg',
+  //       });
+  //     } else {
+  //       // User is signed out
+  //       setUser(navigationData.user);
+  //     }
+  //   });
+
+  //   // Cleanup the listener on unmount
+  //   return () => {
+  //     subscription.unsubscribe();
+  //   };
+  // }, []);
+
   const [activeItem, setActiveItem] = React.useState(
-    navigationData.navMain.find(item => item.url === location.pathname) || navigationData.navMain[0]
+    navigationData.find(item => item.url === location.pathname) ||
+      navigationData[0]
   );
+
+  // Update active item when route changes
+  React.useEffect(() => {
+    const currentItem = navigationData.find(
+      item => item.url === location.pathname
+    );
+    if (currentItem) {
+      setActiveItem(currentItem);
+    }
+  }, [location.pathname]);
+
+  const handleNavigation = item => {
+    setActiveItem(item);
+    navigate(item.url);
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      navigate('/auth/login');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
 
   return (
     <Sidebar
-      collapsible="icon"
-      className="overflow-hidden [&>[data-sidebar=sidebar]]:flex-row"
+      className={cn(
+        'border-r bg-background transition-all duration-300 ease-in-out',
+        isCollapsed ? 'w-[80px]' : 'w-[240px]',
+        className
+      )}
       {...props}
     >
-      {/* First sidebar - icons only */}
-      <Sidebar
-        collapsible="none"
-        className="!w-[calc(var(--sidebar-width-icon)_+_1px)] border-r"
-      >
-        <SidebarHeader>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton size="lg" asChild className="md:h-8 md:p-0">
-                <Link to="/">
-                  <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                    <Command className="size-4" />
-                  </div>
-                  <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">OpenAI Test Site</span>
-                    <span className="truncate text-xs">Dashboard</span>
-                  </div>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarHeader>
+      <SidebarHeader className="border-b p-4">
+        <Link to="/" className="flex items-center space-x-2">
+          <img
+            src="/reedai-api-playground.svg"
+            alt="ReedAI API Playground"
+            className="h-6 w-6"
+          />
+          {!isCollapsed && (
+            <div className="flex items-center">
+              <span className="font-semibold text-primary">ReedAI</span>
+              <span className="text-foreground/80 text-sm ml-1">
+                API Playground
+              </span>
+            </div>
+          )}
+        </Link>
+      </SidebarHeader>
 
-        <SidebarContent>
-          <SidebarGroup>
-            <SidebarGroupContent className="px-1.5 md:px-0">
-              <SidebarMenu>
-                {navigationData.navMain.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      tooltip={{
-                        children: item.title,
-                        hidden: false,
-                      }}
-                      onClick={() => {
-                        setActiveItem(item);
-                        navigate(item.url);
-                      }}
-                      isActive={activeItem.url === item.url}
-                      className="px-2.5 md:px-2"
-                    >
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        </SidebarContent>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {navigationData.map(item => (
+                <SidebarMenuItem key={item.url}>
+                  <SidebarMenuButton
+                    onClick={() => handleNavigation(item)}
+                    isActive={activeItem?.url === item.url}
+                    className={cn(
+                      'w-full',
+                      isCollapsed ? 'justify-center' : 'justify-start'
+                    )}
+                    tooltip={
+                      isCollapsed
+                        ? { content: item.title, side: 'right' }
+                        : null
+                    }
+                  >
+                    <item.icon className="h-5 w-5" />
+                    {!isCollapsed && <span className="ml-3">{item.title}</span>}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
 
-        <SidebarFooter>
-          <div className="px-2.5 md:px-2">
-            <Button variant="ghost" size="icon" onClick={toggleTheme}>
-              {theme === "light" ? "🌙" : "☀️"}
-            </Button>
-          </div>
-          <NavUser user={navigationData.user} />
-        </SidebarFooter>
-      </Sidebar>
+      <SidebarFooter className="border-t p-4">
+        <div className="space-y-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start"
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          >
+            {theme === 'dark' ? '🌙' : '☀️'}
+            {!isCollapsed && <span className="ml-2">Theme</span>}
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start"
+            onClick={() => navigate('/settings')}
+          >
+            <Settings className="h-5 w-5" />
+            {!isCollapsed && <span className="ml-2">Settings</span>}
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start text-destructive"
+            onClick={handleSignOut}
+          >
+            <LogOut className="h-5 w-5" />
+            {!isCollapsed && <span className="ml-2">Sign out</span>}
+          </Button>
+        </div>
+
+        <NavUser user={user} isCollapsed={isCollapsed} className="mt-4" />
+      </SidebarFooter>
     </Sidebar>
   );
 }

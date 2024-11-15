@@ -1,694 +1,351 @@
-import React, { useState } from 'react';
-import {
-  User,
-  Settings,
-  Briefcase,
-  CreditCard,
-  ChevronRight,
-  ChevronLeft,
-  Info,
-  Check,
-  Code2,
-  Server,
-  Database,
-  StarIcon,
-  Sparkles,
-  CheckCircle2,
-} from 'lucide-react';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { useFormContext } from 'react-hook-form';
-import { GitHubIcon } from '@/assets/humanIcons';
-import { IconBrandLinkedin, IconBrandTwitter } from '@tabler/icons-react';
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
+import { Textarea } from '@/components/ui/textarea'
+import { useToast } from '@/components/ui/use-toast'
+import { Logo } from '@/layout/Logo'
+import { fadeInAnimation } from '@/lib/utils'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useSupabaseClient } from '@supabase/auth-helpers-react'
+import { motion } from 'framer-motion'
+import { useState } from 'react'
+import { useDropzone } from 'react-dropzone'
+import { Controller, useForm } from 'react-hook-form'
+import { useNavigate } from 'react-router-dom'
+import * as z from 'zod'
 
-const OnboardingWizard = () => {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [formData, setFormData] = useState({
-    profile: {
-      username: '',
-      displayName: '',
-      profileContext: '',
-      applyContext: false,
-      bio: '',
-      socialLinks: {
-        github: '',
-        twitter: '',
-        linkedin: '',
-      },
-      avatar: 1,
-    },
-    ai: {
-      openaiKey: '',
-      anthropicKey: '',
-      modelInstructions: '',
-      assistantInstructions: '',
-    },
-    workspace: {
-      context: '',
-      frontendStack: [],
-      backendStack: [],
-      databases: [],
-    },
-    account: {
-      plan: 'free',
-    },
-    review: false,
-  });
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 
-  const steps = [
-    {
-      title: 'Profile Setup',
-      icon: <User className="w-6 h-6" />,
-      component: <ProfileStep formData={formData} setFormData={setFormData} />,
-    },
-    {
-      title: 'AI Configuration',
-      icon: <Settings className="w-6 h-6" />,
-      component: <AIStep formData={formData} setFormData={setFormData} />,
-    },
-    {
-      title: 'Workspace',
-      icon: <Briefcase className="w-6 h-6" />,
-      component: (
-        <WorkspaceStep formData={formData} setFormData={setFormData} />
-      ),
-    },
-    {
-      title: 'Account',
-      icon: <CreditCard className="w-6 h-6" />,
-      component: <AccountStep formData={formData} setFormData={setFormData} />,
-    },
-    {
-      title: 'Review',
-      icon: <CheckCircle2 className="w-6 h-6" />,
-      component: <FinalReviewStep />,
-    },  
-  ];
+const stepSchema = z.discriminatedUnion('step', [
+  // Step 1: Workspace
+  z.object({
+    step: z.literal(1),
+    workspaceName: z.string().min(2, 'Workspace name is required'),
+    workspaceContext: z.string(),
+    workspaceAvatar: z.string()
+  }),
+  // Step 2: AI Tools
+  z.object({
+    step: z.literal(2),
+    modelPresets: z.array(z.any()).optional(),
+    toolDefinitions: z.string(),
+    actionPlugins: z.array(z.any()).optional()
+  }),
+  // Step 3: Account
+  z.object({
+    step: z.literal(3),
+    isPro: z.boolean(),
+  })
+])
 
-  const nextStep = () =>
-    setCurrentStep(prev => Math.min(prev + 1, steps.length - 1));
-  const prevStep = () => setCurrentStep(prev => Math.max(prev - 1, 0));
+const steps = [
+  { 
+    title: 'Set up your workspace', 
+    description: 'Configure your API testing environment' 
+  },
+  { 
+    title: 'Configure API tools', 
+    description: 'Set up your OpenAI API integration' 
+  },
+  { 
+    title: 'Choose your plan', 
+    description: 'Select your API testing capabilities' 
+  }
+]
+
+export function OnboardingPage() {
+  const [currentStep, setCurrentStep] = useState(1)
+  const navigate = useNavigate()
+  const { toast } = useToast()
+  const supabase = useSupabaseClient()
+
+  const { control, handleSubmit, formState: { errors, isSubmitting }, watch } = useForm({
+    resolver: zodResolver(stepSchema),
+    defaultValues: {
+      step: currentStep,
+      workspaceName: '',
+      workspaceContext: '',
+      workspaceAvatar: 'default',
+      modelPresets: [],
+      toolDefinitions: '',
+      actionPlugins: [],
+      isPro: false
+    }
+  })
+
+  const { getRootProps, getInputProps } = useDropzone({
+    accept: {
+      'application/json': ['.json'],
+      'text/javascript': ['.js', '.ts']
+    },
+    maxSize: MAX_FILE_SIZE,
+    onDrop: (acceptedFiles) => {
+      // Handle file upload logic
+      console.log('Accepted files:', acceptedFiles)
+    }
+  })
+
+  const isPro = watch('isPro')
+
+  const onSubmit = async (data) => {
+    try {
+      if (currentStep < 3) {
+        setCurrentStep(prev => prev + 1)
+        return
+      }
+
+      // Handle final submission
+      const { error } = await supabase
+        .from('workspaces')
+        .insert([{
+          name: data.workspaceName,
+          context: data.workspaceContext,
+          avatar: data.workspaceAvatar,
+          settings: {
+            isPro: data.isPro,
+            modelPresets: data.modelPresets,
+            toolDefinitions: data.toolDefinitions
+          }
+        }])
+
+      if (error) throw error
+
+      toast({
+        title: 'Setup complete!',
+        description: 'Your workspace is ready to use.'
+      })
+      
+      navigate('/dashboard')
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Setup failed',
+        description: error.message
+      })
+    }
+  }
+
+  const handlePrevious = () => {
+    if (currentStep > 1) {
+      setCurrentStep(prev => prev - 1)
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6">
-      <div className="max-w-4xl mx-auto">
-        {/* Progress Steps */}
-        <div className="flex items-center justify-between mb-8">
-          {steps.map((step, index) => (
-            <div key={index} className="flex items-center">
-              <div
-                className={`flex items-center justify-center w-12 h-12 rounded-full
-                ${
-                  currentStep >= index
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-200 text-gray-500 dark:bg-gray-700'
-                }`}
-              >
-                {step.icon}
-              </div>
-              {index < steps.length - 1 && (
-                <div
-                  className={`h-1 w-24 mx-2 
-                  ${currentStep > index ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'}`}
-                />
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* Main Content Card */}
-        <Card className="w-full p-6 shadow-lg transition-all duration-300 transform">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background">
+      <Logo />
+      
+      <motion.div
+        className="w-full max-w-2xl"
+        {...fadeInAnimation}
+      >
+        <Card>
           <CardHeader>
-            <div className="flex items-center space-x-2">
-              {steps[currentStep].icon}
-              <CardTitle className="text-2xl font-bold">
-                {steps[currentStep].title}
-              </CardTitle>
+            <div className="text-center mb-8">
+              <h1 className="text-2xl font-bold text-primary">
+                {steps[currentStep - 1].title}
+              </h1>
+              <p className="text-muted-foreground mt-2">
+                Step {currentStep} of 3 - {steps[currentStep - 1].description}
+              </p>
             </div>
-          </CardHeader>
-          <CardContent className="pt-6">
-            {steps[currentStep].component}
-          </CardContent>
 
-          {/* Navigation Buttons */}
-          <div className="flex justify-between mt-8">
-            <Button
-              variant="outline"
-              onClick={prevStep}
-              disabled={currentStep === 0}
-              className="flex items-center space-x-2"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              <span>Previous</span>
-            </Button>
-            <Button onClick={nextStep} className="flex items-center space-x-2">
-              <span>
-                {currentStep === steps.length - 1 ? 'Complete' : 'Next'}
-              </span>
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
-        </Card>
-      </div>
-    </div>
-  );
-};
-
-const ProfileStep = ({ formData, setFormData }) => {
-  const avatarOptions = Array.from({ length: 12 }, (_, i) => i + 1);
-
-  const updateProfile = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      profile: {
-        ...prev.profile,
-        [field]: value,
-      },
-    }));
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-6">
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Username</label>
-          <Input
-            placeholder="Enter username"
-            value={formData.profile.username}
-            onChange={e => updateProfile('username', e.target.value)}
-          />
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Display Name</label>
-          <Input
-            placeholder="Enter display name"
-            value={formData.profile.displayName}
-            onChange={e => updateProfile('displayName', e.target.value)}
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <label className="text-sm font-medium">Profile Context</label>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger>
-                <Info className="w-4 h-4 text-gray-400" />
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>This context will be used to personalize your experience</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-        <Textarea
-          placeholder="Enter profile context..."
-          value={formData.profile.profileContext}
-          onChange={e => updateProfile('profileContext', e.target.value)}
-          className="h-24"
-        />
-        <div className="flex items-center space-x-2">
-          <Switch
-            checked={formData.profile.applyContext}
-            onCheckedChange={checked => updateProfile('applyContext', checked)}
-          />
-          <label className="text-sm text-gray-600">
-            Apply context to all conversations
-          </label>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Bio</label>
-        <Textarea
-          placeholder="Tell us about yourself..."
-          value={formData.profile.bio}
-          onChange={e => updateProfile('bio', e.target.value)}
-          className="h-24"
-        />
-      </div>
-
-      <div className="space-y-4">
-        <label className="text-sm font-medium">Social Links</label>
-        <div className="space-y-3">
-          <div className="flex items-center space-x-2">
-            <GitHubIcon className="w-5 h-5" />
-            <Input
-              placeholder="GitHub username"
-              value={formData.profile.socialLinks.github}
-              onChange={e =>
-                setFormData(prev => ({
-                  ...prev,
-                  profile: {
-                    ...prev.profile,
-                    socialLinks: {
-                      ...prev.profile.socialLinks,
-                      github: e.target.value,
-                    },
-                  },
-                }))
-              }
-            />
-          </div>
-          <div className="flex items-center space-x-2">
-            <IconBrandTwitter className="w-5 h-5" />
-            <Input
-              placeholder="Twitter username"
-              value={formData.profile.socialLinks.twitter}
-              onChange={e =>
-                setFormData(prev => ({
-                  ...prev,
-                  profile: {
-                    ...prev.profile,
-                    socialLinks: {
-                      ...prev.profile.socialLinks,
-                      twitter: e.target.value,
-                    },
-                  },
-                }))
-              }
-            />
-          </div>
-          <div className="flex items-center space-x-2">
-            <IconBrandLinkedin className="w-5 h-5" />
-            <Input
-              placeholder="LinkedIn profile"
-              value={formData.profile.socialLinks.linkedin}
-              onChange={e =>
-                setFormData(prev => ({
-                  ...prev,
-                  profile: {
-                    ...prev.profile,
-                    socialLinks: {
-                      ...prev.profile.socialLinks,
-                      linkedin: e.target.value,
-                    },
-                  },
-                }))
-              }
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <label className="text-sm font-medium">Choose Avatar</label>
-        <div className="grid grid-cols-6 gap-4">
-          {avatarOptions.map(id => (
-            <button
-              key={id}
-              onClick={() => updateProfile('avatar', id)}
-              className={`p-2 rounded-lg transition-all duration-200 ${
-                formData.profile.avatar === id
-                  ? 'ring-2 ring-blue-500 bg-blue-50'
-                  : 'hover:bg-gray-50'
-              }`}
-            >
-              <img
-                src={`/api/placeholder/48/48`}
-                alt={`Avatar ${id}`}
-                className="w-12 h-12 rounded-full"
-              />
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const AIStep = ({ formData, setFormData }) => {
-  const updateAI = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      ai: {
-        ...prev.ai,
-        [field]: value,
-      },
-    }));
-  };
-
-  return (
-    <div className="space-y-6">
-      <Alert className="bg-blue-50 border-blue-200">
-        <AlertDescription className="text-sm text-blue-700">
-          Your API keys are securely encrypted and stored. We never share your
-          keys with third parties.
-        </AlertDescription>
-      </Alert>
-
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-medium">OpenAI API Key</label>
-            <Badge variant="outline" className="text-xs">
-              Recommended
-            </Badge>
-          </div>
-          <Input
-            type="password"
-            placeholder="sk-..."
-            value={formData.ai.openaiKey}
-            onChange={e => updateAI('openaiKey', e.target.value)}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Anthropic API Key</label>
-          <Input
-            type="password"
-            placeholder="sk-ant-..."
-            value={formData.ai.anthropicKey}
-            onChange={e => updateAI('anthropicKey', e.target.value)}
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <label className="text-sm font-medium">
-            Default Model Instructions
-          </label>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger>
-                <Info className="w-4 h-4 text-gray-400" />
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>These instructions will be used as default system message</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-        <Textarea
-          placeholder="Enter default instructions for AI models..."
-          value={formData.ai.modelInstructions}
-          onChange={e => updateAI('modelInstructions', e.target.value)}
-          className="h-32"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <label className="text-sm font-medium">
-          Default Assistant Instructions
-        </label>
-        <Textarea
-          placeholder="Enter default instructions for AI assistants..."
-          value={formData.ai.assistantInstructions}
-          onChange={e => updateAI('assistantInstructions', e.target.value)}
-          className="h-32"
-        />
-      </div>
-    </div>
-  );
-};
-
-const WorkspaceStep = ({ formData, setFormData }) => {
-  const updateWorkspace = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      workspace: {
-        ...prev.workspace,
-        [field]: value,
-      },
-    }));
-  };
-
-  const frontendOptions = ['React', 'Vue', 'Angular', 'Next.js', 'Svelte'];
-  const backendOptions = ['Node.js', 'Python', 'Java', 'Go', 'Ruby'];
-  const databaseOptions = [
-    'MongoDB',
-    'PostgreSQL',
-    'MySQL',
-    'Redis',
-    'Firebase',
-  ];
-
-  return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <label className="text-sm font-medium">Workspace Context</label>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger>
-                <Info className="w-4 h-4 text-gray-400" />
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>
-                  This context will be applied to your workspace environment
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-        <Textarea
-          placeholder="Enter workspace context..."
-          value={formData.workspace.context}
-          onChange={e => updateWorkspace('context', e.target.value)}
-          className="h-24"
-        />
-      </div>
-
-      <div className="space-y-4">
-        <label className="text-sm font-medium">Frontend Stack</label>
-        <div className="flex flex-wrap gap-2">
-          {frontendOptions.map(option => (
-            <Button
-              key={option}
-              variant={
-                formData.workspace.frontendStack.includes(option)
-                  ? 'default'
-                  : 'outline'
-              }
-              onClick={() => {
-                const selected =
-                  formData.workspace.frontendStack.includes(option);
-                updateWorkspace(
-                  'frontendStack',
-                  selected
-                    ? formData.workspace.frontendStack.filter(
-                        item => item !== option
-                      )
-                    : [...formData.workspace.frontendStack, option]
-                );
-              }}
-              className="cursor-pointer"
-            >
-              {option}
-            </Button>
-          ))}
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <label className="text-sm font-medium">Backend Stack</label>
-        <div className="flex flex-wrap gap-2">
-          {backendOptions.map(option => (
-            <Button
-              key={option}
-              variant={
-                formData.workspace.backendStack.includes(option)
-                  ? 'default'
-                  : 'outline'
-              }
-              onClick={() => {
-                const selected =
-                  formData.workspace.backendStack.includes(option);
-                updateWorkspace(
-                  'backendStack',
-                  selected
-                    ? formData.workspace.backendStack.filter(
-                        item => item !== option
-                      )
-                    : [...formData.workspace.backendStack, option]
-                );
-              }}
-              className="cursor-pointer"
-            >
-              {option}
-            </Button>
-          ))}
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <label className="text-sm font-medium">Databases</label>
-        <div className="flex flex-wrap gap-2">
-          {databaseOptions.map(option => (
-            <Button
-              key={option}
-              variant={
-                formData.workspace.databases.includes(option)
-                  ? 'default'
-                  : 'outline'
-              }
-              onClick={() => {
-                const selected = formData.workspace.databases.includes(option);
-                updateWorkspace(
-                  'databases',
-                  selected
-                    ? formData.workspace.databases.filter(
-                        item => item !== option
-                      )
-                    : [...formData.workspace.databases, option]
-                );
-              }}
-              className="cursor-pointer"
-            >
-              {option}
-            </Button>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const AccountStep = ({ formData, setFormData }) => {
-  const updateAccount = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      account: {
-        ...prev.account,
-        [field]: value,
-      },
-    }));
-  };
-
-  const planOptions = [
-    { id: 'free', name: 'Free', price: '$0/mo', features: ['Basic features'] },
-    {
-      id: 'pro',
-      name: 'Pro',
-      price: '$9/mo',
-      features: ['Advanced features', 'Priority support'],
-    },
-    {
-      id: 'enterprise',
-      name: 'Enterprise',
-      price: 'Contact us',
-      features: ['All features', 'Dedicated support'],
-    },
-  ];
-
-  return (
-    <div className="space-y-6">
-      <div className="space-y-4">
-        <label className="text-sm font-medium">Select Plan</label>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {planOptions.map(plan => (
-            <Card
-              key={plan.id}
-              className={`p-4 border cursor-pointer ${formData.account.plan === plan.id ? 'border-blue-500' : 'border-gray-200'}`}
-              onClick={() => updateAccount('plan', plan.id)}
-            >
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold">{plan.name}</h3>
-                  {formData.account.plan === plan.id && (
-                    <Check className="w-5 h-5 text-blue-500" />
+            <div className="flex justify-between mb-8">
+              {steps.map((_, index) => (
+                <div key={index} className="flex items-center flex-1">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                    index + 1 < currentStep ? 'bg-primary text-primary-foreground' :
+                    index + 1 === currentStep ? 'bg-primary text-primary-foreground' :
+                    'bg-secondary text-secondary-foreground'
+                  }`}>
+                    {index + 1 < currentStep ? '✓' : index + 1}
+                  </div>
+                  {index < steps.length - 1 && (
+                    <div className={`w-full h-1 mx-2 ${
+                      index + 1 < currentStep ? 'bg-primary' : 'bg-secondary'
+                    }`} />
                   )}
                 </div>
-                <p className="text-xl font-bold">{plan.price}</p>
-                <ul className="space-y-1">
-                  {plan.features.map((feature, index) => (
-                    <li key={index} className="text-sm text-gray-600">
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </Card>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Final Review Step Component
-export function FinalReviewStep() {
-  const { watch } = useFormContext();
-  const formData = watch();
-
-  return (
-    <div className="space-y-6 animate-fadeIn">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-6 h-6 text-primary" />
-            <CardTitle>Review Your Setup</CardTitle>
-          </div>
-          <CardDescription>
-            Review and confirm your configuration before finishing
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <Alert>
-            <AlertTitle className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4" />
-              Almost there!
-            </AlertTitle>
-            <AlertDescription>
-              Please review your settings below before completing the setup.
-            </AlertDescription>
-          </Alert>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h3 className="font-semibold mb-2">Workspace Configuration</h3>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Code2 className="w-4 h-4" />
-                  Frontend: {formData?.workspace?.frontend || 'Not selected'}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Server className="w-4 h-4" />
-                  Backend: {formData?.workspace?.backend || 'Not selected'}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Database className="w-4 h-4" />
-                  Database: {formData?.workspace?.database || 'Not selected'}
-                </div>
-              </div>
+              ))}
             </div>
+          </CardHeader>
 
-            <div>
-              <h3 className="font-semibold mb-2">Selected Plan</h3>
-              <div className="p-4 rounded-lg bg-primary/5 border">
-                <div className="flex items-center gap-2 mb-2">
-                  <StarIcon className="w-4 h-4 text-primary" />
-                  {formData?.account?.plan || 'Free Plan'}
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  You can change your plan at any time from your account settings.
-                </p>
+          <CardContent>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              {currentStep === 1 && (
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-4"
+                >
+                  <div className="space-y-2">
+                    <Label htmlFor="workspaceName">Workspace Name</Label>
+                    <Controller
+                      name="workspaceName"
+                      control={control}
+                      render={({ field }) => (
+                        <Input {...field} id="workspaceName" />
+                      )}
+                    />
+                    {errors.workspaceName && (
+                      <p className="text-sm text-destructive">{errors.workspaceName.message}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="workspaceContext">Workspace Context</Label>
+                    <Controller
+                      name="workspaceContext"
+                      control={control}
+                      render={({ field }) => (
+                        <Textarea {...field} id="workspaceContext" />
+                      )}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="workspaceAvatar">Workspace Avatar</Label>
+                    <Controller
+                      name="workspaceAvatar"
+                      control={control}
+                      render={({ field }) => (
+                        <Select 
+                          onValueChange={field.onChange} 
+                          defaultValue={field.value}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select an avatar" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="default">Default</SelectItem>
+                            <SelectItem value="rocket">Rocket</SelectItem>
+                            <SelectItem value="star">Star</SelectItem>
+                            <SelectItem value="lightning">Lightning</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </div>
+                </motion.div>
+              )}
+
+              {currentStep === 2 && (
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-4"
+                >
+                  <div className="space-y-2">
+                    <Label>Model Presets</Label>
+                    <div
+                      {...getRootProps()}
+                      className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary transition-colors cursor-pointer"
+                    >
+                      <input {...getInputProps()} />
+                      <p className="text-muted-foreground">
+                        Drag & drop model preset files here, or click to select
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        JSON files up to 10MB
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="toolDefinitions">Tool Definitions</Label>
+                    <Controller
+                      name="toolDefinitions"
+                      control={control}
+                      render={({ field }) => (
+                        <Textarea
+                          {...field}
+                          id="toolDefinitions"
+                          placeholder="Enter your tool definitions in JSON format"
+                        />
+                      )}
+                    />
+                  </div>
+                </motion.div>
+              )}
+
+              {currentStep === 3 && (
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-6"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-medium">Pro Account</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Get access to advanced features and priority support
+                      </p>
+                    </div>
+                    <Controller
+                      name="isPro"
+                      control={control}
+                      render={({ field }) => (
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      )}
+                    />
+                  </div>
+
+                  {isPro && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      className="bg-secondary/50 rounded-lg p-4"
+                    >
+                      <h4 className="text-sm font-medium mb-2">Pro features include:</h4>
+                      <ul className="text-sm space-y-1">
+                        <li className="flex items-center">
+                          <motion.span className="mr-2">✓</motion.span>
+                          Unlimited API endpoint testing
+                        </li>
+                        <li className="flex items-center">
+                          <motion.span className="mr-2">✓</motion.span>
+                          Advanced response visualization
+                        </li>
+                        <li className="flex items-center">
+                          <motion.span className="mr-2">✓</motion.span>
+                          Custom testing environments
+                        </li>
+                      </ul>
+                    </motion.div>
+                  )}
+                </motion.div>
+              )}
+
+              <div className="flex justify-between mt-8">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handlePrevious}
+                  disabled={currentStep === 1 || isSubmitting}
+                >
+                  Previous
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Processing...' : 
+                   currentStep === 3 ? 'Complete Setup' : 'Next'}
+                </Button>
               </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+            </form>
+          </CardContent>
+        </Card>
+      </motion.div>
     </div>
-  );
+  )
 }
-
-export default OnboardingWizard;

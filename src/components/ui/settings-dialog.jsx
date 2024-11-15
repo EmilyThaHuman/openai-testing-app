@@ -1,17 +1,26 @@
 import React from 'react';
-import { Dialog, DialogOverlay, DialogContent } from '@reach/dialog';
-import '@reach/dialog/styles.css';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 export function SettingsDialog({ isOpen, onClose }) {
   return (
-    <Dialog isOpen={isOpen} onDismiss={onClose} aria-label="Settings">
-      <DialogOverlay />
-      <DialogContent>
-        <button className="close-button" onClick={onClose}>
-          <span aria-hidden>×</span>
-        </button>
-        <h2 className="text-lg font-bold">Settings</h2>
-        <p>Settings content goes here.</p>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Settings</DialogTitle>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <p>Settings content goes here.</p>
+        </div>
+        <DialogFooter>
+          <Button onClick={onClose}>Close</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

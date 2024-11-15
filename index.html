@@ -1,27 +1,184 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + React</title>
-  </head>
-  <body>
-    <!-- Google tag (gtag.js) -->
-    <script
-      async
-      src="https://www.googletagmanager.com/gtag/js?id=G-HSC0WD4HKX"
-    ></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag() {
-        dataLayer.push(arguments);
-      }
-      gtag("js", new Date());
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <link rel="icon" href="/reedai-api-playground.svg" type="image/svg+xml">
+    <style>
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
-      gtag("config", "G-HSC0WD4HKX");
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.6s ease-out forwards;
+        }
+
+        .hover-scale {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .hover-scale:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .search-input {
+            transition: all 0.3s ease-in-out;
+            width: 200px;
+        }
+
+        .search-input:focus {
+            width: 300px;
+            outline: none;
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+        }
+
+        .nav-link {
+            position: relative;
+            transition: color 0.3s;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -2px;
+            left: 0;
+            background-color: #8b5cf6;
+            transition: width 0.3s ease-in-out;
+        }
+
+        .nav-link:hover {
+            color: #8b5cf6;
+        }
+
+        .nav-link:hover::after {
+            width: 100%;
+        }
+
+        .icon-spin {
+            transition: all 0.3s ease-in-out;
+        }
+
+        .icon-spin:hover {
+            transform: rotate(180deg);
+            color: #8b5cf6;
+        }
+    </style>
+</head>
+<body class="bg-white font-inter">
+    <header class="flex items-center justify-between p-4 border-b border-gray-200 sticky top-0 bg-white/80 backdrop-blur-sm z-50">
+        <div class="flex items-center space-x-2 hover-scale">
+            <img alt="Magic UI logo" class="w-6 h-6 animate-float" height="24" src="https://storage.googleapis.com/a1aa/image/epQSGC3ZTRTiLCP3Ln8aq7rL2MWgKJPWXOmiB3GueyzBWQxTA.jpg" width="24"/>
+            <span class="font-semibold">Magic UI</span>
+            <span class="text-xs bg-gradient-to-r from-purple-500 to-indigo-500 text-white px-1.5 py-0.5 rounded">Beta</span>
+        </div>
+        <nav class="flex items-center space-x-6">
+            <a class="text-gray-700 nav-link" href="#">Components</a>
+            <a class="text-gray-700 nav-link" href="#">Showcase</a>
+            <a class="text-gray-700 nav-link" href="#">Templates</a>
+            <a class="text-gray-700 nav-link" href="#"><i class="fas fa-external-link-alt"></i></a>
+        </nav>
+        <div class="flex items-center space-x-4">
+            <button onclick="window.open('https://github.com/yourusername/magic-ui', '_blank')" 
+                    class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded transition-all duration-200 flex items-center space-x-2 hover-scale">
+                <i class="fab fa-github"></i>
+                <span>Star on GitHub</span>
+            </button>
+            <input class="border border-gray-300 rounded px-2 py-1 search-input" 
+                   placeholder="Search documentation..." type="text"/>
+            <a href="auth/login" class="text-gray-700 cursor-pointer icon-spin">
+                <i class="fas fa-user-circle"></i>
+            </a>
+            <i class="fas fa-cog text-gray-700 cursor-pointer icon-spin"></i>
+            <i class="fas fa-sun text-gray-700 cursor-pointer icon-spin" id="themeToggle"></i>
+        </div>
+    </header>
+    <main class="text-center py-16 relative overflow-hidden animate-fade-in">
+        <div class="absolute inset-0 bg-gradient-to-b from-purple-50 to-transparent opacity-50"></div>
+        <div class="relative z-10">
+            <div class="inline-block bg-gradient-to-r from-purple-500 to-indigo-500 text-white px-4 py-2 rounded-full text-sm mb-6 hover-scale">
+                <i class="fas fa-bolt mr-2"></i>
+                Introducing iPhone 15 Pro
+            </div>
+            <h1 class="text-6xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600 animate-float">
+                UI library for Design Engineers
+            </h1>
+            <p class="text-lg text-gray-700 mb-8 max-w-3xl mx-auto">
+                50+ free and open-source animated components built with
+                <br/>
+                <span class="font-semibold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600">
+                    React, Typescript, Tailwind CSS, and Framer Motion.
+                </span>
+                <br/>
+                Perfect companion for
+                <span class="font-semibold">shadcn/ui</span>.
+            </p>
+            <div class="flex justify-center space-x-4 mb-12">
+                <button onclick="window.location.href='#'" 
+                        class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-8 py-3 rounded-lg transition-all duration-200 hover:-translate-y-1 hover-scale">
+                    Browse Components
+                </button>
+                <button onclick="window.location.href='auth/register'" 
+                        class="bg-white text-gray-800 border-2 border-gray-200 px-8 py-3 rounded-lg hover:border-purple-500 transition-all duration-200 hover:-translate-y-1 hover-scale">
+                    Get Started
+                </button>
+            </div>
+            <div class="flex justify-center space-x-8 mb-16">
+                <i class="fab fa-react text-5xl text-blue-500 animate-float" style="animation-delay: 0s"></i>
+                <i class="fab fa-js-square text-5xl text-yellow-500 animate-float" style="animation-delay: 0.2s"></i>
+                <i class="fas fa-code text-5xl text-purple-500 animate-float" style="animation-delay: 0.4s"></i>
+                <i class="fas fa-pencil-alt text-5xl text-indigo-500 animate-float" style="animation-delay: 0.6s"></i>
+            </div>
+            <h2 class="text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600">
+                Showcase
+            </h2>
+            <p class="text-lg text-gray-700">
+                Companies choose Magic UI to build their landing pages.
+            </p>
+        </div>
+    </main>
+
+    <script>
+        // Add smooth scrolling
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Search input functionality
+        const searchInput = document.querySelector('.search-input');
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                console.log('Searching for:', this.value);
+            }
+        });
+
+        // Theme toggle functionality
+        const themeToggle = document.querySelector('.fa-sun');
+        themeToggle.addEventListener('click', function() {
+            document.body.classList.toggle('dark');
+            this.classList.toggle('fa-sun');
+            this.classList.toggle('fa-moon');
+        });
     </script>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+</body>
 </html>

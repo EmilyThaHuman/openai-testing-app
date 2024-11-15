@@ -1,87 +1,96 @@
 // src/pages/auth/LoginPage.jsx
-import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/context/AuthContext'
+import { useToast } from '@/components/ui/use-toast'
+import { useNavigate } from 'react-router-dom'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardHeader, CardContent } from '@/components/ui/card'
 
-export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { signIn } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { toast } = useToast();
+export function LoginPage() {
+  const { signIn, signInWithProvider } = useAuth()
+  const { toast } = useToast()
+  const navigate = useNavigate()
 
-  const handleSubmit = async e => {
-    e.preventDefault();
-    setLoading(true);
-
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
+    
     try {
-      const { error } = await signIn({ email, password });
-      if (error) throw error;
-
-      // Redirect to the page they came from or dashboard
-      const from = location.state?.from?.pathname || '/dashboard';
-      navigate(from, { replace: true });
+      await signIn(
+        formData.get('email'),
+        formData.get('password')
+      )
+      navigate('/dashboard')
     } catch (error) {
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: error.message,
-      });
-    } finally {
-      setLoading(false);
+        title: 'Login failed',
+        description: error.message || 'Please try again'
+      })
     }
-  };
+  }
+
+  const handleOAuthLogin = async (provider) => {
+    try {
+      await signInWithProvider(provider)
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Login failed',
+        description: error.message || 'Please try again'
+      })
+    }
+  }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background">
-      <div className="w-full max-w-md space-y-8 p-8">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold">Welcome back</h1>
-          <p className="text-muted-foreground">Sign in to your account</p>
-        </div>
+    <div className="min-h-screen flex items-center justify-center">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <h2 className="text-2xl font-bold text-center">Welcome Back</h2>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Input
+                name="email"
+                type="email"
+                placeholder="Email"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Input
+                name="password"
+                type="password"
+                placeholder="Password"
+                required
+              />
+            </div>
+            <Button type="submit" className="w-full">
+              Sign In
+            </Button>
+          </form>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-            />
+          <div className="mt-4 space-y-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() => handleOAuthLogin('google')}
+            >
+              Continue with Google
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() => handleOAuthLogin('github')}
+            >
+              Continue with GitHub
+            </Button>
           </div>
-
-          <div>
-            <Input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-            />
-          </div>
-
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Signing in...' : 'Sign in'}
-          </Button>
-        </form>
-
-        <p className="text-center text-sm text-muted-foreground">
-          Don&apos;t have an account?{' '}
-          <Button
-            variant="link"
-            className="p-0"
-            onClick={() => navigate('/auth/register')}
-          >
-            Sign up
-          </Button>
-        </p>
-      </div>
+        </CardContent>
+      </Card>
     </div>
-  );
+  )
 }

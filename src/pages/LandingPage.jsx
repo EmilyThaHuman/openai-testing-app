@@ -2,8 +2,11 @@ import React, { useState } from 'react';
 import AuthModal from '@/components/auth/AuthModal';
 import { Button } from '@/components/ui/button'; // Importing Button from shadcn/ui
 import { Code2, LibraryIcon, Sparkles } from 'lucide-react';
+import { GitHubIcon } from '@/assets/humanIcons';
+import { useNavigate } from 'react-router-dom';
 
 const LandingPage = () => {
+  const navigate = useNavigate();
   const [isAuthModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState('login');
 
@@ -23,8 +26,9 @@ const LandingPage = () => {
                 variant="default"
                 size="lg"
                 onClick={() => {
-                  setAuthMode('signup');
-                  setAuthModalOpen(true);
+                  navigate('/auth/register');
+                  // setAuthMode('signup');
+                  // setAuthModalOpen(true);
                 }}
               >
                 Get Started
@@ -33,8 +37,9 @@ const LandingPage = () => {
                 variant="outline"
                 size="lg"
                 onClick={() => {
-                  setAuthMode('login');
-                  setAuthModalOpen(true);
+                  navigate('/auth/login');
+                  // setAuthMode('login');
+                  // setAuthModalOpen(true);
                 }}
               >
                 Login
@@ -93,7 +98,7 @@ const LandingPage = () => {
               rel="noopener noreferrer"
               className="inline-flex items-center text-white hover:text-gray-300"
             >
-              <GithubIcon className="w-5 h-5 mr-2" />
+              <GitHubIcon className="w-5 h-5 mr-2" />
               <span>View my GitHub Profile</span>
             </a>
           </div>

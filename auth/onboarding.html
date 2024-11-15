@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <style>
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.6s ease-out forwards;
+        }
+
+        .hover-scale {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .hover-scale:hover {
+            transform: scale(1.02);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .step-indicator {
+            transition: all 0.3s ease-in-out;
+        }
+
+        .step-line {
+            transition: background-color 0.3s ease-in-out;
+        }
+
+        .file-upload {
+            transition: border-color 0.3s ease-in-out;
+        }
+
+        .file-upload:hover {
+            border-color: #8b5cf6;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #8b5cf6;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-inter">
+    <div class="min-h-screen flex flex-col items-center justify-center p-4">
+        <a href="/" class="flex items-center space-x-2 mb-8 hover-scale">
+            <img alt="Magic UI logo" class="w-8 h-8" src="https://storage.googleapis.com/a1aa/image/epQSGC3ZTRTiLCP3Ln8aq7rL2MWgKJPWXOmiB3GueyzBWQxTA.jpg"/>
+            <span class="font-semibold text-xl">Magic UI</span>
+        </a>
+        
+        <div class="w-full max-w-2xl bg-white rounded-xl shadow-lg p-8 animate-fade-in">
+            <div class="text-center mb-8">
+                <h1 id="stepTitle" class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600">
+                    Set up your workspace
+                </h1>
+                <p class="text-gray-600 mt-2">
+                    Step <span id="currentStep">1</span> of 3
+                </p>
+            </div>
+
+            <div class="flex justify-between mb-8">
+                <div class="flex items-center flex-1">
+                    <div class="w-8 h-8 rounded-full flex items-center justify-center bg-purple-600 text-white step-indicator">1</div>
+                    <div class="w-full h-1 mx-2 bg-gray-200 step-line"></div>
+                </div>
+                <div class="flex items-center flex-1">
+                    <div class="w-8 h-8 rounded-full flex items-center justify-center bg-gray-200 text-gray-600 step-indicator">2</div>
+                    <div class="w-full h-1 mx-2 bg-gray-200 step-line"></div>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-8 h-8 rounded-full flex items-center justify-center bg-gray-200 text-gray-600 step-indicator">3</div>
+                </div>
+            </div>
+
+            <form id="onboardingForm" class="space-y-6">
+                <!-- Workspace Step -->
+                <div id="step1" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Workspace Name
+                        </label>
+                        <input
+                            name="workspaceName"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Workspace Context
+                        </label>
+                        <textarea
+                            name="workspaceContext"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+                            rows="4"
+                        ></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Workspace Avatar
+                        </label>
+                        <select
+                            name="workspaceAvatar"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+                        >
+                            <option value="default">Default</option>
+                            <option value="rocket">Rocket</option>
+                            <option value="star">Star</option>
+                            <option value="lightning">Lightning</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- AI Tools Step -->
+                <div id="step2" class="space-y-4 hidden">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Model Presets
+                        </label>
+                        <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md file-upload">
+                            <div class="space-y-1 text-center">
+                                <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                                <div class="flex text-sm text-gray-600">
+                                    <label class="relative cursor-pointer rounded-md font-medium text-purple-600 hover:text-purple-500">
+                                        <span>Upload presets</span>
+                                        <input type="file" class="sr-only" multiple accept=".json" name="modelPresets">
+                                    </label>
+                                    <p class="pl-1">or drag and drop</p>
+                                </div>
+                                <p class="text-xs text-gray-500">JSON files up to 10MB</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Tool Definitions
+                        </label>
+                        <textarea
+                            name="toolDefinitions"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+                            rows="4"
+                            placeholder="Enter your tool definitions in JSON format"
+                        ></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Action Plugins
+                        </label>
+                        <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md file-upload">
+                            <div class="space-y-1 text-center">
+                                <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                                <div class="flex text-sm text-gray-600">
+                                    <label class="relative cursor-pointer rounded-md font-medium text-purple-600 hover:text-purple-500">
+                                        <span>Upload plugins</span>
+                                        <input type="file" class="sr-only" multiple accept=".js,.ts" name="actionPlugins">
+                                    </label>
+                                    <p class="pl-1">or drag and drop</p>
+                                </div>
+                                <p class="text-xs text-gray-500">JavaScript or TypeScript files</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Account Step -->
+                <div id="step3" class="space-y-4 hidden">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-900">Pro Account</h3>
+                            <p class="text-sm text-gray-500">Get access to advanced features and priority support</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" name="isPro">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div id="proFeatures" class="mt-4 p-4 bg-purple-50 rounded-lg hidden">
+                        <h4 class="text-sm font-medium text-purple-800 mb-2">Pro features include:</h4>
+                        <ul class="text-sm text-purple-700 space-y-1">
+                            <li class="flex items-center">
+                                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                </svg>
+                                Unlimited AI model usage
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                </svg>
+                                Priority support
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                </svg>
+                                Custom AI model fine-tuning
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="flex justify-between mt-8">
+                    <button
+                        type="button"
+                        id="prevButton"
+                        class="bg-white text-gray-700 border border-gray-300 px-6 py-2 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled
+                    >
+                        Previous
+                    </button>
+                    <button
+                        type="button"
+                        id="nextButton"
+                        class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-2 rounded-lg hover:opacity-90 transition-opacity"
+                    >
+                        Next
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        const totalSteps = 3;
+
+        const updateStepVisibility = () => {
+            // Hide all steps
+            for (let i = 1; i <= totalSteps; i++) {
+                document.getElementById(`step${i}`).classList.add('hidden');
+            }
+            // Show current step
+            document.getElementById(`step${currentStep}`).classList.remove('hidden');
+            
+            // Update step title
+            const titles = [
+                'Set up your workspace',
+                'Configure AI tools',
+                'Finalize your account'
+            ];
+            document.getElementById('stepTitle').textContent = titles[currentStep - 1];
+            document.getElementById('currentStep').textContent = currentStep;
+
+            // Update buttons
+            document.getElementById('prevButton').disabled = currentStep === 1;
+            const nextButton = document.getElementById('nextButton');
+            nextButton.textContent = currentStep === totalSteps ? 'Complete' : 'Next';
+
+            // Update progress indicators
+            const indicators = document.querySelectorAll('.step-indicator');
+            const lines = document.querySelectorAll('.step-line');
+            
+            indicators.forEach((indicator, index) => {
+                if (index + 1 < currentStep) {
+                    indicator.classList.remove('bg-gray-200', 'text-gray-600');
+                    indicator.classList.add('bg-green-500', 'text-white');
+                    indicator.innerHTML = '✓';
+                } else if (index + 1 === currentStep) {
+                    indicator.classList.remove('bg-gray-200', 'text-gray-600', 'bg-green-500');
+                    indicator.classList.add('bg-purple-600', 'text-white');
+                    indicator.innerHTML = (index + 1).toString();
+                } else {
+                    indicator.classList.remove('bg-purple-600', 'text-white', 'bg-green-500');
+                    indicator.classList.add('bg-gray-200', 'text-gray-600');
+                    indicator.innerHTML = (index + 1).toString();
+                }
+            });
+
+            lines.forEach((line, index) => {
+                if (index + 1 < currentStep) {
+                    line.classList.remove('bg-gray-200');
+                    line.classList.add('bg-green-500');
+                } else {
+                    line.classList.remove('bg-green-500');
+                    line.classList.add('bg-gray-200');
+                }
+            });
+        };
+
+        document.getElementById('nextButton').addEventListener('click', () => {
+            if (currentStep < totalSteps) {
+                currentStep++;
+                updateStepVisibility();
+            } else {
+                // Handle form submission
+                const formData = new FormData(document.getElementById('onboardingForm'));
+                console.log('Form submitted:', Object.fromEntries(formData));
+                window.location.href = '/dashboard';
+            }
+        });
+
+        document.getElementById('prevButton').addEventListener('click', () => {
+            if (currentStep > 1) {
+                currentStep--;
+                updateStepVisibility();
+            }
+        });
+
+        // Handle pro features visibility
+        document.querySelector('input[name="isPro"]').addEventListener('change', (e) => {
+            const proFeatures = document.getElementById('proFeatures');
+            if (e.target.checked) {
+                proFeatures.classList.remove('hidden');
+            } else {
+                proFeatures.classList.add('hidden');
+            }
+        });
+
+        // Initialize drag and drop for file uploads
+        const fileUploads = document.querySelectorAll('.file-upload');
+        fileUploads.forEach(upload => {
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                upload.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                upload.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                upload.addEventListener(eventName, unhighlight, false);
+            });
+
+            function highlight(e) {
+                upload.classList.add('border-purple-500');
+            }
+
+            function unhighlight(e) {
+                upload.classList.remove('border-purple-500');
+            }
+
+            upload.addEventListener('drop', handleDrop, false);
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                const input = upload.querySelector('input[type="file"]');
+                input.files = files;
+            }
+        });
+    </script>
+</body>
+</html>

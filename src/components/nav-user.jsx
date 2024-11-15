@@ -1,19 +1,21 @@
 "use client"
 
+import { useAuth } from '@/context/AuthContext'
+import { useNavigate } from 'react-router-dom'
 import {
   BadgeCheck,
   Bell,
   ChevronsUpDown,
   CreditCard,
   LogOut,
-  Sparkles,
-} from "lucide-react"
-
+  Settings,
+  User,
+} from 'lucide-react'
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from "@/components/ui/avatar"
+} from '@/components/ui/avatar'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,85 +24,98 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  useSidebar,
-} from "@/components/ui/sidebar"
+} from '@/components/ui/dropdown-menu'
+import { cn } from '@/lib/utils'
 
-export function NavUser({
-  user
-}) {
-  const { isMobile } = useSidebar()
+export function NavUser({ user, isCollapsed, className }) {
+  const navigate = useNavigate()
+  const { signOut } = useAuth()
+
+  if (!user) return null
+
+  const handleSignOut = async () => {
+    try {
+      await signOut()
+      navigate('/auth/login')
+    } catch (error) {
+      console.error('Error signing out:', error)
+    }
+  }
 
   return (
-    (<SidebarMenu>
-      <SidebarMenuItem>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <SidebarMenuButton
-              size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground md:h-8 md:p-0">
-              <Avatar className="h-8 w-8 rounded-lg">
-                <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
-              </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">{user.name}</span>
-                <span className="truncate text-xs">{user.email}</span>
-              </div>
-              <ChevronsUpDown className="ml-auto size-4" />
-            </SidebarMenuButton>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
-            side={isMobile ? "bottom" : "right"}
-            align="end"
-            sideOffset={4}>
-            <DropdownMenuLabel className="p-0 font-normal">
-              <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="rounded-lg">CN</AvatarFallback>
-                </Avatar>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">{user.name}</span>
-                  <span className="truncate text-xs">{user.email}</span>
+    <div className={cn("relative", className)}>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button className={cn(
+            "w-full flex items-center gap-2 p-2 rounded-lg hover:bg-accent transition-colors",
+            isCollapsed ? "justify-center" : "justify-start"
+          )}>
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={user.avatar_url} alt={user.name} />
+              <AvatarFallback>
+                {user.name?.charAt(0) || user.email?.charAt(0)}
+              </AvatarFallback>
+            </Avatar>
+            
+            {!isCollapsed && (
+              <>
+                <div className="flex-1 text-left">
+                  <p className="text-sm font-medium leading-none">{user.name}</p>
+                  <p className="text-xs text-muted-foreground">{user.email}</p>
                 </div>
-              </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <Sparkles />
-                Upgrade to Pro
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <BadgeCheck />
-                Account
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <CreditCard />
-                Billing
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Bell />
-                Notifications
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <LogOut />
-              Log out
+                <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />
+              </>
+            )}
+          </button>
+        </DropdownMenuTrigger>
+        
+        <DropdownMenuContent 
+          className="w-56" 
+          align={isCollapsed ? "center" : "end"}
+          side="top"
+        >
+          <DropdownMenuLabel>My Account</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          
+          <DropdownMenuGroup>
+            <DropdownMenuItem onClick={() => navigate('/profile')}>
+              <User className="mr-2 h-4 w-4" />
+              Profile
             </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </SidebarMenuItem>
-    </SidebarMenu>)
-  );
+            <DropdownMenuItem onClick={() => navigate('/billing')}>
+              <CreditCard className="mr-2 h-4 w-4" />
+              Billing
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate('/settings')}>
+              <Settings className="mr-2 h-4 w-4" />
+              Settings
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+          
+          <DropdownMenuSeparator />
+          
+          <DropdownMenuGroup>
+            <DropdownMenuItem onClick={() => navigate('/notifications')}>
+              <Bell className="mr-2 h-4 w-4" />
+              Notifications
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate('/subscription')}>
+              <BadgeCheck className="mr-2 h-4 w-4" />
+              Subscription
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+          
+          <DropdownMenuSeparator />
+          
+          <DropdownMenuItem 
+            className="text-destructive focus:text-destructive"
+            onClick={handleSignOut}
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            Log out
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  )
 }
