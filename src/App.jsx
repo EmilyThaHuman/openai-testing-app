@@ -1,8 +1,7 @@
 // App.js
 
 import React, { Suspense } from 'react';
-import './index.css'; // Ensure this path is correct
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { RouterProvider } from 'react-router-dom';
 import { Layout } from './components/layout/Layout';
 import { OpenAIProvider } from './context/OpenAIContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -12,74 +11,76 @@ import { AuthProvider } from './context/AuthContext';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import ErrorBoundary from './components/shared/ErrorBoundary';
 import { Progress } from '@/components/ui/progress';
+import { Toaster } from './components/ui/toaster';
+import { router } from './router/routes.jsx';
 
 
-// Lazy load components with proper error handling
-const LandingPage = React.lazy(() =>
-  import('./pages/LandingPage').then(module => ({
-    default: module.default || module.LandingPage,
-  }))
-);
+// // Lazy load components with proper error handling
+// const LandingPage = React.lazy(() =>
+//   import('./pages/LandingPage').then(module => ({
+//     default: module.default || module.LandingPage,
+//   }))
+// );
 
-const SignInPage = React.lazy(() =>
-  import('./pages/AuthPage').then(module => ({
-    default: module.default || module.AuthPage,
-  }))
-);  
+// const SignInPage = React.lazy(() =>
+//   import('./pages/AuthPage').then(module => ({
+//     default: module.default || module.AuthPage,
+//   }))
+// );  
 
-const SignUpPage = React.lazy(() =>
-  import('./pages/AuthPage').then(module => ({
-    default: module.default || module.AuthPage,
-  }))
-);
+// const SignUpPage = React.lazy(() =>
+//   import('./pages/AuthPage').then(module => ({
+//     default: module.default || module.AuthPage,
+//   }))
+// );
 
-const ApiDashboard = React.lazy(() =>
-  import('./pages/ApiDashboard').then(module => ({
-    default: module.default || module.ApiDashboard,
-  }))
-);
+// const ApiDashboard = React.lazy(() =>
+//   import('./pages/ApiDashboard').then(module => ({
+//     default: module.default || module.ApiDashboard,
+//   }))
+// );
 
-const OpenCanvasPage = React.lazy(() =>
-  import('./pages/OpenCanvas').then(module => ({
-    default: module.default || module.OpenCanvasPage,
-  }))
-);
+// const OpenCanvasPage = React.lazy(() =>
+//   import('./pages/OpenCanvas').then(module => ({
+//     default: module.default || module.OpenCanvasPage,
+//   }))
+// );
 
-const AssistantInstancesTestPage = React.lazy(() =>
-  import('./pages/AssistantInstancesTestPage').then(module => ({
-    default: module.default || module.AssistantInstancesTestPage,
-  }))
-);
+// const AssistantInstancesTestPage = React.lazy(() =>
+//   import('./pages/AssistantInstancesTestPage').then(module => ({
+//     default: module.default || module.AssistantInstancesTestPage,
+//   }))
+// );
 
-const OpenAITestPage = React.lazy(() =>
-  import('./pages/OpenAiTestPage').then(module => ({
-    default: module.default || module.OpenAITestPage,
-  }))
-);
+// const OpenAITestPage = React.lazy(() =>
+//   import('./pages/OpenAiTestPage').then(module => ({
+//     default: module.default || module.OpenAITestPage,
+//   }))
+// );
 
-const AssistantsPage = React.lazy(() =>
-  import('./pages/AssistantsPage').then(module => ({
-    default: module.default || module.AssistantsPage,
-  }))
-);
+// const AssistantsPage = React.lazy(() =>
+//   import('./pages/AssistantsPage').then(module => ({
+//     default: module.default || module.AssistantsPage,
+//   }))
+// );
 
-const ChatPage = React.lazy(() =>
-  import('./pages/ChatPage').then(module => ({
-    default: module.default || module.ChatPage,
-  }))
-);
+// const ChatPage = React.lazy(() =>
+//   import('./pages/ChatPage').then(module => ({
+//     default: module.default || module.ChatPage,
+//   }))
+// );
 
-const ImagePage = React.lazy(() =>
-  import('./pages/ImagePage').then(module => ({
-    default: module.default || module.ImagePage,
-  }))
-);
+// const ImagePage = React.lazy(() =>
+//   import('./pages/ImagePage').then(module => ({
+//     default: module.default || module.ImagePage,
+//   }))
+// );
 
-const AudioPage = React.lazy(() =>
-  import('./pages/AudioPage').then(module => ({
-    default: module.default || module.AudioPage,
-  }))
-);
+// const AudioPage = React.lazy(() =>
+//   import('./pages/AudioPage').then(module => ({
+//     default: module.default || module.AudioPage,
+//   }))
+// );
 
 function App() {
   return (
@@ -87,10 +88,12 @@ function App() {
       <AuthProvider>
         <DatabaseProvider>
           <ThemeProvider>
-          <OpenAIProvider>
-            <ChatProvider>
-              <SidebarProvider>
-                <BrowserRouter>
+            <OpenAIProvider>
+              <ChatProvider>
+                <SidebarProvider>
+                  <RouterProvider router={router} />
+                  <Toaster />
+                  {/* <BrowserRouter>
                   <Suspense
                     fallback={
                       <div className="flex items-center justify-center h-screen">
@@ -121,11 +124,11 @@ function App() {
                       </Route>
                     </Routes>
                   </Suspense>
-                </BrowserRouter>
-              </SidebarProvider>
-            </ChatProvider>
-          </OpenAIProvider>
-        </ThemeProvider>
+                </BrowserRouter> */}
+                </SidebarProvider>
+              </ChatProvider>
+            </OpenAIProvider>
+          </ThemeProvider>
         </DatabaseProvider>
       </AuthProvider>
     </ErrorBoundary>

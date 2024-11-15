@@ -1,0 +1,32 @@
+{
+  "name": "ReedAi Api Playground",
+  "short_name": "ReedAi Api Playground",
+  "start_url": ".",
+  "description": "ReedAi Api Playground is a tool for testing and playing with the OpenAI API. It's a great tool for developers who want to test and play with the OpenAI API but dont want to build all the required components.",
+  "display": "standalone",
+  "theme_color": "#18b984",
+  "background_color": "#000000",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "icon-192x192.png",
+      "type": "image/ico",
+      "sizes": "192x192"
+    },
+    {
+      "src": "icon-256x256.png",
+      "type": "image/png",
+      "sizes": "256x256"
+    },
+    {
+      "src": "icon-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    }
+  ]
+}

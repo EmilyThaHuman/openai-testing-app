@@ -1,3 +1,4 @@
+/* eslint-disable no-case-declarations */
 import OpenAI from 'openai';
 import { createModuleLogger } from '@/services/logger';
 import { ApiTracker } from '@/services/ApiTracker.jsx';
@@ -121,6 +122,60 @@ const trackUsageMetrics = async (endpoint, operation, params) => {
   });
 };
 
+function handleStreamingResponse(response) {
+  const eventLines = response.split('\n\n');
+  let messageContent = '';
+
+  eventLines.forEach(line => {
+    if (line.startsWith('data:')) {
+      const data = JSON.parse(line.slice(5));
+      const eventType = data.object;
+
+      switch (eventType) {
+        case 'thread.run.created':
+        case 'thread.run.queued':
+        case 'thread.run.in_progress':
+        case 'thread.run.completed':
+          console.log(`[${eventType}]`, data);
+          break;
+        case 'thread.run.step.created':
+        case 'thread.run.step.in_progress':
+        case 'thread.run.step.completed':
+          console.log(`[${eventType}]`, data.id, data.status);
+          break;
+        case 'thread.message.created':
+        case 'thread.message.in_progress':
+        case 'thread.message.completed':
+          console.log(`[${eventType}]`, data.id, data.status);
+          break;
+        case 'thread.message.delta':
+          const delta = data.delta.content[0];
+          if (delta.type === 'text') {
+            messageContent += delta.text.value;
+            console.log(`[${eventType}]`, messageContent);
+          }
+          break;
+        case 'done':
+          console.log('[DONE]');
+          handleFinalResponse(messageContent);
+          break;
+      }
+    }
+  });
+}
+
+function handleFinalResponse(finalResponse) {
+  console.log('Final Response:', finalResponse);
+  // Perform further actions with the final response
+}
+
+/**
+ * UnifiedOpenAIService
+ * - initialize(apiKey: string) -> void (sets the API key)
+ * - beta.assistants.update(assistantId: string, params: object) -> Promise<Assistant>
+ * - chat.create(params: object) -> Promise<Response>
+ * - chat.createStream(params: object, onData: function) -> Promise<void>
+ */
 export const UnifiedOpenAIService = {
   /**
    * Initialization
@@ -378,16 +433,17 @@ export const UnifiedOpenAIService = {
     },
 
     messages: {
-      create: async (threadId, content) => {
+      create: async (threadId, params) => {
         return trackApiCall(`threads.messages.create.${threadId}`, async () => {
           console.log('Creating message...');
           console.log('(create)-> Thread ID:', threadId);
-          console.log('(create)-> Content:', content);
+          console.log('(create)-> Params:', params);
           try {
             const openai = checkInitialization();
             return await openai.beta.threads.messages.create(threadId, {
               role: 'user',
-              content,
+              content: params.content,
+              // file_ids: params.file_ids,
             });
           } catch (error) {
             console.error('OpenAI API Error:', error);
@@ -480,35 +536,129 @@ export const UnifiedOpenAIService = {
     },
 
     runs: {
-      create: async (threadId, assistantId) => {
+      create: async (threadId, params) => {
         try {
           console.log('Creating run...');
           console.log('(create)-> Thread ID:', threadId);
-          console.log('(create)-> Assistant ID:', assistantId);
+          console.log('(create)-> Assistant ID:', params.assistantId);
+          console.log('(create)-> Streaming:', params.stream);
 
           const openai = checkInitialization();
-          const run = await openai.beta.threads.runs.create(threadId, {
-            assistant_id: assistantId,
+          const runStream = await openai.beta.threads.runs.create(threadId, {
+            assistant_id: params.assistantId,
+            stream: params.stream,
           });
 
-          let runStatus = await openai.beta.threads.runs.retrieve(
-            threadId,
-            run.id
-          );
-          while (['in_progress', 'queued'].includes(runStatus.status)) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            runStatus = await openai.beta.threads.runs.retrieve(
-              threadId,
-              run.id
-            );
-          }
-
-          return runStatus;
+          // Do not consume the runStream here
+          // Just return it for consumption elsewhere
+          return runStream;
         } catch (error) {
           console.error('OpenAI API Error:', error);
           throw error;
         }
       },
+      // create: async (threadId, params) => {
+      //   try {
+      //     console.log('Creating run...');
+      //     console.log('(create)-> Thread ID:', threadId);
+      //     console.log('(create)-> Assistant ID:', params.assistantId);
+      //     console.log('(create)-> Streaming:', params.stream);
+
+      //     const openai = checkInitialization();
+      //     const runStream = await openai.beta.threads.runs.create(threadId, {
+      //       assistant_id: params.assistantId,
+      //       stream: params.stream,
+      //     });
+
+      //     // Log the run status onChange
+      //     // handleStreamingResponse(runStream);
+
+      //     let run_id;
+
+      //     for await (const event of runStream) {
+      //       if (event.type === 'run_created') {
+      //         run_id = event.run.id;
+      //       }
+      //     }
+
+      // for await (const event of runStream) {
+      //   switch (event.type) {
+      //     case 'thread.run.created':
+      //       await await logOpenAIEvent('Run Status: Created', event.data);
+      //       break;
+
+      //     case 'thread.run.queued':
+      //       await logOpenAIEvent('Run Status: Queued', event.data);
+      //       break;
+
+      //     case 'thread.run.in_progress':
+      //       await logOpenAIEvent('Run Status: In Progress', event.data);
+      //       break;
+
+      //     case 'thread.message.created':
+      //       await logOpenAIEvent('Message Created', event.data);
+      //       break;
+
+      //     case 'thread.message.delta':
+      //       if (
+      //         event.data.delta.content &&
+      //         event.data.delta.content[0]?.text?.value
+      //       ) {
+      //         const content = event.data.delta.content[0].text.value;
+      //         this.currentMessage += content;
+
+      //         // Log the delta
+      //         await logOpenAIEvent('Content Delta', {
+      //           delta: content,
+      //           currentMessage: this.currentMessage,
+      //         });
+      //       }
+      //       break;
+
+      //     case 'thread.message.completed':
+      //       await logOpenAIEvent('Message Completed', event.data);
+      //       break;
+
+      //     case 'thread.run.completed':
+      //       await logOpenAIEvent('Run Completed', event.data);
+
+      //       // Log final stats
+      //       await logOpenAIEvent('Final Statistics', {
+      //         totalTokens: event.data.usage?.total_tokens,
+      //         completionTokens: event.data.usage?.completion_tokens,
+      //         promptTokens: event.data.usage?.prompt_tokens,
+      //       });
+      //       break;
+
+      //     case 'thread.run.failed':
+      //       await logOpenAIEvent('Run Failed', {
+      //         error: event.data.last_error,
+      //         status: event.data.status,
+      //       });
+      //       break;
+      //   }
+      // }
+
+      //     let runStatus = await openai.beta.threads.runs.retrieve(
+      //       threadId,
+      //       run_id
+      //     );
+      //     console.log(runStatus);
+
+      //     while (['in_progress', 'queued'].includes(runStatus.status)) {
+      //       await new Promise(resolve => setTimeout(resolve, 1000));
+      //       runStatus = await openai.beta.threads.runs.retrieve(
+      //         threadId,
+      //         run_id
+      //       );
+      //     }
+
+      //     return runStatus;
+      //   } catch (error) {
+      //     console.error('OpenAI API Error:', error);
+      //     throw error;
+      //   }
+      // },
 
       createAndRun: async (assistantId, params) => {
         console.log('Creating and running...');
@@ -597,7 +747,7 @@ export const UnifiedOpenAIService = {
         }
       },
 
-      get: async (threadId, runId) => {
+      retrieve: async (threadId, runId) => {
         console.log('Getting run...');
         console.log('(get)-> Thread ID:', threadId);
         console.log('(get)-> Run ID:', runId);

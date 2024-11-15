@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase } from './supabaseClient';
 
 export const authMiddleware = {
   async signUp(email, password, metadata = {}) {

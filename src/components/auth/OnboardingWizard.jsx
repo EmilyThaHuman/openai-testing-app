@@ -1,18 +1,16 @@
 import React, { useState } from 'react';
-import {
-  Box,
-  Button,
-  Heading,
-  FormControl,
-  FormLabel,
-  Input,
-  Select,
-  Textarea,
-} from 'shadcn/ui';
-import { Stepper, Step } from 'shadcn/ui/stepper';
 import { useNavigate } from 'react-router-dom';
-import { databaseUtils } from '../lib/supabase';
+import { databaseUtils } from '@/lib/supabase';
+import { Card } from '../ui/card';
+import { Step, Stepper } from '../ui/stepper';
 import StepLabel from './StepLabel';
+import { FormControl, FormLabel } from '../ui/form';
+import { Input } from '../ui/input';
+import { Textarea } from '../ui/textarea';
+import { Select } from '../ui/select';
+import { Button } from '../ui/button';
+import { Header } from '@radix-ui/react-accordion';
+
 const OnboardingWizard = () => {
   const [step, setStep] = useState(0);
   const [profileData, setProfileData] = useState({
@@ -35,19 +33,19 @@ const OnboardingWizard = () => {
   };
 
   return (
-    <Box className="p-4">
-      <Heading as="h2" size="lg" mb={4}>
+    <Card className="p-4">
+      <Header as="h2" size="lg" mb={4}>
         Onboarding Wizard
-      </Heading>
+      </Header>
       <Stepper activeStep={step}>
         <Step>
-          <StepLabel>Profile Info</StepLabel>
+          <StepLabel>Profile & Workspaces</StepLabel>
         </Step>
         <Step>
-          <StepLabel>AI Preferences</StepLabel>
+          <StepLabel>AI, Tools & Actions</StepLabel>
         </Step>
         <Step>
-          <StepLabel>Communication Style</StepLabel>
+          <StepLabel>Account</StepLabel>
         </Step>
         <Step>
           <StepLabel>Review & Submit</StepLabel>
@@ -62,6 +60,22 @@ const OnboardingWizard = () => {
               setProfileData({ ...profileData, name: e.target.value })
             }
             placeholder="Enter your name"
+          />
+          <FormLabel>Display Name</FormLabel>
+          <Input
+            value={profileData.displayName}
+            onChange={e =>
+              setProfileData({ ...profileData, displayName: e.target.value })
+            }
+            placeholder="Enter your display name"
+          />
+          <FormLabel>Profile Context</FormLabel>
+          <Textarea
+            value={profileData.profileContext}
+            onChange={e =>
+              setProfileData({ ...profileData, profileContext: e.target.value })
+            }
+            placeholder="Describe your profile context"
           />
           <FormLabel>Role</FormLabel>
           <Select
@@ -79,18 +93,6 @@ const OnboardingWizard = () => {
       )}
       {step === 1 && (
         <FormControl>
-          <FormLabel>Interests</FormLabel>
-          <Textarea
-            value={profileData.interests}
-            onChange={e =>
-              setProfileData({ ...profileData, interests: e.target.value })
-            }
-            placeholder="What are your interests?"
-          />
-        </FormControl>
-      )}
-      {step === 2 && (
-        <FormControl>
           <FormLabel>AI Preferences</FormLabel>
           <Textarea
             value={profileData.aiPreferences}
@@ -99,13 +101,24 @@ const OnboardingWizard = () => {
             }
             placeholder="What AI features do you prefer?"
           />
+          <FormLabel>Workspace Context</FormLabel>
+          <Textarea
+            value={profileData.workspaceContext}
+            onChange={e =>
+              setProfileData({
+                ...profileData,
+                workspaceContext: e.target.value,
+              })
+            }
+            placeholder="Describe your workspace context"
+          />
         </FormControl>
       )}
-      {step === 3 && (
+      {step === 2 && (
         <FormControl>
-          <FormLabel>Communication Style</FormLabel>
+          <FormLabel>Development Stack and Preferences</FormLabel>
           <Textarea
-            value={profileData.communicationStyle}
+            value={profileData.developmentStack}
             onChange={e =>
               setProfileData({
                 ...profileData,
@@ -116,10 +129,22 @@ const OnboardingWizard = () => {
           />
         </FormControl>
       )}
+      {step === 3 && (
+        <FormControl>
+          <FormLabel>Review & Submit</FormLabel>
+          <Textarea
+            value={profileData.review}
+            onChange={e =>
+              setProfileData({ ...profileData, review: e.target.value })
+            }
+            placeholder="Review your profile data"
+          />
+        </FormControl>
+      )}
       <Button onClick={handleNext} className="mt-4">
         {step < 3 ? 'Next' : 'Finish'}
       </Button>
-    </Box>
+    </Card>
   );
 };
 
