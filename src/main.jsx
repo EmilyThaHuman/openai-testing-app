@@ -1,7 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import './index.css'; // Ensure this path is correct
-import App from './App';
+import { App } from './App.jsx';
 
 // ========================================================
 // [index] | This is the entry point for the application

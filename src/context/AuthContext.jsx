@@ -1,101 +1,63 @@
-import { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase/client';
+import { createContext, useContext, useEffect, useState } from 'react'
+import { useSupabaseClient } from '@supabase/auth-helpers-react'
+import { useToast } from '@/components/ui/use-toast'
 
-const AuthContext = createContext();
+const AuthContext = createContext({})
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [session, setSession] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const supabase = useSupabaseClient()
+  const { toast } = useToast()
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   useEffect(() => {
-    // Check active sessions
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+      setUser(session?.user ?? null)
+      setIsAuthenticated(!!session?.user)
+      setLoading(false)
+    })
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+      setUser(session?.user ?? null)
+      setIsAuthenticated(!!session?.user)
+      setLoading(false)
+    })
 
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const signIn = async (email, password) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
-  };
-
-  const signUp = async (email, password, metadata = {}) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-        data: {
-          ...metadata,
-          full_name: metadata.full_name || email.split('@')[0],
-          avatar_url: metadata.avatar_url || '/avatars/default.jpg'
-        }
-      }
-    });
-    if (error) throw error;
-
-    // Create initial workspace for new user
-    const { error: workspaceError } = await supabase
-      .from('workspaces')
-      .insert([
-        {
-          name: 'My Workspace',
-          description: 'My personal workspace',
-          user_id: supabase.auth.user()?.id,
-          is_home: true
-        }
-      ]);
-
-    if (workspaceError) throw workspaceError;
-  };
+    return () => subscription.unsubscribe()
+  }, [supabase])
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-  };
-
-  const signInWithProvider = async (provider) => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-        scopes: provider === 'github' ? 'read:user user:email' : 'profile email'
-      }
-    });
-    if (error) throw error;
-  };
+    try {
+      await supabase.auth.signOut()
+      setUser(null)
+      setIsAuthenticated(false)
+      window.location.href = '/auth/login'
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Sign out failed',
+        description: error.message
+      })
+    }
+  }
 
   return (
     <AuthContext.Provider value={{
       user,
-      session,
       loading,
-      signIn,
-      signUp,
-      signOut,
-      signInWithProvider
+      isAuthenticated,
+      signOut
     }}>
       {children}
     </AuthContext.Provider>
-  );
+  )
 }
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+  const context = useContext(AuthContext)
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider')
   }
-  return context;
-};
+  return context
+}

@@ -1,17 +1,20 @@
 // App.js
 
-import { BrowserRouter } from 'react-router-dom'
-import { AuthProvider } from '@/context/AuthContext'
-import { Toaster } from '@/components/ui/toaster'
-import { AppRoutes } from '@/router/routes'
+import { SessionContextProvider } from '@supabase/auth-helpers-react'
+import { RouterProvider } from 'react-router-dom'
+import { Toaster } from './components/ui/toaster'
+import { router } from './router/routes'
+import { ThemeProvider } from './context/ThemeContext'
+import { OpenAIProvider } from './context/OpenAIContext'
+import { AuthProvider } from './context/AuthContext'
+import { SidebarProvider } from './components/ui/sidebar'
+import { supabase } from './lib/supabase-client'
 
 export function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <AppRoutes />
-        <Toaster />
-      </AuthProvider>
-    </BrowserRouter>
+    <SessionContextProvider supabaseClient={supabase}>
+      <RouterProvider router={router} />
+      <Toaster />
+    </SessionContextProvider>
   )
 }

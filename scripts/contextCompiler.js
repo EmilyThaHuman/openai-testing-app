@@ -9,7 +9,7 @@ const sourceDirs = [
   'components',
   'actions',
 ];
-const targetDir = 'contextExport';
+const targetDir = 'data/js';
 
 async function createDirectoryIfNotExists(dir) {
   try {

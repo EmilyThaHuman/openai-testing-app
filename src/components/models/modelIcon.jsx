@@ -5,8 +5,8 @@ import perplexity from "@/public/providers/perplexity.png";
 import { IconSparkles } from "@tabler/icons-react";
 import { useTheme } from "next-themes";
 import PropTypes from "prop-types";
-import { AnthropicSVG } from "../../../icons/anthropic-svg";
-import { GoogleSVG } from "../../../icons/google-svg";
+import { AnthropicSVG } from "../../assets/humanIcons/ai/anthropic-svg";
+import { GoogleSVG } from "../../assets/humanIcons/ai/google-svg";
 import { OpenAISVG } from "../../../icons/openai-svg";
 
 export const ModelIcon = ({ provider, height, width, ...props }) => {

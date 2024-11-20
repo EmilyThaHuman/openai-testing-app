@@ -15,7 +15,7 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
-import { useStoreShallow } from '@/store';
+import { useStoreShallow } from '@/store/useStore';
 import {
   ArchiveX,
   Command,
@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import * as React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { AppIcon } from '@/components/ui/AppIcon';
 
 const navigationData = [
   {
@@ -82,48 +83,6 @@ export function AppSidebar({ className, ...props }) {
   const { theme, setTheme } = useTheme();
   const { user, signOut } = useAuth();
   const { isCollapsed, setIsCollapsed } = useSidebar();
-  // let user;
-
-  // React.useEffect(() => {
-  //   const getUser = async () => {
-  //     const {
-  //       data: { user },
-  //     } = await supabase.auth.getUser();
-
-  //     if (user) {
-  //       setUser({
-  //         name: user.user_metadata.full_name || user.email,
-  //         email: user.email,
-  //         avatar: user.user_metadata.avatar_url || '/avatars/default.jpg',
-  //       });
-  //     } else {
-  //       setUser(navigationData.user);
-  //     }
-  //   };
-
-  //   getUser();
-
-  //   const {
-  //     data: { subscription },
-  //   } = supabase.auth.onAuthStateChange((event, session) => {
-  //     if (session && session.user) {
-  //       const user = session.user;
-  //       setUser({
-  //         name: user.user_metadata.full_name || user.email,
-  //         email: user.email,
-  //         avatar: user.user_metadata.avatar_url || '/avatars/default.jpg',
-  //       });
-  //     } else {
-  //       // User is signed out
-  //       setUser(navigationData.user);
-  //     }
-  //   });
-
-  //   // Cleanup the listener on unmount
-  //   return () => {
-  //     subscription.unsubscribe();
-  //   };
-  // }, []);
 
   const [activeItem, setActiveItem] = React.useState(
     navigationData.find(item => item.url === location.pathname) ||
@@ -165,17 +124,11 @@ export function AppSidebar({ className, ...props }) {
     >
       <SidebarHeader className="border-b p-4">
         <Link to="/" className="flex items-center space-x-2">
-          <img
-            src="/reedai-api-playground.svg"
-            alt="ReedAI API Playground"
-            className="h-6 w-6"
-          />
+          <AppIcon size={isCollapsed ? "md" : "sm"} animate={false} />
           {!isCollapsed && (
             <div className="flex items-center">
               <span className="font-semibold text-primary">ReedAI</span>
-              <span className="text-foreground/80 text-sm ml-1">
-                API Playground
-              </span>
+              <span className="text-foreground/80 text-sm ml-1">API</span>
             </div>
           )}
         </Link>

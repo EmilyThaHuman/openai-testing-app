@@ -5,11 +5,12 @@ import { persist } from "zustand/middleware";
 import { createChatSlice } from "./slices/chatSlice";
 import { createAssistantSlice } from "./slices/assistantSlice";
 import { createFileSlice } from "./slices/fileSlice";
-import { createUISlice } from "./slices/uiSlice";
+import { createUserSlice } from "./slices/userSlice";
 import { createVectorStoreSlice } from "./slices/vectorStoreSlice";
 import { createToolsSlice } from "./slices/toolsSlice";
 import { createOpenAISlice } from "./slices/openaiSlice";
 import { UnifiedOpenAIService } from "@/services/openai/unifiedOpenAIService";
+import { createUISlice } from "./slices/uiSlice";
 
 export const useStore = createWithEqualityFn(
   persist(
@@ -18,9 +19,10 @@ export const useStore = createWithEqualityFn(
       ...createChatSlice(...args),
       ...createAssistantSlice(...args),
       ...createFileSlice(...args),
-      ...createUISlice(...args),
       ...createVectorStoreSlice(...args),
       ...createToolsSlice(...args),
+      ...createUISlice(...args),
+      ...createUserSlice(...args),
 
       // Helper to get all chats (both regular and assistant)
       getAllChats: () => {
@@ -44,6 +46,16 @@ export const useStore = createWithEqualityFn(
     {
       name: "app-storage",
       partialize: (state) => ({
+        // --- user state --- //
+        user: state.user,
+        accessToken: state.accessToken,
+        username: state.username,
+        displayname: state.displayname,
+        avatar: state.avatar,
+        profileContext: state.profileContext,
+        theme: state.theme,
+          subscribed: state.subscribed,
+
         // --- global state --- //
         apiKey: state.apiKey,
 

@@ -6,6 +6,9 @@ import { Input } from '@/components/ui/input'
 import { Card, CardHeader, CardContent } from '@/components/ui/card'
 import { Github, Mail } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
+import { AppIcon } from '@/components/ui/AppIcon'
+import { motion } from 'framer-motion'
+import { supabase } from '@/lib/supabase'
 
 export function RegisterPage() {
   const { signUp, signInWithProvider } = useAuth()
@@ -25,7 +28,7 @@ export function RegisterPage() {
         title: 'Registration successful!',
         description: 'Please check your email to verify your account.'
       })
-      navigate('/auth/login')
+      navigate('/onboarding')
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -38,7 +41,7 @@ export function RegisterPage() {
   const handleOAuthSignUp = async (provider) => {
     try {
       await signInWithProvider(provider)
-      // Redirect will happen automatically after OAuth
+      navigate('/onboarding')
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -49,15 +52,28 @@ export function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="min-h-screen flex items-center justify-center bg-background p-4"
+    >
       <Card className="w-full max-w-md">
         <CardHeader>
-          <div className="flex flex-col items-center space-y-2 text-center">
-            <h1 className="text-2xl font-bold">Create an account</h1>
+          <motion.div 
+            initial={{ scale: 0.9 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.3 }}
+            className="flex flex-col items-center justify-center mb-8"
+          >
+            <AppIcon size="xl" className="animate-float" />
+            <h1 className="mt-4 text-2xl font-bold text-center">
+              Create your account
+            </h1>
             <p className="text-muted-foreground">
-              Choose your preferred registration method
+              Get started with ReedAI API Playground
             </p>
-          </div>
+          </motion.div>
         </CardHeader>
 
         <CardContent>
@@ -66,6 +82,7 @@ export function RegisterPage() {
               <Button 
                 variant="outline" 
                 onClick={() => handleOAuthSignUp('github')}
+                className="transition-all hover:scale-105"
               >
                 <Github className="mr-2 h-4 w-4" />
                 Github
@@ -73,6 +90,7 @@ export function RegisterPage() {
               <Button 
                 variant="outline" 
                 onClick={() => handleOAuthSignUp('google')}
+                className="transition-all hover:scale-105"
               >
                 <svg
                   className="mr-2 h-4 w-4"
@@ -110,13 +128,20 @@ export function RegisterPage() {
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <motion.form 
+              onSubmit={handleSubmit} 
+              className="space-y-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+            >
               <div className="space-y-2">
                 <Input
                   name="email"
                   type="email"
                   placeholder="Email"
                   required
+                  className="transition-all focus:scale-[1.02]"
                 />
               </div>
               <div className="space-y-2">
@@ -125,6 +150,7 @@ export function RegisterPage() {
                   type="password"
                   placeholder="Password"
                   required
+                  className="transition-all focus:scale-[1.02]"
                 />
               </div>
               <div className="space-y-2">
@@ -133,18 +159,22 @@ export function RegisterPage() {
                   type="password"
                   placeholder="Confirm Password"
                   required
+                  className="transition-all focus:scale-[1.02]"
                 />
               </div>
-              <Button type="submit" className="w-full">
+              <Button 
+                type="submit" 
+                className="w-full transition-all hover:scale-105"
+              >
                 Create account
               </Button>
-            </form>
+            </motion.form>
 
             <div className="text-center text-sm">
               Already have an account?{' '}
               <Button 
                 variant="link" 
-                className="p-0 h-auto font-normal"
+                className="p-0 h-auto font-normal hover:text-primary"
                 onClick={() => navigate('/auth/login')}
               >
                 Sign in
@@ -153,6 +183,6 @@ export function RegisterPage() {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </motion.div>
   )
 } 

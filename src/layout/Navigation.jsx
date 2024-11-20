@@ -2,10 +2,10 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Logo } from './Logo'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '@/context/ThemeContext'
 import { cn } from '@/lib/utils'
+import { AppIcon } from '@/components/ui/AppIcon'
 import { 
   FaGithub, 
   FaUserCircle, 
@@ -29,7 +29,21 @@ export function Navigation() {
       "flex items-center justify-between p-4 border-b sticky top-0 backdrop-blur-sm z-50",
       "border-border bg-background/80"
     )}>
-      <Logo />
+      <motion.a 
+        href="/"
+        className="flex items-center space-x-2 hover:opacity-90 transition-opacity"
+        whileHover={{ scale: 1.02 }}
+      >
+        <AppIcon size="sm" animate={false} />
+        <div className="flex items-center">
+          <span className="font-semibold text-xl bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/50">
+            ReedAI
+          </span>
+          <span className="text-foreground/80 font-medium ml-1">
+            API
+          </span>
+        </div>
+      </motion.a>
 
       <nav className="hidden md:flex items-center space-x-6">
         <NavLink href="/resources">Resources</NavLink>

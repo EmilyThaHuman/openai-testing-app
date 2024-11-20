@@ -1,44 +1,32 @@
-import Marquee from 'react-fast-marquee'
 import { Badge } from '@/components/ui/badge'
+import Marquee from '@/components/ui/marquee'
+import { motion } from 'framer-motion'
 
-const CODING_PROMPTS = [
-  "Test OpenAI Chat Completions API",
-  "Visualize API response data",
-  "Configure Assistant API endpoints",
-  "Test image generation models",
-  "Integrate speech-to-text API",
-  "Monitor API usage metrics",
-  "Debug API response errors",
-  "Test streaming responses",
-  "Configure model parameters",
-  "Validate API authentication",
-  "Test function calling",
-  "Analyze token usage",
-  "Test moderation endpoints",
-  "Configure API rate limits",
-  "Test embeddings generation"
-]
-
-export function PromptsMarquee() {
+export function PromptsMarquee({ prompts }) {
   return (
     <div className="py-4 bg-muted/30">
-      <Marquee
-        gradient={true}
-        gradientColor={[255, 255, 255]}
-        speed={40}
+      <Marquee 
+        className="py-2" 
         pauseOnHover={true}
       >
-        <div className="flex gap-4 px-4">
-          {CODING_PROMPTS.map((prompt, index) => (
+        <motion.div
+          className="flex items-center gap-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          {prompts.map((prompt, index) => (
             <Badge 
               key={index}
               variant="secondary"
-              className="text-sm py-2 px-4 whitespace-nowrap"
+              className="flex items-center gap-2 py-2 px-4 whitespace-nowrap hover:bg-secondary/80 transition-colors cursor-default"
             >
-              {prompt}
+              <span className="text-lg">{prompt.icon}</span>
+              <span className="font-medium">{prompt.title}:</span>
+              <span className="text-muted-foreground">{prompt.description}</span>
             </Badge>
           ))}
-        </div>
+        </motion.div>
       </Marquee>
     </div>
   )

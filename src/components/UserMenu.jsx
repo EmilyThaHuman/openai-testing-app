@@ -1,12 +1,17 @@
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabaseClient';
+import { useAuth } from '@/context/AuthContext';
 
-function UserMenu() {
+export function UserMenu() {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate('/signin');
+    try {
+      await signOut();
+      navigate('/auth/login', { replace: true });
+    } catch (error) {
+      console.error('Sign out failed:', error);
+    }
   };
 
   return (
