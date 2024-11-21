@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import TrackPageViews from "./TrackPageViews";
+import { useEffect } from 'react';
+import TrackPageViews from './TrackPageViews';
 
 export const GoogleAnalytics = () => {
   const gaMeasurementID = import.meta.env.VITE_GA_MEASUREMENT_ID;
@@ -11,7 +11,7 @@ export const GoogleAnalytics = () => {
 
     // Create and load Google Analytics script
     const createGAScript = () => {
-      const script = document.createElement("script");
+      const script = document.createElement('script');
       script.src = `https://www.googletagmanager.com/gtag/js?id=${gaMeasurementID}`;
       script.async = true;
       document.head.appendChild(script);
@@ -22,8 +22,8 @@ export const GoogleAnalytics = () => {
           window.dataLayer.push(arguments);
         }
         window.gtag = gtag;
-        gtag("js", new Date());
-        gtag("config", gaMeasurementID, { send_page_view: false });
+        gtag('js', new Date());
+        gtag('config', gaMeasurementID, { send_page_view: false });
       };
     };
 
@@ -36,7 +36,7 @@ export const GoogleAnalytics = () => {
     return () => {
       // Optional: Remove GA script on component unmount
       const script = document.querySelector(
-        `script[src*="googletagmanager.com/gtag"]`,
+        `script[src*="googletagmanager.com/gtag"]`
       );
       if (script) {
         document.head.removeChild(script);

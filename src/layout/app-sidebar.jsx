@@ -1,4 +1,4 @@
-import { NavUser } from '@/components/nav-user';
+import { NavUser } from '@/layout/nav-user';
 import { Button } from '@/components/ui/button';
 import {
   Sidebar,

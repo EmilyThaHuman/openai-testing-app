@@ -11,34 +11,34 @@ export { generateOptimizedPrompt } from './ai/generateOptimizedPrompt';
 export { summarizeMessages } from './ai/summarizeMessages';
 
 // AI Models
-export { falAiStableDiffusion3Medium } from './ai-models/falAiStableDiffusion3Medium';
-export { generateRecommendations } from './ai-models/generateRecommendations';
-export { streamChatCompletion } from './ai-models/streamChatCompletion';
+export { falAiStableDiffusion3Medium } from './ai/falAiStableDiffusion3Medium';
+export { generateRecommendations } from './ai/generateRecommendations';
+export { streamChatCompletion } from './ai/streamChatCompletion';
 
 // API Gateways
 export { portKeyAIGateway } from './api-gateways/portKeyAIGateway';
 export { portKeyAIGatewayTogetherAI } from './api-gateways/portKeyAIGatewayTogetherAI';
 
 // API Functions
-export { perplexitySearch } from './api/perplexity/perplexitySearch';
+export { perplexitySearch } from './web/perplexitySearch';
 
 // Data Analysis
 export {
-  calculateStatistics,
   analyzeTrends,
+  calculateStatistics,
   compareDataSets,
   generatePredictions,
 } from './data-analysis/dataAnalysis';
-export { performDataAnalysis } from './data-analysis/performDataAnalysis';
+export { performDataAnalysis } from './ai/analysis/performDataAnalysis';
 
 // Knowledge Base
-export { searchKnowledgeBase } from './knowledge-base/searchKnowledgeBase';
+export { searchKnowledgeBase } from './ai/searchKnowledgeBase';
 
 // System Functions
 export { execute as openApp } from './system/openApp';
 
 // System Utilities
-export { getDeviceContext } from './system-utilities/getDeviceContext';
+export { getDeviceContext } from './ai/getDeviceContext';
 
 // Web Tools
 export { brightDataWebScraper } from './web/brightDataWebScraper';
@@ -100,6 +100,8 @@ export const toolConfigurations = {
     requiresAuth: false,
   },
 };
+
+export const AI_TOOL_CONFIG = toolConfigurations;
 
 // Export function categories for organization
 export const functionCategories = {

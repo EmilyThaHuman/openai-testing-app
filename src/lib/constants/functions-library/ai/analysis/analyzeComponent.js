@@ -1,5 +1,4 @@
 import { getWindow } from '@/utils/browser';
-import logger from '../../utils/logger';
 
 export async function analyzeComponent({
   componentPath,
@@ -51,7 +50,7 @@ export async function analyzeComponent({
 
     return analysis;
   } catch (error) {
-    logger.error('Error analyzing component:', error);
+    console.error('Error analyzing component:', error);
     throw error;
   }
 }

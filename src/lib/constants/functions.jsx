@@ -15,56 +15,57 @@ export const AI_TOOL_CONFIG = {
       name: 'extract_keywords',
       description: 'Extract main keywords from given text',
       path: 'ai/extractKeywords.js',
-      required_args: ['text']
+      required_args: ['text'],
     },
     {
       name: 'analyze_text',
       description: 'Analyze text content using GPT',
       path: 'ai/analysis/analyzeComponent.js',
-      required_args: ['text']
+      required_args: ['text'],
     },
     {
       name: 'scrape_website',
       description: 'Scrape content from a website',
       path: 'web/scrapeWebsite.js',
-      required_args: ['url']
+      required_args: ['url'],
     },
     {
       name: 'take_screenshot',
       description: 'Take a screenshot of a website',
       path: 'web/takeScreenshot.js',
-      required_args: ['url']
+      required_args: ['url'],
     },
     {
       name: 'search_styled',
       description: 'Search for styled-components',
       path: 'web/searchStyledComponents.js',
-      required_args: ['query']
+      required_args: ['query'],
     },
     {
       name: 'perplexity_search',
       description: 'Perform a search using Perplexity AI',
       path: 'api/perplexity/perplexitySearch.jsx',
-      required_args: ['query']
+      required_args: ['query'],
     },
     {
       name: 'optimize_prompt',
       description: 'Generate an optimized prompt',
       path: 'ai/optimizePrompt.js',
-      required_args: ['input']
+      required_args: ['input'],
     },
     {
       name: 'summarize_chat',
       description: 'Summarize chat messages',
       path: 'ai/summarizeMessages.js',
-      required_args: ['messages', 'sessionId']
-    }
-  ]
+      required_args: ['messages', 'sessionId'],
+    },
+  ],
 };
 
 // OpenAI Configuration
 const chatOpenAI = new ChatOpenAI({
-  modelName: import.meta.env.VITE_OPENAI_API_CHAT_COMPLETION_MODEL || 'gpt-3.5-turbo',
+  modelName:
+    import.meta.env.VITE_OPENAI_API_CHAT_COMPLETION_MODEL || 'gpt-3.5-turbo',
   openAIApiKey: import.meta.env.VITE_OPENAI_API_PROJECT_KEY,
 });
 
@@ -101,7 +102,8 @@ export async function performPerplexityCompletion(prompt, perplexityApiKey) {
       messages: [
         {
           role: 'system',
-          content: 'Provide a concise answer. Include in-text citations in the format [citation_number], and return a separate list of citations.',
+          content:
+            'Provide a concise answer. Include in-text citations in the format [citation_number], and return a separate list of citations.',
         },
         { role: 'user', content: prompt },
       ],
@@ -123,7 +125,9 @@ export async function performPerplexityCompletion(prompt, perplexityApiKey) {
 
     const completion = response.data.choices[0].message.content.trim();
     const citations = response.data.choices[0].message.citations || [];
-    logger.info(`Perplexity completion response: ${completion} - Citations: ${citations.length}`);
+    logger.info(
+      `Perplexity completion response: ${completion} - Citations: ${citations.length}`
+    );
 
     return {
       pageContent: completion,
@@ -135,7 +139,9 @@ export async function performPerplexityCompletion(prompt, perplexityApiKey) {
   } catch (error) {
     if (axios.isAxiosError(error)) {
       if (error.response) {
-        logger.error(`Perplexity API error: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+        logger.error(
+          `Perplexity API error: ${error.response.status} - ${JSON.stringify(error.response.data)}`
+        );
         throw new Error(`Perplexity API error: ${error.response.status}`);
       } else if (error.request) {
         logger.error('No response received from Perplexity API.');
@@ -170,7 +176,9 @@ export async function scrapeWebsite(options) {
         waitUntil: 'domcontentloaded',
       },
       async evaluate(page, browser) {
-        const html = await page.evaluate(() => document.documentElement.innerHTML);
+        const html = await page.evaluate(
+          () => document.documentElement.innerHTML
+        );
         fs.writeFileSync(saveFilePathWithDate, html);
         return `Website HTML saved to ${saveFilePathWithDate}`;
       },
@@ -192,7 +200,10 @@ export async function takeScreenshot({ url }) {
       fs.mkdirSync(outputDirectory, { recursive: true });
     }
     const screenshotFileName = `${websiteName}_${timestamp}.png`;
-    const screenshotFilePathWithDate = path.join(outputDirectory, screenshotFileName);
+    const screenshotFilePathWithDate = path.join(
+      outputDirectory,
+      screenshotFileName
+    );
 
     const loader = new PuppeteerWebBaseLoader(url, {
       launchOptions: {

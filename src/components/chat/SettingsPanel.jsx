@@ -6,12 +6,12 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select';
 import {
   Accordion,
@@ -20,6 +20,12 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { X, Info } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 export function SettingsPanel() {
   const {
@@ -27,13 +33,13 @@ export function SettingsPanel() {
     updateChatSettings,
     models,
     getSettingInfo,
-    toggleSettings
+    toggleSettings,
   } = useStoreSelector(state => ({
     activeChat: state.activeChat,
     updateChatSettings: state.updateChatSettings,
     models: state.models,
     getSettingInfo: state.getSettingInfo,
-    toggleSettings: state.toggleSettings
+    toggleSettings: state.toggleSettings,
   }));
 
   if (!activeChat) return null;
@@ -62,7 +68,7 @@ export function SettingsPanel() {
               <div className="space-y-4">
                 <Select
                   value={activeChat.settings.model}
-                  onValueChange={(value) => 
+                  onValueChange={value =>
                     updateChatSettings(activeChat.id, { model: value })
                   }
                 >
@@ -70,7 +76,7 @@ export function SettingsPanel() {
                     <SelectValue placeholder="Select a model" />
                   </SelectTrigger>
                   <SelectContent>
-                    {models.map((model) => (
+                    {models.map(model => (
                       <SelectItem key={model.id} value={model.id}>
                         <div className="flex items-center justify-between w-full">
                           <span>{model.name}</span>
@@ -105,7 +111,7 @@ export function SettingsPanel() {
                   min={0}
                   max={2}
                   step={0.1}
-                  onValueChange={([value]) => 
+                  onValueChange={([value]) =>
                     updateChatSettings(activeChat.id, { temperature: value })
                   }
                 />
@@ -129,16 +135,16 @@ export function SettingsPanel() {
                         <Info className="h-4 w-4 text-muted-foreground" />
                       </TooltipTrigger>
                       <TooltipContent>
-                        Define the AI's behavior and context
+                        Define the AI&apos;s behavior and context
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 </div>
                 <textarea
                   value={activeChat.settings.systemPrompt}
-                  onChange={(e) => 
-                    updateChatSettings(activeChat.id, { 
-                      systemPrompt: e.target.value 
+                  onChange={e =>
+                    updateChatSettings(activeChat.id, {
+                      systemPrompt: e.target.value,
                     })
                   }
                   className="w-full h-32 p-2 text-sm rounded-md border resize-none focus:outline-none focus:ring-2 focus:ring-ring"
@@ -160,9 +166,9 @@ export function SettingsPanel() {
                     <Input
                       type="number"
                       value={activeChat.settings.maxTokens}
-                      onChange={(e) => 
-                        updateChatSettings(activeChat.id, { 
-                          maxTokens: parseInt(e.target.value) 
+                      onChange={e =>
+                        updateChatSettings(activeChat.id, {
+                          maxTokens: parseInt(e.target.value),
                         })
                       }
                       className="w-20 h-8"
@@ -184,7 +190,7 @@ export function SettingsPanel() {
                       min={0}
                       max={1}
                       step={0.05}
-                      onValueChange={([value]) => 
+                      onValueChange={([value]) =>
                         updateChatSettings(activeChat.id, { topP: value })
                       }
                       className="w-[120px]"
@@ -205,7 +211,7 @@ export function SettingsPanel() {
                   </div>
                   <Switch
                     checked={activeChat.settings.stream}
-                    onCheckedChange={(checked) => 
+                    onCheckedChange={checked =>
                       updateChatSettings(activeChat.id, { stream: checked })
                     }
                   />
@@ -221,7 +227,7 @@ export function SettingsPanel() {
                   </div>
                   <Switch
                     checked={activeChat.settings.functions}
-                    onCheckedChange={(checked) => 
+                    onCheckedChange={checked =>
                       updateChatSettings(activeChat.id, { functions: checked })
                     }
                   />
@@ -233,4 +239,4 @@ export function SettingsPanel() {
       </ScrollArea>
     </motion.div>
   );
-} 
+}

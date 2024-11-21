@@ -111,3 +111,5 @@ export const models = [
     strengths: "Efficient reasoning, particularly in math and coding, suitable for applications requiring reasoning without broad world knowledge",
   },
 ];
+
+export default models;

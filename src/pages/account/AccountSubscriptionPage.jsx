@@ -1,41 +1,40 @@
-import React from 'react'
-import { AccountPageLayout } from '@/components/account/AccountPageLayout'
-import { motion } from 'framer-motion'
-import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { 
-  AlertCircle, 
-  CheckCircle2, 
-  CreditCard, 
-  Download, 
-  UploadCloud, 
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { cardVariants, listItemVariants } from '@/config/animations';
+import { AccountPageLayout } from '@/layout/AccountPageLayout';
+import { motion } from 'framer-motion';
+import {
+  AlertCircle,
+  ArrowRight,
+  CheckCircle2,
+  CreditCard,
+  Download,
+  UploadCloud,
   Zap,
-  ArrowRight
-} from 'lucide-react'
-import { cardVariants, listItemVariants } from '@/config/animations'
+} from 'lucide-react';
 
 const features = [
   { icon: Zap, text: '10,000 API calls per month' },
   { icon: UploadCloud, text: '5GB storage' },
   { icon: CheckCircle2, text: 'Priority support' },
   { icon: CreditCard, text: 'Custom billing options' },
-]
+];
 
 const billingHistory = [
-  { date: 'April 1, 2024', amount: 29.00 },
-  { date: 'March 1, 2024', amount: 29.00 },
-  { date: 'February 1, 2024', amount: 29.00 },
-]
+  { date: 'April 1, 2024', amount: 29.0 },
+  { date: 'March 1, 2024', amount: 29.0 },
+  { date: 'February 1, 2024', amount: 29.0 },
+];
 
 export function AccountSubscriptionPage() {
   return (
     <AccountPageLayout title="Subscription">
       <div className="responsive-layout">
         <div className="responsive-container">
-          <motion.div 
+          <motion.div
             variants={cardVariants}
             initial="initial"
             animate="animate"
@@ -48,12 +47,14 @@ export function AccountSubscriptionPage() {
                 <div className="scroll-content">
                   <div className="flex justify-between items-start mb-6">
                     <div className="space-y-2">
-                      <Badge variant="secondary" className="mb-2">Current Plan</Badge>
+                      <Badge variant="secondary" className="mb-2">
+                        Current Plan
+                      </Badge>
                       <h2 className="text-2xl font-semibold">Pro Plan</h2>
                       <p className="text-muted-foreground">$29/month</p>
                     </div>
-                    <Badge 
-                      variant="outline" 
+                    <Badge
+                      variant="outline"
                       className="bg-green-500/10 text-green-500 hover:bg-green-500/20 transition-colors"
                     >
                       Active
@@ -64,7 +65,9 @@ export function AccountSubscriptionPage() {
                     <motion.div variants={listItemVariants}>
                       <div className="flex justify-between mb-2">
                         <span className="text-sm font-medium">API Calls</span>
-                        <span className="text-sm text-muted-foreground">8,543/10,000</span>
+                        <span className="text-sm text-muted-foreground">
+                          8,543/10,000
+                        </span>
                       </div>
                       <Progress value={85} className="h-2" />
                     </motion.div>
@@ -72,7 +75,9 @@ export function AccountSubscriptionPage() {
                     <motion.div variants={listItemVariants}>
                       <div className="flex justify-between mb-2">
                         <span className="text-sm font-medium">Storage</span>
-                        <span className="text-sm text-muted-foreground">4.2GB/5GB</span>
+                        <span className="text-sm text-muted-foreground">
+                          4.2GB/5GB
+                        </span>
                       </div>
                       <Progress value={84} className="h-2" />
                     </motion.div>
@@ -82,7 +87,8 @@ export function AccountSubscriptionPage() {
                     <AlertCircle className="h-4 w-4 text-primary" />
                     <AlertTitle>Usage Alert</AlertTitle>
                     <AlertDescription>
-                      You're approaching your API calls limit. Consider upgrading your plan.
+                      You're approaching your API calls limit. Consider
+                      upgrading your plan.
                     </AlertDescription>
                   </Alert>
 
@@ -102,7 +108,7 @@ export function AccountSubscriptionPage() {
               <div className="scroll-container">
                 <div className="scroll-content">
                   <h2 className="account-section-title">Plan Features</h2>
-                  <motion.div 
+                  <motion.div
                     variants={listItemVariants}
                     className="grid gap-4"
                   >
@@ -127,10 +133,7 @@ export function AccountSubscriptionPage() {
               <div className="scroll-container">
                 <div className="scroll-content">
                   <h2 className="account-section-title">Payment Method</h2>
-                  <motion.div 
-                    variants={listItemVariants}
-                    className="space-y-4"
-                  >
+                  <motion.div variants={listItemVariants} className="space-y-4">
                     <div className="flex items-center justify-between p-4 border rounded-lg account-card-hover">
                       <div className="flex items-center gap-4">
                         <div className="p-2 rounded-full bg-primary/10">
@@ -138,10 +141,14 @@ export function AccountSubscriptionPage() {
                         </div>
                         <div>
                           <p className="font-medium">•••• 4242</p>
-                          <p className="text-sm text-muted-foreground">Expires 04/2024</p>
+                          <p className="text-sm text-muted-foreground">
+                            Expires 04/2024
+                          </p>
                         </div>
                       </div>
-                      <Button variant="outline" size="sm">Update</Button>
+                      <Button variant="outline" size="sm">
+                        Update
+                      </Button>
                     </div>
                   </motion.div>
                 </div>
@@ -153,10 +160,7 @@ export function AccountSubscriptionPage() {
               <div className="scroll-container">
                 <div className="scroll-content">
                   <h2 className="account-section-title">Billing History</h2>
-                  <motion.div 
-                    variants={listItemVariants}
-                    className="space-y-4"
-                  >
+                  <motion.div variants={listItemVariants} className="space-y-4">
                     {billingHistory.map((bill, i) => (
                       <motion.div
                         key={i}
@@ -170,13 +174,17 @@ export function AccountSubscriptionPage() {
                           </div>
                           <div>
                             <p className="font-medium">Pro Plan - Monthly</p>
-                            <p className="text-sm text-muted-foreground">{bill.date}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {bill.date}
+                            </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
-                          <span className="font-medium">${bill.amount.toFixed(2)}</span>
-                          <Button 
-                            variant="ghost" 
+                          <span className="font-medium">
+                            ${bill.amount.toFixed(2)}
+                          </span>
+                          <Button
+                            variant="ghost"
                             size="icon"
                             className="hover:text-primary transition-colors"
                           >
@@ -193,7 +201,7 @@ export function AccountSubscriptionPage() {
         </div>
       </div>
     </AccountPageLayout>
-  )
+  );
 }
 
-export default AccountSubscriptionPage 
+export default AccountSubscriptionPage;

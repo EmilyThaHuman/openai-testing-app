@@ -1,50 +1,6 @@
-import React, { useState } from 'react'
-import { AccountPageLayout } from '@/components/account/AccountPageLayout'
-import { motion } from 'framer-motion'
-import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
-import { useToast } from '@/components/ui/use-toast'
-import { useStore } from '@/store/useStore'
-import { useAuth } from '@/context/AuthContext'
-import { useTheme } from '@/context/ThemeContext'
-import {
-  Key,
-  Moon,
-  Sun,
-  Globe,
-  Shield,
-  Trash2,
-  AlertCircle,
-  Save,
-  Loader2,
-  Settings2,
-  Lock,
-  Bell,
-  Eye,
-  EyeOff,
-  Languages,
-  Palette,
-  Laptop,
-  Smartphone,
-  Keyboard,
-  Sliders,
-  RefreshCw
-} from 'lucide-react'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from '@/components/ui/alert'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -52,18 +8,49 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
-import { cardVariants, listItemVariants } from '@/config/animations'
-import { cn } from '@/lib/utils'
-import { useRouter } from 'react-router-dom'
-import { supabaseClient } from '@/lib/supabase'
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { useToast } from '@/components/ui/use-toast';
+import { cardVariants, listItemVariants } from '@/config/animations';
+import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
+import { AccountPageLayout } from '@/layout/AccountPageLayout';
+import { supabaseClient } from '@/lib/supabase';
+import { useStore } from '@/store/useStore';
+import { motion } from 'framer-motion';
+import {
+  AlertCircle,
+  Bell,
+  Eye,
+  EyeOff,
+  Globe,
+  Key,
+  Laptop,
+  Loader2,
+  Lock,
+  Moon,
+  Palette,
+  RefreshCw,
+  Save,
+  Settings2,
+  Shield,
+  Sun,
+  Trash2,
+} from 'lucide-react';
+import { useState } from 'react';
+import { useRouter } from 'react-router-dom';
 
 // Enhanced setting section component
 const SettingSection = ({ icon: Icon, title, description, children }) => (
-  <motion.div
-    variants={listItemVariants}
-    className="space-y-4"
-  >
+  <motion.div variants={listItemVariants} className="space-y-4">
     <div className="flex items-center gap-3">
       <div className="p-2 rounded-lg bg-primary/10">
         <Icon className="h-5 w-5 text-primary" />
@@ -73,11 +60,9 @@ const SettingSection = ({ icon: Icon, title, description, children }) => (
         <p className="text-sm text-muted-foreground">{description}</p>
       </div>
     </div>
-    <div className="pl-12">
-      {children}
-    </div>
+    <div className="pl-12">{children}</div>
   </motion.div>
-)
+);
 
 // Enhanced setting item component
 const SettingItem = ({ icon: Icon, title, description, children }) => (
@@ -96,98 +81,94 @@ const SettingItem = ({ icon: Icon, title, description, children }) => (
     </div>
     {children}
   </motion.div>
-)
+);
 
 export function AccountSettingsPage() {
-  const { toast } = useToast()
-  const { theme, setTheme } = useTheme()
-  const { user } = useAuth()
-  const [isLoading, setIsLoading] = useState(false)
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
-  const [deleteConfirmation, setDeleteConfirmation] = useState('')
-  const [showApiKey, setShowApiKey] = useState(false)
-  const router = useRouter()
-  const [isDeletingAccount, setIsDeletingAccount] = useState(false)
+  const { toast } = useToast();
+  const { theme, setTheme } = useTheme();
+  const { user } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [showApiKey, setShowApiKey] = useState(false);
+  const router = useRouter();
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
-  const {
-    apiKey,
-    setApiKey,
-    settings,
-    updateSettings,
-  } = useStore()
+  const { apiKey, setApiKey, settings, updateSettings } = useStore();
 
   const handleSave = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      await updateSettings(settings)
+      await updateSettings(settings);
       toast({
         title: 'Settings saved',
         description: 'Your settings have been updated successfully',
-      })
+      });
     } catch (error) {
       toast({
         title: 'Error',
         description: error.message || 'Failed to save settings',
         variant: 'destructive',
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleDeleteAccount = async () => {
     if (deleteConfirmation !== user?.email) {
       toast({
         title: 'Error',
         description: 'Please enter your email correctly to confirm deletion',
-        variant: 'destructive'
-      })
-      return
+        variant: 'destructive',
+      });
+      return;
     }
 
-    setIsDeletingAccount(true)
+    setIsDeletingAccount(true);
     try {
       // Delete user data from Supabase
       const { error: deleteError } = await supabaseClient.auth.updateUser({
-        data: { deleted: true }
-      })
-      
-      if (deleteError) throw deleteError
+        data: { deleted: true },
+      });
+
+      if (deleteError) throw deleteError;
 
       // Sign out the user
-      await supabaseClient.auth.signOut()
+      await supabaseClient.auth.signOut();
 
       // Clear local storage and state
-      localStorage.clear()
-      
+      localStorage.clear();
+
       toast({
         title: 'Account Deleted',
-        description: 'Your account has been successfully deleted. You will be redirected shortly.',
-      })
+        description:
+          'Your account has been successfully deleted. You will be redirected shortly.',
+      });
 
       // Redirect to home page after short delay
       setTimeout(() => {
-        router.push('/')
-      }, 2000)
-
+        router.push('/');
+      }, 2000);
     } catch (error) {
-      console.error('Delete account error:', error)
+      console.error('Delete account error:', error);
       toast({
         title: 'Error',
-        description: error.message || 'Failed to delete account. Please try again.',
-        variant: 'destructive'
-      })
+        description:
+          error.message || 'Failed to delete account. Please try again.',
+        variant: 'destructive',
+      });
     } finally {
-      setIsDeletingAccount(false)
-      setShowDeleteDialog(false)
+      setIsDeletingAccount(false);
+      setShowDeleteDialog(false);
     }
-  }
+  };
 
   return (
     <AccountPageLayout title="Settings">
       <div className="responsive-layout">
         <div className="responsive-container">
-          <motion.div 
+          <motion.div
             variants={cardVariants}
             initial="initial"
             animate="animate"
@@ -211,7 +192,7 @@ export function AccountSettingsPage() {
                       <Input
                         type={showApiKey ? 'text' : 'password'}
                         value={apiKey || ''}
-                        onChange={(e) => setApiKey(e.target.value)}
+                        onChange={e => setApiKey(e.target.value)}
                         className="pr-10 font-mono"
                         placeholder="sk-..."
                       />
@@ -265,10 +246,7 @@ export function AccountSettingsPage() {
                   title="Theme"
                   description="Choose between light and dark mode"
                 >
-                  <Select
-                    value={theme}
-                    onValueChange={setTheme}
-                  >
+                  <Select value={theme} onValueChange={setTheme}>
                     <SelectTrigger className="w-40">
                       <SelectValue />
                     </SelectTrigger>
@@ -333,7 +311,8 @@ export function AccountSettingsPage() {
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle>Warning</AlertTitle>
                   <AlertDescription>
-                    Once you delete your account, there is no going back. Please be certain.
+                    Once you delete your account, there is no going back. Please
+                    be certain.
                   </AlertDescription>
                 </Alert>
                 <Button
@@ -348,15 +327,15 @@ export function AccountSettingsPage() {
             </Card>
 
             {/* Save Button */}
-            <motion.div 
+            <motion.div
               variants={listItemVariants}
               className="sticky bottom-6 mt-6"
             >
               <Card className="account-card bg-background/80 backdrop-blur-sm">
                 <div className="flex justify-end gap-4">
                   <Button variant="outline">Cancel</Button>
-                  <Button 
-                    onClick={handleSave} 
+                  <Button
+                    onClick={handleSave}
                     disabled={isLoading}
                     className="relative overflow-hidden group"
                   >
@@ -368,7 +347,7 @@ export function AccountSettingsPage() {
                       )}
                       Save Changes
                     </span>
-                    <motion.div 
+                    <motion.div
                       className="absolute inset-0 bg-gradient-to-r from-primary/50 to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                       whileHover={{ scale: 1.1 }}
                     />
@@ -402,7 +381,7 @@ export function AccountSettingsPage() {
 
           <Input
             value={deleteConfirmation}
-            onChange={(e) => setDeleteConfirmation(e.target.value)}
+            onChange={e => setDeleteConfirmation(e.target.value)}
             placeholder="Enter your email"
           />
 
@@ -431,7 +410,7 @@ export function AccountSettingsPage() {
         </DialogContent>
       </Dialog>
     </AccountPageLayout>
-  )
+  );
 }
 
-export default AccountSettingsPage 
+export default AccountSettingsPage;

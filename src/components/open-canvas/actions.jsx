@@ -3,15 +3,19 @@ import OpenAI from 'openai';
 
 import { REACT_AGENT_CONFIG } from '@/config/ai/agent';
 
+import { lookupTool } from '../../lib/constants/mentionTools';
+import {
+  getImages,
+  getSearchResults,
+  getVideos,
+} from '../../lib/constants/searchProvider';
 import {
   get10BlueLinksContents,
   processAndVectorizeContent,
 } from './archive/contentProcessing';
 import { functionCalling } from './archive/functionCalling';
 import relevantQuestions from './archive/generateRelevantQuestions';
-import { lookupTool } from './mentionTools';
 import { checkRateLimit } from './archive/rateLimit';
-import { getImages, getSearchResults, getVideos } from './searchProvider';
 import {
   clearSemanticCache,
   getFromSemanticCache,

@@ -4,26 +4,42 @@ export const SUPABASE_CONFIG = {
     persistSession: true,
     detectSessionInUrl: true,
     flowType: 'pkce',
-    storage: {
-      storageKey: 'reed-ai-auth',
-      persistSession: true
-    }
+    storageKey: 'app-auth',
+    storage: window.localStorage,
+    sessionExpiryTime: 30 * 60 * 1000,
   },
   db: {
-    schema: 'public'
+    schema: 'public',
+    autoRefreshData: true,
+    realtime: {
+      enabled: true,
+      presence: {
+        key: 'user_presence',
+      },
+
+    },
+    // realtime: {
+    //   channels: {
+    //     chat: 'chat_messages',
+    //     presence: 'presence_updates',
+    //     notifications: 'user_notifications',
+    //   },
+    // },
+    storage: {
+      buckets: {
+        avatars: 'avatars',
+        workspaceFiles: 'workspace-files',
+        chatAttachments: 'chat-attachments',
+      },
+    },
   },
-  realtime: {
-    channels: {
-      chat: 'chat_messages',
-      presence: 'presence_updates',
-      notifications: 'user_notifications'
-    }
+  global: {
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    fetch: {
+      cache: 'no-cache',
+    },
   },
-  storage: {
-    buckets: {
-      avatars: 'avatars',
-      workspaceFiles: 'workspace-files',
-      chatAttachments: 'chat-attachments'
-    }
-  }
-} 
+};

@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { cn } from '@/lib/utils';
 
 const ChatPage = () => {
   const { toast } = useToast();
@@ -16,6 +17,30 @@ const ChatPage = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [messageInput, setMessageInput] = useState('');
   const [isSending, setIsSending] = useState(false);
+
+  // Create initial chat if none exists
+  useEffect(() => {
+    const initializeChat = async () => {
+      if (!chatContext) return;
+
+      const { chats = [], createChat } = chatContext;
+
+      if (!chats || chats.length === 0) {
+        try {
+          await createChat();
+        } catch (error) {
+          console.error('Failed to create initial chat:', error);
+          toast({
+            title: 'Error',
+            description: 'Failed to initialize chat. Please refresh the page.',
+            variant: 'destructive',
+          });
+        }
+      }
+    };
+
+    initializeChat();
+  }, [chatContext, toast]);
 
   // Handle null chat context
   if (!chatContext) {
@@ -30,41 +55,21 @@ const ChatPage = () => {
     );
   }
 
-  const { 
+  const {
     chats = [],
     activeChat,
     activeChatId,
-    isLoading, 
+    isLoading,
     error,
     createChat,
     deleteChat,
     updateChatTitle,
     clearChat,
     sendMessage,
-    setActiveChatId
+    setActiveChatId,
   } = chatContext;
 
-  // Create initial chat if none exists
-  useEffect(() => {
-    const initializeChat = async () => {
-      if (!chats || chats.length === 0) {
-        try {
-          await createChat();
-        } catch (error) {
-          console.error('Failed to create initial chat:', error);
-          toast({
-            title: 'Error',
-            description: 'Failed to initialize chat. Please refresh the page.',
-            variant: 'destructive'
-          });
-        }
-      }
-    };
-
-    initializeChat();
-  }, [chats, createChat, toast]);
-
-  const handleSend = async (message) => {
+  const handleSend = async message => {
     if (!message?.trim() || !activeChatId) return;
 
     setIsSending(true);
@@ -72,7 +77,7 @@ const ChatPage = () => {
       await sendMessage({
         chatId: activeChatId,
         content: message,
-        role: 'user'
+        role: 'user',
       });
       setMessageInput('');
     } catch (error) {
@@ -80,7 +85,7 @@ const ChatPage = () => {
       toast({
         title: 'Error',
         description: 'Failed to send message. Please try again.',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     } finally {
       setIsSending(false);
@@ -104,7 +109,7 @@ const ChatPage = () => {
       <div className="flex-1 flex min-h-0">
         {/* Sidebar */}
         <div className="w-64 border-r bg-background p-4 flex flex-col min-h-0">
-          <Button 
+          <Button
             className="w-full mb-4"
             onClick={() => createChat()}
             disabled={isLoading}
@@ -113,7 +118,7 @@ const ChatPage = () => {
           </Button>
 
           <ScrollArea className="flex-1">
-            {chats?.map((chat) => (
+            {chats?.map(chat => (
               <Card
                 key={chat.id}
                 className={cn(
@@ -122,9 +127,7 @@ const ChatPage = () => {
                 )}
                 onClick={() => setActiveChatId(chat.id)}
               >
-                <p className="truncate text-sm">
-                  {chat.title || 'New Chat'}
-                </p>
+                <p className="truncate text-sm">{chat.title || 'New Chat'}</p>
               </Card>
             ))}
           </ScrollArea>
@@ -137,7 +140,7 @@ const ChatPage = () => {
             {showSettings ? 'Hide Settings' : 'Show Settings'}
           </Button>
         </div>
-        
+
         {/* Main Chat Area */}
         <div className="flex-1 flex flex-col min-h-0">
           {/* Messages */}

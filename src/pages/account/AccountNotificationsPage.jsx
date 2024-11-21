@@ -1,13 +1,12 @@
-import React from 'react'
-import { AccountPageLayout } from '@/components/account/AccountPageLayout'
-import { motion } from 'framer-motion'
-import { Card } from '@/components/ui/card'
-import { Switch } from '@/components/ui/switch'
-import { Label } from '@/components/ui/label'
-import { Button } from '@/components/ui/button'
-import { Bell, Mail, MessageSquare, Star, Zap } from 'lucide-react'
-import { useToast } from '@/components/ui/use-toast'
-import { cardVariants, listItemVariants } from '@/config/animations'
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { useToast } from '@/components/ui/use-toast';
+import { cardVariants, listItemVariants } from '@/config/animations';
+import { AccountPageLayout } from '@/layout/AccountPageLayout';
+import { motion } from 'framer-motion';
+import { Bell, Mail, MessageSquare, Star, Zap } from 'lucide-react';
 
 const notificationSettings = [
   {
@@ -40,23 +39,23 @@ const notificationSettings = [
     description: 'Get notified when approaching usage limits',
     icon: Zap,
   },
-]
+];
 
 export function AccountNotificationsPage() {
-  const { toast } = useToast()
+  const { toast } = useToast();
 
   const handleSave = () => {
     toast({
       title: 'Settings saved',
       description: 'Your notification preferences have been updated',
-    })
-  }
+    });
+  };
 
   return (
     <AccountPageLayout title="Notification Settings">
       <div className="responsive-layout">
         <div className="responsive-container">
-          <motion.div 
+          <motion.div
             variants={cardVariants}
             initial="initial"
             animate="animate"
@@ -67,7 +66,7 @@ export function AccountNotificationsPage() {
               <div className="scroll-container">
                 <div className="scroll-content space-y-6">
                   {notificationSettings.map((setting, index) => {
-                    const Icon = setting.icon
+                    const Icon = setting.icon;
                     return (
                       <motion.div
                         key={setting.id}
@@ -94,7 +93,7 @@ export function AccountNotificationsPage() {
                           className="data-[state=checked]:bg-primary"
                         />
                       </motion.div>
-                    )
+                    );
                   })}
                 </div>
               </div>
@@ -103,8 +102,8 @@ export function AccountNotificationsPage() {
                 <Button variant="outline" className="hover-glow">
                   Cancel
                 </Button>
-                <Button 
-                  onClick={handleSave} 
+                <Button
+                  onClick={handleSave}
                   className="account-hover-effect gradient-border"
                 >
                   Save Changes
@@ -115,7 +114,7 @@ export function AccountNotificationsPage() {
         </div>
       </div>
     </AccountPageLayout>
-  )
+  );
 }
 
-export default AccountNotificationsPage 
+export default AccountNotificationsPage;

@@ -1,15 +1,15 @@
-import { Outlet } from 'react-router-dom';
-import { useOpenAI } from '@/context/OpenAIContext';
 import { ApiKeyInput } from '@/components/shared/ApiKeyInput';
-import { AppSidebar } from '@/components/app-sidebar';
-import { Toaster } from '@/components/ui/toaster';
 import { Breadcrumbs } from '@/components/ui/breadcrumbs';
-import { SettingsDialog } from '@/components/ui/settings-dialog';
 import { Button } from '@/components/ui/button';
-import { Settings, Menu } from 'lucide-react';
-import { useState } from 'react';
+import { SettingsDialog } from '@/components/ui/settings-dialog';
+import { Toaster } from '@/components/ui/toaster';
+import { useOpenAI } from '@/context/OpenAIContext';
+import { AppSidebar } from '@/layout/app-sidebar';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { Menu, Settings } from 'lucide-react';
+import { useState } from 'react';
+import { Outlet } from 'react-router-dom';
 
 export function Layout() {
   const { apiKey } = useOpenAI();

@@ -1,3 +1,7 @@
+import { AI_TOOL_CONFIG } from '@/lib/constants/aiTools';
+import { mentionFunctions } from '@/lib/constants/mentionTools';
+import PropTypes from 'prop-types';
+
 export async function lookupTool(mentionTool, userMessage, streamable, file) {
   const toolInfo = AI_TOOL_CONFIG.mentionTools.find(
     tool => tool.id === mentionTool
