@@ -1,0 +1,296 @@
+---
+title: 'Authentication'
+description: 'Authentication setup and configuration for the OpenAI Testing App'
+---
+
+# Authentication
+
+The OpenAI Testing App uses multiple authentication mechanisms to secure access to various services and APIs.
+
+## API Keys
+
+### Required API Keys
+
+```env
+VITE_OPENAI_API_KEY=sk-...       # OpenAI API key
+VITE_SUPABASE_URL=https://...    # Supabase project URL
+VITE_SUPABASE_ANON_KEY=eyJ...    # Supabase anonymous key
+VITE_PERPLEXITY_API_KEY=pplx-... # Perplexity API key
+```
+
+### API Key Management
+
+```javascript
+// lib/utils.js
+export const getApiKey = (provider) => {
+  const keys = {
+    openai: import.meta.env.VITE_OPENAI_API_KEY,
+    perplexity: import.meta.env.VITE_PERPLEXITY_API_KEY,
+  };
+  return keys[provider];
+};
+```
+
+## Supabase Authentication
+
+### Configuration
+
+```javascript
+// lib/supabase.js
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+```
+
+### User Authentication
+
+```javascript
+// Authentication Hook
+export const useAuth = () => {
+  const signIn = async ({ email, password }) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    return { data, error };
+  };
+
+  const signUp = async ({ email, password }) => {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+    return { data, error };
+  };
+
+  const signOut = async () => {
+    const { error } = await supabase.auth.signOut();
+    return { error };
+  };
+
+  return { signIn, signUp, signOut };
+};
+```
+
+### Session Management
+
+```javascript
+// Session Hook
+export const useSession = () => {
+  const [session, setSession] = useState(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  return session;
+};
+```
+
+## Protected Routes
+
+### Route Guard Component
+
+```jsx
+// components/auth/RouteGuard.jsx
+export const RouteGuard = ({ children }) => {
+  const session = useSession();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!session) {
+      navigate('/login');
+    }
+  }, [session, navigate]);
+
+  return session ? children : null;
+};
+```
+
+### Implementation
+
+```jsx
+// App.jsx
+const ProtectedRoute = ({ children }) => {
+  return (
+    <RouteGuard>
+      {children}
+    </RouteGuard>
+  );
+};
+
+// Usage in routes
+<Route
+  path="/protected"
+  element={
+    <ProtectedRoute>
+      <ProtectedComponent />
+    </ProtectedRoute>
+  }
+/>
+```
+
+## API Authentication
+
+### Request Headers
+
+```javascript
+// services/api.js
+const createApiHeaders = (provider) => {
+  const apiKey = getApiKey(provider);
+  
+  return {
+    'Authorization': `Bearer ${apiKey}`,
+    'Content-Type': 'application/json',
+  };
+};
+```
+
+### API Client Configuration
+
+```javascript
+// lib/api-client.js
+import axios from 'axios';
+
+export const createApiClient = (provider) => {
+  const client = axios.create({
+    headers: createApiHeaders(provider),
+  });
+
+  // Request interceptor
+  client.interceptors.request.use(
+    (config) => {
+      // Add authentication headers
+      return config;
+    },
+    (error) => {
+      return Promise.reject(error);
+    }
+  );
+
+  // Response interceptor
+  client.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+      if (error.response?.status === 401) {
+        // Handle authentication errors
+      }
+      return Promise.reject(error);
+    }
+  );
+
+  return client;
+};
+```
+
+## Error Handling
+
+### Authentication Errors
+
+```javascript
+// utils/error-handlers.js
+export const handleAuthError = (error) => {
+  if (error.response?.status === 401) {
+    return {
+      type: 'auth',
+      message: 'Authentication failed. Please check your credentials.',
+    };
+  }
+
+  if (error.response?.status === 403) {
+    return {
+      type: 'permission',
+      message: 'You do not have permission to perform this action.',
+    };
+  }
+
+  return {
+    type: 'unknown',
+    message: 'An unexpected error occurred.',
+  };
+};
+```
+
+### Usage Example
+
+```javascript
+try {
+  const response = await api.post('/endpoint', data);
+  return response.data;
+} catch (error) {
+  const { type, message } = handleAuthError(error);
+  throw new Error(message);
+}
+```
+
+## Security Best Practices
+
+1. **Token Storage**
+   - Store tokens securely in memory
+   - Use HTTP-only cookies when possible
+   - Never store sensitive keys in local storage
+
+2. **Request Security**
+   - Use HTTPS for all requests
+   - Implement rate limiting
+   - Validate all input data
+
+3. **Error Handling**
+   - Never expose sensitive information in errors
+   - Log authentication failures
+   - Implement proper error responses
+
+4. **Session Management**
+   - Implement proper session timeouts
+   - Handle token refresh flows
+   - Clear sessions on logout
+
+## Testing Authentication
+
+### Unit Tests
+
+```javascript
+// auth.test.js
+describe('Authentication', () => {
+  it('should sign in user with valid credentials', async () => {
+    const { signIn } = useAuth();
+    const result = await signIn({
+      email: 'test@example.com',
+      password: 'password',
+    });
+    expect(result.error).toBeNull();
+    expect(result.data.user).toBeDefined();
+  });
+});
+```
+
+### Integration Tests
+
+```javascript
+// protected-route.test.js
+describe('Protected Route', () => {
+  it('should redirect to login when not authenticated', async () => {
+    render(
+      <MemoryRouter initialEntries={['/protected']}>
+        <ProtectedRoute>
+          <div>Protected Content</div>
+        </ProtectedRoute>
+      </MemoryRouter>
+    );
+
+    expect(window.location.pathname).toBe('/login');
+  });
+});

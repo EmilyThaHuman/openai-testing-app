@@ -12,6 +12,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { motion, AnimatePresence } from "framer-motion";
+import { Loader2, Download } from "lucide-react";
 
 export default function ImageTesting() {
   const { apiKey } = useOpenAI();
@@ -53,110 +55,155 @@ export default function ImageTesting() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="grid gap-4">
-        <div className="space-y-2">
-          <Label>Model</Label>
-          <Select value={model} onValueChange={setModel}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select model" />
-            </SelectTrigger>
-            <SelectContent>
-              {models.map((m) => (
-                <SelectItem key={m} value={m}>
-                  {m}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+    <motion.div 
+      className="container max-w-4xl mx-auto space-y-6 p-4"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+    >
+      <Card className="p-6">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <div className="space-y-2">
+            <Label>Model</Label>
+            <Select value={model} onValueChange={setModel}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select model" />
+              </SelectTrigger>
+              <SelectContent>
+                {models.map((m) => (
+                  <SelectItem key={m} value={m}>
+                    {m}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Size</Label>
+            <Select value={size} onValueChange={setSize}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select size" />
+              </SelectTrigger>
+              <SelectContent>
+                {sizes.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {s}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Quality</Label>
+            <Select value={quality} onValueChange={setQuality}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select quality" />
+              </SelectTrigger>
+              <SelectContent>
+                {qualities.map((q) => (
+                  <SelectItem key={q} value={q}>
+                    {q}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Style</Label>
+            <Select value={style} onValueChange={setStyle}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select style" />
+              </SelectTrigger>
+              <SelectContent>
+                {styles.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {s}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
-        <div className="space-y-2">
-          <Label>Size</Label>
-          <Select value={size} onValueChange={setSize}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select size" />
-            </SelectTrigger>
-            <SelectContent>
-              {sizes.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {s}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <Label>Quality</Label>
-          <Select value={quality} onValueChange={setQuality}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select quality" />
-            </SelectTrigger>
-            <SelectContent>
-              {qualities.map((q) => (
-                <SelectItem key={q} value={q}>
-                  {q}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <Label>Style</Label>
-          <Select value={style} onValueChange={setStyle}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select style" />
-            </SelectTrigger>
-            <SelectContent>
-              {styles.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {s}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
+        <div className="mt-6 space-y-2">
           <Label htmlFor="prompt">Prompt</Label>
           <Textarea
             id="prompt"
             placeholder="Enter your image generation prompt..."
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            rows={4}
+            className="min-h-[100px] resize-none"
           />
         </div>
 
         <Button 
           onClick={generateImage} 
           disabled={loading || !prompt.trim()}
+          className="mt-4 w-full sm:w-auto"
         >
-          {loading ? 'Generating...' : 'Generate Image'}
+          {loading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Generating...
+            </>
+          ) : (
+            'Generate Image'
+          )}
         </Button>
-      </div>
+      </Card>
 
-      {error && (
-        <Card className="p-4 mt-4 text-red-500">
-          {error}
-        </Card>
-      )}
-
-      {images.length > 0 && (
-        <div className="grid gap-4 mt-4">
-          {images.map((image, index) => (
-            <Card key={index} className="p-4">
-              <img
-                src={image.url}
-                alt={`Generated image ${index + 1}`}
-                className="w-full h-auto rounded-lg"
-              />
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+          >
+            <Card className="p-4 bg-destructive/10 text-destructive">
+              {error}
             </Card>
-          ))}
-        </div>
-      )}
-    </div>
+          </motion.div>
+        )}
+
+        {images.length > 0 && (
+          <motion.div 
+            className="grid gap-6 sm:grid-cols-2"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            {images.map((image, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <Card className="overflow-hidden">
+                  <img
+                    src={image.url}
+                    alt={`Generated image ${index + 1}`}
+                    className="w-full h-auto aspect-square object-cover"
+                    loading="lazy"
+                  />
+                  <div className="p-3 border-t bg-muted/50">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      className="w-full"
+                      onClick={() => window.open(image.url)}
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      Download
+                    </Button>
+                  </div>
+                </Card>
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 } 

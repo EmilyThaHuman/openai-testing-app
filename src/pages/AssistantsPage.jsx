@@ -7,9 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { UnifiedOpenAIService } from '@/services/openai/unifiedOpenAIService'
 import { useOpenAI } from '@/context/OpenAIContext'
 import { useStoreShallow } from '@/store/useStore'
-import { AssistantStream } from "openai/lib/AssistantStream";
+// import { AssistantStream } from "openai/lib/AssistantStream";
 
-export function AssistantsPage() {
+export default function AssistantsPage() {
   const { apiKey } = useOpenAI()
   const {
     assistants,
@@ -198,7 +198,7 @@ export function AssistantsPage() {
             <Card className="p-4">
               <h2 className="text-xl font-semibold mb-4">Assistants List</h2>
               <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                {assistants.map(assistant => (
+                {assistants?.map(assistant => (
                   <Card 
                     key={assistant.id} 
                     className={`p-4 cursor-pointer hover:bg-gray-100 ${

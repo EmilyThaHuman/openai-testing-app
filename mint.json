@@ -1,0 +1,79 @@
+{
+  "$schema": "https://mintlify.com/schema.json",
+  "name": "OpenAI Testing Platform",
+  "logo": {
+    "light": "/providers/perplexity.png",
+    "dark": "/providers/perplexity.png"
+  },
+  "favicon": "/providers/perplexity.png",
+  "colors": {
+    "primary": "#0D9373",
+    "light": "#07C983",
+    "dark": "#0D9373",
+    "anchors": {
+      "from": "#0D9373",
+      "to": "#07C983"
+    }
+  },
+  "topbarLinks": [
+    {
+      "name": "GitHub",
+      "url": "https://github.com/yourusername/openai-testing-platform"
+    }
+  ],
+  "topbarCtaButton": {
+    "name": "Get Started",
+    "url": "docs/quickstart"
+  },
+  "anchors": [
+    {
+      "name": "API Reference",
+      "icon": "rectangle-terminal",
+      "url": "api-reference"
+    },
+    {
+      "name": "Features",
+      "icon": "sparkles",
+      "url": "features"
+    }
+  ],
+  "navigation": [
+    {
+      "group": "Getting Started",
+      "pages": [
+        "introduction",
+        "quickstart",
+        "development",
+        "architecture"
+      ]
+    },
+    {
+      "group": "Features",
+      "pages": [
+        "features/chat",
+        "features/assistants",
+        "features/open-canvas",
+        "features/images",
+        "features/audio"
+      ]
+    },
+    {
+      "group": "API Reference",
+      "pages": [
+        "api-reference/authentication",
+        "api-reference/openai",
+        "api-reference/perplexity",
+        "api-reference/database"
+      ]
+    },
+    {
+      "group": "Components",
+      "pages": [
+        "components/overview"
+      ]
+    }
+  ],
+  "footerSocials": {
+    "github": "https://github.com/yourusername/openai-testing-platform"
+  }
+}

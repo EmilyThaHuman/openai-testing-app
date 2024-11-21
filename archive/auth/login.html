@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <style>
+        .hover-scale {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .hover-scale:hover {
+            transform: scale(1.02);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.6s ease-out forwards;
+        }
+
+        .social-button {
+            transition: all 0.2s;
+        }
+
+        .social-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-inter">
+    <div class="min-h-screen flex flex-col items-center justify-center p-4">
+        <a href="/" class="flex items-center space-x-2 mb-8 hover-scale">
+            <img alt="Magic UI logo" class="w-8 h-8" src="https://storage.googleapis.com/a1aa/image/epQSGC3ZTRTiLCP3Ln8aq7rL2MWgKJPWXOmiB3GueyzBWQxTA.jpg"/>
+            <span class="font-semibold text-xl">Magic UI</span>
+        </a>
+        
+        <div class="w-full max-w-md bg-white rounded-lg shadow-lg p-8 animate-fade-in">
+            <h2 class="text-2xl font-bold text-center mb-8 bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600">
+                Welcome back
+            </h2>
+            
+            <div class="space-y-4 mb-6">
+                <button class="w-full flex items-center justify-center space-x-2 border border-gray-300 rounded-md px-4 py-2 text-gray-700 social-button">
+                    <i class="fab fa-github text-xl"></i>
+                    <span>Continue with GitHub</span>
+                </button>
+                <button class="w-full flex items-center justify-center space-x-2 border border-gray-300 rounded-md px-4 py-2 text-gray-700 social-button">
+                    <i class="fab fa-google text-xl"></i>
+                    <span>Continue with Google</span>
+                </button>
+            </div>
+            
+            <div class="relative mb-6">
+                <div class="absolute inset-0 flex items-center">
+                    <div class="w-full border-t border-gray-300"></div>
+                </div>
+                <div class="relative flex justify-center text-sm">
+                    <span class="px-2 bg-white text-gray-500">Or continue with</span>
+                </div>
+            </div>
+            
+            <form class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" for="email">
+                        Email address
+                    </label>
+                    <input class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+                           id="email"
+                           type="email"
+                           required/>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" for="password">
+                        Password
+                    </label>
+                    <input class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+                           id="password"
+                           type="password"
+                           required/>
+                </div>
+                
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <input type="checkbox" id="remember-me" class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"/>
+                        <label for="remember-me" class="ml-2 block text-sm text-gray-700">
+                            Remember me
+                        </label>
+                    </div>
+                    <a href="#" class="text-sm text-purple-600 hover:text-purple-500">
+                        Forgot password?
+                    </a>
+                </div>
+                
+                <button type="submit" 
+                        class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-2 px-4 rounded-md hover-scale">
+                    Sign in
+                </button>
+            </form>
+            
+            <div class="mt-6 text-center">
+                <span class="text-gray-600">Don't have an account?</span>
+                <a href="/auth/register" class="text-purple-600 hover:text-purple-500 font-medium ml-1">Sign up</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.querySelector('form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            // Here you would typically make an API call to authenticate the user
+            console.log('Login submitted:', { email });
+            alert('Login successful! Redirecting to dashboard...');
+            window.location.href = '/';
+        });
+    </script>
+</body>
+</html>

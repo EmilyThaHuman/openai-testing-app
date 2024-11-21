@@ -1,0 +1,365 @@
+---
+title: 'Perplexity Integration'
+description: 'Guide for integrating and using Perplexity AI services'
+---
+
+# Perplexity Integration
+
+The OpenAI Testing App integrates Perplexity AI services for enhanced search capabilities and completions. This guide covers the implementation and usage of Perplexity's features.
+
+## Configuration
+
+### Setup
+
+```javascript
+// lib/perplexity/config.js
+import { PerplexityAI } from 'perplexity-ai';
+
+export const perplexity = new PerplexityAI({
+  apiKey: import.meta.env.VITE_PERPLEXITY_API_KEY,
+});
+```
+
+## Search Functionality
+
+### Basic Search
+
+```javascript
+// services/perplexity/search.js
+export const performPerplexitySearch = async ({
+  query,
+  model = 'pplx-7b-online',
+  max_tokens = 1024,
+}) => {
+  try {
+    const response = await perplexity.search({
+      query,
+      model,
+      max_tokens,
+    });
+
+    return {
+      result: response.choices[0].text,
+      metadata: response.metadata,
+    };
+  } catch (error) {
+    console.error('Perplexity search error:', error);
+    throw error;
+  }
+};
+```
+
+### Advanced Search Options
+
+```javascript
+// services/perplexity/advancedSearch.js
+export const performAdvancedSearch = async ({
+  query,
+  model = 'pplx-7b-online',
+  max_tokens = 1024,
+  temperature = 0.7,
+  top_p = 0.9,
+  context = '',
+}) => {
+  try {
+    const response = await perplexity.search({
+      query,
+      model,
+      max_tokens,
+      temperature,
+      top_p,
+      context,
+    });
+
+    return {
+      result: response.choices[0].text,
+      metadata: response.metadata,
+      usage: response.usage,
+    };
+  } catch (error) {
+    console.error('Advanced search error:', error);
+    throw error;
+  }
+};
+```
+
+## Completions
+
+### Text Completion
+
+```javascript
+// services/perplexity/completion.js
+export const performPerplexityCompletion = async ({
+  prompt,
+  model = 'pplx-7b-chat',
+  max_tokens = 1024,
+  temperature = 0.7,
+}) => {
+  try {
+    const response = await perplexity.complete({
+      prompt,
+      model,
+      max_tokens,
+      temperature,
+    });
+
+    return {
+      completion: response.choices[0].text,
+      usage: response.usage,
+    };
+  } catch (error) {
+    console.error('Completion error:', error);
+    throw error;
+  }
+};
+```
+
+### Stream Completion
+
+```javascript
+// services/perplexity/streamCompletion.js
+export const streamPerplexityCompletion = async ({
+  prompt,
+  model = 'pplx-7b-chat',
+  onToken,
+  onComplete,
+}) => {
+  try {
+    const stream = await perplexity.complete({
+      prompt,
+      model,
+      stream: true,
+    });
+
+    let fullResponse = '';
+
+    for await (const chunk of stream) {
+      const token = chunk.choices[0]?.text || '';
+      fullResponse += token;
+      onToken?.(token);
+    }
+
+    onComplete?.(fullResponse);
+    return fullResponse;
+  } catch (error) {
+    console.error('Stream completion error:', error);
+    throw error;
+  }
+};
+```
+
+## Integration with Open Canvas
+
+### Search Tool Implementation
+
+```javascript
+// components/open-canvas/utils/lookupTool.jsx
+export const useLookupTool = () => {
+  const performLookup = async (query) => {
+    try {
+      const result = await performPerplexitySearch({
+        query,
+        model: 'pplx-7b-online',
+      });
+
+      return {
+        success: true,
+        data: result.result,
+        metadata: result.metadata,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  };
+
+  return { performLookup };
+};
+```
+
+### Usage in Components
+
+```jsx
+// components/open-canvas/SearchPanel.jsx
+export const SearchPanel = () => {
+  const { performLookup } = useLookupTool();
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState(null);
+
+  const handleSearch = async () => {
+    const response = await performLookup(query);
+    if (response.success) {
+      setResults(response.data);
+    }
+  };
+
+  return (
+    <div>
+      <input
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Enter your search query"
+      />
+      <button onClick={handleSearch}>Search</button>
+      {results && <div>{results}</div>}
+    </div>
+  );
+};
+```
+
+## Error Handling
+
+### Error Handler Implementation
+
+```javascript
+// utils/perplexity-error-handler.js
+export const handlePerplexityError = (error) => {
+  if (error.response) {
+    switch (error.response.status) {
+      case 401:
+        return {
+          type: 'auth',
+          message: 'Invalid API key or unauthorized access',
+        };
+      case 429:
+        return {
+          type: 'rate_limit',
+          message: 'Rate limit exceeded',
+        };
+      case 500:
+        return {
+          type: 'server',
+          message: 'Perplexity server error',
+        };
+      default:
+        return {
+          type: 'unknown',
+          message: error.response.data?.error || 'Unknown error occurred',
+        };
+    }
+  }
+
+  return {
+    type: 'network',
+    message: 'Network error occurred',
+  };
+};
+```
+
+## Rate Limiting
+
+### Rate Limiter Implementation
+
+```javascript
+// utils/perplexity-rate-limiter.js
+export class PerplexityRateLimiter {
+  constructor() {
+    this.requests = new Map();
+    this.limit = 10; // requests per minute
+    this.window = 60000; // 1 minute in milliseconds
+  }
+
+  async throttle(key, fn) {
+    const now = Date.now();
+    const userRequests = this.requests.get(key) || [];
+    
+    // Clean up old requests
+    const recentRequests = userRequests.filter(
+      time => now - time < this.window
+    );
+
+    if (recentRequests.length >= this.limit) {
+      const oldestRequest = recentRequests[0];
+      const waitTime = this.window - (now - oldestRequest);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+
+    recentRequests.push(now);
+    this.requests.set(key, recentRequests);
+
+    return fn();
+  }
+}
+```
+
+## Testing
+
+### Mock Setup
+
+```javascript
+// __tests__/mocks/perplexity.js
+export const mockPerplexityResponses = {
+  search: {
+    choices: [
+      {
+        text: 'Mock search result',
+      },
+    ],
+    metadata: {
+      source: 'mock-source',
+    },
+  },
+  completion: {
+    choices: [
+      {
+        text: 'Mock completion result',
+      },
+    ],
+    usage: {
+      total_tokens: 100,
+    },
+  },
+};
+```
+
+### Test Examples
+
+```javascript
+// __tests__/perplexity.test.js
+describe('Perplexity Service', () => {
+  it('should perform search', async () => {
+    const query = 'test query';
+    const response = await performPerplexitySearch({ query });
+    
+    expect(response.result).toBe('Mock search result');
+    expect(response.metadata).toBeDefined();
+  });
+
+  it('should handle rate limiting', async () => {
+    const rateLimiter = new PerplexityRateLimiter();
+    const userId = 'test-user';
+    
+    const requests = Array(12).fill().map(() => 
+      rateLimiter.throttle(userId, () => 
+        performPerplexitySearch({ query: 'test' })
+      )
+    );
+    
+    await expect(Promise.all(requests)).resolves.toBeDefined();
+  });
+});
+```
+
+## Best Practices
+
+1. **Error Handling**
+   - Always implement proper error handling
+   - Use the provided error handler utility
+   - Log errors appropriately
+
+2. **Rate Limiting**
+   - Implement rate limiting for all API calls
+   - Monitor usage and adjust limits as needed
+   - Handle rate limit errors gracefully
+
+3. **Response Processing**
+   - Validate response data
+   - Handle edge cases
+   - Process results before displaying
+
+4. **Performance**
+   - Cache results when appropriate
+   - Use streaming for long responses
+   - Implement request timeouts

@@ -135,47 +135,9 @@ export const CustomLogo = props => (
   </SvgIcon>
 );
 
-export const GitHubIcon = props => {
-  return (
-    <SvgIcon {...props} viewBox="0 0 24 24">
-      <path
-        d="M12 0C5.373 0 0 5.373 0 12c0 5.302 3.438 
-        9.8 8.207 11.387.599.111.793-.261.793-.577V19.3c-3.338.726
-        -4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756
-        -1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 
-        1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418
-        -1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 
-        0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117
-        -3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399
-        3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 
-        3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 
-        1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 
-        5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 
-        4.765-1.589 8.199-6.086 8.199-11.386C24 5.373 18.627 0 12 0z"
-      />
-    </SvgIcon>
-  );
-};
-
 export const DashboardIcon = props => (
   <SvgIcon {...props} viewBox="0 -960 960 960">
     <path d="M520-600v-240h320v240H520ZM120-440v-400h320v400H120Zm400 320v-400h320v400H520Zm-400 0v-240h320v240H120Zm80-400h160v-240H200v240Zm400 320h160v-240H600v240Zm0-480h160v-80H600v80ZM200-200h160v-80H200v80Zm160-320Zm240-160Zm0 240ZM360-280Z" />
-  </SvgIcon>
-);
-
-// AiIcon
-export const AiIcon = props => (
-  <SvgIcon {...props} viewBox="0 0 32 32">
-    <polygon points="17 11 20 11 20 21 17 21 17 23 25 23 25 21 22 21 22 11 25 11 25 9 17 9 17 11" />
-    <path d="m13,9h-4c-1.103,0-2,.897-2,2v12h2v-5h4v5h2v-12c0-1.103-.897-2-2-2Zm-4,7v-5h4v5h-4Z" />
-    <rect width="32" height="32" fill="none" />
-  </SvgIcon>
-);
-
-// ChatBotIcon
-export const ChatBotIcon = props => (
-  <SvgIcon {...props}>
-    <path d="M18 3a4 4 0 0 1 4 4v8a4 4 0 0 1 -4 4h-4.724l-4.762 2.857a1 1 0 0 1 -1.508 -.743l-.006 -.114v-2h-1a4 4 0 0 1 -3.995 -3.8l-.005 -.2v-8a4 4 0 0 1 4 -4zm-2.8 9.286a1 1 0 0 0 -1.414 .014a2.5 2.5 0 0 1 -3.572 0a1 1 0 0 0 -1.428 1.4a4.5 4.5 0 0 0 6.428 0a1 1 0 0 0 -.014 -1.414m-5.69 -4.286h-.01a1 1 0 1 0 0 2h.01a1 1 0 0 0 0 -2m5 0h-.01a1 1 0 0 0 0 2h.01a1 1 0 0 0 0 -2" />
   </SvgIcon>
 );
 
@@ -297,15 +259,17 @@ export function FoldersIcon(props) {
   );
 }
 
-export const FileIcon = (props) => (
-  <SvgIcon     xmlns="http://www.w3.org/2000/svg"
+export const FileIcon = props => (
+  <SvgIcon
+    xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
     strokeWidth="2"
     strokeLinecap="round"
     strokeLinejoin="round"
-    {...props}>
+    {...props}
+  >
     <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
     <polyline points="14 2 14 8 20 8" />
   </SvgIcon>
@@ -449,7 +413,7 @@ export const DashboardLogoWhite = props => (
   </SvgIcon>
 );
 
-export const ExternalLinkIcon = (props) => (
+export const ExternalLinkIcon = props => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 24 24"
@@ -1121,31 +1085,11 @@ export const EthereumLogoOutline = props => (
   </SvgIcon>
 );
 
-export const apps = props => (
+export const AppsIcon = props => (
   <SvgIcon {...props}>
     <svg {...props} xmlns="http://www.w3.org/2000/svg" width="16" height="16">
       <path d="M4 2v2H2V2h2zm1-1H1v4h4V1zM9 2v2H7V2h2zm1-1H6v4h4V1zM14 2v2h-2V2h2zm1-1h-4v4h4V1zM4 7v2H2V7h2zm1-1H1v4h4V6zM9 7v2H7V7h2zm1-1H6v4h4V6zM14 7v2h-2V7h2zm1-1h-4v4h4V6zM4 12v2H2v-2h2zm1-1H1v4h4v-4zM9 12v2H7v-2h2zm1-1H6v4h4v-4zM14 12v2h-2v-2h2zm1-1h-4v4h4v-4z" />
     </svg>
-  </SvgIcon>
-);
-
-export const AiIbmIcon = props => (
-  <SvgIcon {...props}>
-    <polygon points="17 11 20 11 20 21 17 21 17 23 25 23 25 21 22 21 22 11 25 11 25 9 17 9 17 11" />
-    <path d="m13,9h-4c-1.103,0-2,.897-2,2v12h2v-5h4v5h2v-12c0-1.103-.897-2-2-2Zm-4,7v-5h4v5h-4Z" />
-    <rect width="32" height="32" fill="none" />
-  </SvgIcon>
-);
-
-export const AiGenerate = props => (
-  <SvgIcon {...props}>
-    <path d="m19,22v-2h1v-7h-1v-2h4v2h-1v7h1v2h-4Z" />
-    <path d="m15.5005,22h2l-3.5005-11h-3l-3.4966,11h1.9988l.6018-2h4.7781l.6184,2Zm-4.7947-4l1.6284-5.4111.2559-.0024,1.6736,5.4136h-3.5579Z" />
-    <polygon points="32 4 28 4 28 0 26 0 26 4 22 4 22 6 26 6 26 10 28 10 28 6 32 6 32 4" />
-    <rect x="30" y="12" width="2" height="2" />
-    <rect x="18" y="0" width="2" height="2" />
-    <polygon points="32 32 0 32 0 0 14 0 14 2 2 2 2 30 30 30 30 18 32 18 32 32" />
-    <rect width="32" height="32" fill="none" />
   </SvgIcon>
 );
 
@@ -1342,69 +1286,6 @@ export const OpenPanelLeft = props => (
   </SvgIcon>
 );
 
-export const PromptSession = props => (
-  <SvgIcon {...props}>
-    <polygon points="27 25.5859 25 23.5859 25 21 23 21 23 24.4141 25.5859 27 27 25.5859" />
-    <path d="m24,31c-3.8599,0-7-3.1401-7-7s3.1401-7,7-7,7,3.1401,7,7-3.1401,7-7,7Zm0-12c-2.7571,0-5,2.2429-5,5s2.2429,5,5,5,5-2.2429,5-5-2.2429-5-5-5Z" />
-    <path d="m28,15h2V5c0-1.103-.8975-2-2-2h-3v2h3v10Z" />
-    <circle cx="9" cy="13" r="2" />
-    <circle cx="16" cy="13" r="2" />
-    <circle cx="23" cy="13" r="2" />
-    <path d="m7,23h-3c-1.103,0-2-.8975-2-2V5c0-1.103.897-2,2-2h3v2h-3v16h3v2Z" />
-    <rect
-      id="_Transparent_Rectangle_"
-      data-name="&amp;lt;Transparent Rectangle&amp;gt;"
-      className="cls-1"
-      width="32"
-      height="32"
-    />
-  </SvgIcon>
-);
-
-export const PromptTemplate = props => (
-  <SvgIcon {...props}>
-    <path d="m31.5,23c-.8271,0-1.5-.6729-1.5-1.5v-1.5c0-1.1025-.8972-2-2-2h-2v2h2v1.5c0,.98.4072,1.8643,1.0581,2.5-.6509.6357-1.0581,1.52-1.0581,2.5v1.5h-2v2h2c1.1028,0,2-.8975,2-2v-1.5c0-.8271.6729-1.5,1.5-1.5h.5v-2h-.5Z" />
-    <path d="m16,20v1.5c0,.8271-.6729,1.5-1.5,1.5h-.5v2h.5c.8271,0,1.5.6729,1.5,1.5v1.5c0,1.1025.8972,2,2,2h2v-2h-2v-1.5c0-.98-.4072-1.8643-1.0581-2.5.6509-.6357,1.0581-1.52,1.0581-2.5v-1.5h2v-2h-2c-1.1028,0-2,.8975-2,2Z" />
-    <path d="m28,15h2V5c0-1.103-.8975-2-2-2h-3v2h3v10Z" />
-    <circle cx="23" cy="13" r="2" />
-    <circle cx="16" cy="13" r="2" />
-    <circle cx="9" cy="13" r="2" />
-    <path d="m7,23h-3c-1.103,0-2-.8975-2-2V5c0-1.103.897-2,2-2h3v2h-3v16h3v2Z" />
-    <rect
-      id="_Transparent_Rectangle_"
-      data-name="&amp;lt;Transparent Rectangle&amp;gt;"
-      className="cls-1"
-      width="32"
-      height="32"
-    />
-  </SvgIcon>
-);
-
-export const QuestionAnswering = props => (
-  <SvgIcon {...props}>
-    <polygon
-      className="cls-2"
-      points="20 15.1798 17.41 12.59 16 14 20 18 26 12 24.59 10.59 20 15.1798"
-    />
-    <rect className="cls-2" x="8" y="18" width="2" height="2" />
-    <path
-      className="cls-2"
-      d="m12,9h-5v2h4v2h-3v3h2v-1h2c.5522,0,1-.4478,1-1v-4c0-.5522-.4478-1-1-1Z"
-    />
-    <path
-      className="cls-2"
-      d="m17.7358,30l-1.7358-1,4-7h6c1.1071,0,2-.8926,2-2v-12c0-1.1074-.8929-2-2-2H6c-1.1071,0-2,.8926-2,2v12c0,1.1074.8929,2,2,2h9v2H6c-2.2093,0-4-1.79-4-4v-12c0-2.2109,1.7907-4,4-4h20c2.2093,0,4,1.7891,4,4v12c0,2.21-1.7907,4-4,4h-4.8354l-3.4287,6Z"
-    />
-    <rect
-      id="_Transparent_Rectangle_"
-      data-name="&amp;lt;Transparent Rectangle&amp;gt;"
-      className="cls-1"
-      width="32"
-      height="32"
-    />
-  </SvgIcon>
-);
-
 export const SettingsAdjust = props => (
   <SvgIcon {...props}>
     <path
@@ -1502,3 +1383,174 @@ export const ObjectIcon = () => {
     </svg>
   );
 };
+
+/* =========================================== */
+/* SOCIAL ICONS */
+/* =========================================== */
+export const TwitterIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 122.88 122.88"
+    role="img"
+    aria-label="Twitter Icon"
+  >
+    <defs>
+      <style>
+        {`.cls-1 { fill: #1ca1f1; } .cls-2 { fill: #fff; fill-rule: evenodd; }`}
+      </style>
+    </defs>
+    <path
+      className="cls-1"
+      d="M27.75,0H95.13a27.83,27.83,0,0,1,27.75,27.75V94.57a27.83,27.83,0,0,1-27.75,27.74H27.75A27.83,27.83,0,0,1,0,94.57V27.75A27.83,27.83,0,0,1,27.75,0Z"
+    />
+    <path
+      className="cls-2"
+      d="M102.55,35.66a33.3,33.3,0,0,1-9.68,2.65A17,17,0,0,0,100.29,29a34.05,34.05,0,0,1-10.71,4.1A16.87,16.87,0,0,0,60.41,44.62a17.45,17.45,0,0,0,.43,3.84A47.86,47.86,0,0,1,26.09,30.83a16.83,16.83,0,0,0-2.29,8.48h0a16.84,16.84,0,0,0,7.5,14,17,17,0,0,1-7.64-2.11v.22A16.86,16.86,0,0,0,37.19,68a17.19,17.19,0,0,1-4.45.6,17.58,17.58,0,0,1-3.18-.31A16.9,16.9,0,0,0,45.31,80a34,34,0,0,1-25,7,47.69,47.69,0,0,0,25.86,7.58c31,0,48-25.7,48-48,0-.74,0-1.46-.05-2.19a33.82,33.82,0,0,0,8.41-8.71Z"
+    />
+  </svg>
+);
+
+export const GitHubIcon = props => {
+  return (
+    <SvgIcon {...props} viewBox="0 0 24 24">
+      <path
+        d="M12 0C5.373 0 0 5.373 0 12c0 5.302 3.438 
+        9.8 8.207 11.387.599.111.793-.261.793-.577V19.3c-3.338.726
+        -4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756
+        -1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 
+        1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418
+        -1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 
+        0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117
+        -3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399
+        3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 
+        3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 
+        1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 
+        5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 
+        4.765-1.589 8.199-6.086 8.199-11.386C24 5.373 18.627 0 12 0z"
+      />
+    </SvgIcon>
+  );
+};
+
+export const LinkedInIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 122.88 122.31"
+    role="img"
+    aria-label="LinkedIn Icon"
+  >
+    <defs>
+      <style>
+        {`.cls-1 { fill: #0a66c2; } .cls-2 { fill: #fff; fill-rule: evenodd; }`}
+      </style>
+    </defs>
+    <path
+      className="cls-1"
+      d="M27.75,0H95.13a27.83,27.83,0,0,1,27.75,27.75V94.57a27.83,27.83,0,0,1-27.75,27.74H27.75A27.83,27.83,0,0,1,0,94.57V27.75A27.83,27.83,0,0,1,27.75,0Z"
+    />
+    <path
+      className="cls-2"
+      d="M49.19,47.41H64.72v8h.22c2.17-3.88,7.45-8,15.34-8,16.39,0,19.42,10.2,19.42,23.47V98.94H83.51V74c0-5.71-.12-13.06-8.42-13.06s-9.72,6.21-9.72,12.65v25.4H49.19V47.41ZM40,31.79a8.42,8.42,0,1,1-8.42-8.42A8.43,8.43,0,0,1,40,31.79ZM23.18,47.41H40V98.94H23.18V47.41Z"
+    />
+  </svg>
+);
+
+/* =========================================== */
+/* AI ICONS */
+/* =========================================== */
+export const PromptSession = props => (
+  <SvgIcon {...props}>
+    <polygon points="27 25.5859 25 23.5859 25 21 23 21 23 24.4141 25.5859 27 27 25.5859" />
+    <path d="m24,31c-3.8599,0-7-3.1401-7-7s3.1401-7,7-7,7,3.1401,7,7-3.1401,7-7,7Zm0-12c-2.7571,0-5,2.2429-5,5s2.2429,5,5,5,5-2.2429,5-5-2.2429-5-5-5Z" />
+    <path d="m28,15h2V5c0-1.103-.8975-2-2-2h-3v2h3v10Z" />
+    <circle cx="9" cy="13" r="2" />
+    <circle cx="16" cy="13" r="2" />
+    <circle cx="23" cy="13" r="2" />
+    <path d="m7,23h-3c-1.103,0-2-.8975-2-2V5c0-1.103.897-2,2-2h3v2h-3v16h3v2Z" />
+    <rect
+      id="_Transparent_Rectangle_"
+      data-name="&amp;lt;Transparent Rectangle&amp;gt;"
+      className="cls-1"
+      width="32"
+      height="32"
+    />
+  </SvgIcon>
+);
+
+export const PromptTemplate = props => (
+  <SvgIcon {...props}>
+    <path d="m31.5,23c-.8271,0-1.5-.6729-1.5-1.5v-1.5c0-1.1025-.8972-2-2-2h-2v2h2v1.5c0,.98.4072,1.8643,1.0581,2.5-.6509.6357-1.0581,1.52-1.0581,2.5v1.5h-2v2h2c1.1028,0,2-.8975,2-2v-1.5c0-.8271.6729-1.5,1.5-1.5h.5v-2h-.5Z" />
+    <path d="m16,20v1.5c0,.8271-.6729,1.5-1.5,1.5h-.5v2h.5c.8271,0,1.5.6729,1.5,1.5v1.5c0,1.1025.8972,2,2,2h2v-2h-2v-1.5c0-.98-.4072-1.8643-1.0581-2.5.6509-.6357,1.0581-1.52,1.0581-2.5v-1.5h2v-2h-2c-1.1028,0-2,.8975-2,2Z" />
+    <path d="m28,15h2V5c0-1.103-.8975-2-2-2h-3v2h3v10Z" />
+    <circle cx="23" cy="13" r="2" />
+    <circle cx="16" cy="13" r="2" />
+    <circle cx="9" cy="13" r="2" />
+    <path d="m7,23h-3c-1.103,0-2-.8975-2-2V5c0-1.103.897-2,2-2h3v2h-3v16h3v2Z" />
+    <rect
+      id="_Transparent_Rectangle_"
+      data-name="&amp;lt;Transparent Rectangle&amp;gt;"
+      className="cls-1"
+      width="32"
+      height="32"
+    />
+  </SvgIcon>
+);
+
+export const QuestionAnswering = props => (
+  <SvgIcon {...props}>
+    <polygon
+      className="cls-2"
+      points="20 15.1798 17.41 12.59 16 14 20 18 26 12 24.59 10.59 20 15.1798"
+    />
+    <rect className="cls-2" x="8" y="18" width="2" height="2" />
+    <path
+      className="cls-2"
+      d="m12,9h-5v2h4v2h-3v3h2v-1h2c.5522,0,1-.4478,1-1v-4c0-.5522-.4478-1-1-1Z"
+    />
+    <path
+      className="cls-2"
+      d="m17.7358,30l-1.7358-1,4-7h6c1.1071,0,2-.8926,2-2v-12c0-1.1074-.8929-2-2-2H6c-1.1071,0-2,.8926-2,2v12c0,1.1074.8929,2,2,2h9v2H6c-2.2093,0-4-1.79-4-4v-12c0-2.2109,1.7907-4,4-4h20c2.2093,0,4,1.7891,4,4v12c0,2.21-1.7907,4-4,4h-4.8354l-3.4287,6Z"
+    />
+    <rect
+      id="_Transparent_Rectangle_"
+      data-name="&amp;lt;Transparent Rectangle&amp;gt;"
+      className="cls-1"
+      width="32"
+      height="32"
+    />
+  </SvgIcon>
+);
+
+export const AiIbmIcon = props => (
+  <SvgIcon {...props}>
+    <polygon points="17 11 20 11 20 21 17 21 17 23 25 23 25 21 22 21 22 11 25 11 25 9 17 9 17 11" />
+    <path d="m13,9h-4c-1.103,0-2,.897-2,2v12h2v-5h4v5h2v-12c0-1.103-.897-2-2-2Zm-4,7v-5h4v5h-4Z" />
+    <rect width="32" height="32" fill="none" />
+  </SvgIcon>
+);
+
+export const AiGenerate = props => (
+  <SvgIcon {...props}>
+    <path d="m19,22v-2h1v-7h-1v-2h4v2h-1v7h1v2h-4Z" />
+    <path d="m15.5005,22h2l-3.5005-11h-3l-3.4966,11h1.9988l.6018-2h4.7781l.6184,2Zm-4.7947-4l1.6284-5.4111.2559-.0024,1.6736,5.4136h-3.5579Z" />
+    <polygon points="32 4 28 4 28 0 26 0 26 4 22 4 22 6 26 6 26 10 28 10 28 6 32 6 32 4" />
+    <rect x="30" y="12" width="2" height="2" />
+    <rect x="18" y="0" width="2" height="2" />
+    <polygon points="32 32 0 32 0 0 14 0 14 2 2 2 2 30 30 30 30 18 32 18 32 32" />
+    <rect width="32" height="32" fill="none" />
+  </SvgIcon>
+);
+
+export const AiIcon = props => (
+  <SvgIcon {...props} viewBox="0 0 32 32">
+    <polygon points="17 11 20 11 20 21 17 21 17 23 25 23 25 21 22 21 22 11 25 11 25 9 17 9 17 11" />
+    <path d="m13,9h-4c-1.103,0-2,.897-2,2v12h2v-5h4v5h2v-12c0-1.103-.897-2-2-2Zm-4,7v-5h4v5h-4Z" />
+    <rect width="32" height="32" fill="none" />
+  </SvgIcon>
+);
+
+export const ChatBotIcon = props => (
+  <SvgIcon {...props}>
+    <path d="M18 3a4 4 0 0 1 4 4v8a4 4 0 0 1 -4 4h-4.724l-4.762 2.857a1 1 0 0 1 -1.508 -.743l-.006 -.114v-2h-1a4 4 0 0 1 -3.995 -3.8l-.005 -.2v-8a4 4 0 0 1 4 -4zm-2.8 9.286a1 1 0 0 0 -1.414 .014a2.5 2.5 0 0 1 -3.572 0a1 1 0 0 0 -1.428 1.4a4.5 4.5 0 0 0 6.428 0a1 1 0 0 0 -.014 -1.414m-5.69 -4.286h-.01a1 1 0 1 0 0 2h.01a1 1 0 0 0 0 -2m5 0h-.01a1 1 0 0 0 0 2h.01a1 1 0 0 0 0 -2" />
+  </SvgIcon>
+);

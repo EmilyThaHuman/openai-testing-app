@@ -1,0 +1,423 @@
+---
+title: 'Open Canvas'
+description: 'Guide to using and implementing the Open Canvas workspace for AI experimentation'
+---
+
+# Open Canvas
+
+Open Canvas is a flexible workspace that allows users to experiment with different AI capabilities, combine multiple providers, and create custom workflows.
+
+## Overview
+
+The Open Canvas feature includes:
+- Multi-provider AI integration
+- Dynamic tool selection
+- Real-time results
+- Custom workflow creation
+- Context preservation
+- Visual workspace management
+
+## Implementation
+
+### Core Components
+
+```jsx
+// components/open-canvas/OpenCanvas.jsx
+export const OpenCanvas = () => {
+  const {
+    activeTools,
+    results,
+    isLoading,
+    error,
+    addTool,
+    removeTool,
+    executeWorkflow,
+  } = useOpenCanvas();
+
+  return (
+    <div className="flex h-full">
+      <ToolPanel
+        activeTools={activeTools}
+        onAddTool={addTool}
+        onRemoveTool={removeTool}
+      />
+      <WorkspacePanel
+        tools={activeTools}
+        results={results}
+        isLoading={isLoading}
+        error={error}
+        onExecute={executeWorkflow}
+      />
+    </div>
+  );
+};
+```
+
+### Tool Management
+
+```javascript
+// store/slices/openCanvasSlice.js
+export const createOpenCanvasSlice = (set, get) => ({
+  activeTools: [],
+  results: {},
+  isLoading: false,
+  error: null,
+
+  addTool: (tool) => {
+    set((state) => ({
+      activeTools: [...state.activeTools, tool],
+    }));
+  },
+
+  removeTool: (toolId) => {
+    set((state) => ({
+      activeTools: state.activeTools.filter((t) => t.id !== toolId),
+    }));
+  },
+
+  setResults: (toolId, result) => {
+    set((state) => ({
+      results: {
+        ...state.results,
+        [toolId]: result,
+      },
+    }));
+  },
+
+  clearResults: () => {
+    set({ results: {} });
+  },
+
+  setLoading: (isLoading) => {
+    set({ isLoading });
+  },
+
+  setError: (error) => {
+    set({ error });
+  },
+});
+```
+
+### Tool Implementation
+
+```javascript
+// lib/constants/functions.jsx
+export const availableTools = {
+  textCompletion: {
+    id: 'textCompletion',
+    name: 'Text Completion',
+    description: 'Generate text using AI models',
+    providers: ['openai', 'perplexity'],
+    component: TextCompletionTool,
+    execute: async (params) => {
+      // Implementation
+    },
+  },
+  search: {
+    id: 'search',
+    name: 'AI Search',
+    description: 'Search and analyze information',
+    providers: ['perplexity'],
+    component: SearchTool,
+    execute: async (params) => {
+      // Implementation
+    },
+  },
+  imageGeneration: {
+    id: 'imageGeneration',
+    name: 'Image Generation',
+    description: 'Generate images using AI',
+    providers: ['openai'],
+    component: ImageGenerationTool,
+    execute: async (params) => {
+      // Implementation
+    },
+  },
+};
+```
+
+### Tool Components
+
+```jsx
+// components/open-canvas/tools/TextCompletionTool.jsx
+export const TextCompletionTool = ({
+  onExecute,
+  provider,
+  isLoading,
+}) => {
+  const [prompt, setPrompt] = useState('');
+  const [settings, setSettings] = useState({
+    temperature: 0.7,
+    maxTokens: 1000,
+  });
+
+  const handleExecute = async () => {
+    await onExecute({
+      prompt,
+      ...settings,
+      provider,
+    });
+  };
+
+  return (
+    <div className="p-4 border rounded-lg">
+      <div className="space-y-4">
+        <Textarea
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          placeholder="Enter your prompt"
+        />
+        <div className="flex gap-4">
+          <div>
+            <Label>Temperature</Label>
+            <Input
+              type="number"
+              value={settings.temperature}
+              onChange={(e) =>
+                setSettings((s) => ({
+                  ...s,
+                  temperature: parseFloat(e.target.value),
+                }))
+              }
+              min={0}
+              max={1}
+              step={0.1}
+            />
+          </div>
+          <div>
+            <Label>Max Tokens</Label>
+            <Input
+              type="number"
+              value={settings.maxTokens}
+              onChange={(e) =>
+                setSettings((s) => ({
+                  ...s,
+                  maxTokens: parseInt(e.target.value),
+                }))
+              }
+              min={1}
+              max={4000}
+            />
+          </div>
+        </div>
+        <Button
+          onClick={handleExecute}
+          disabled={isLoading || !prompt}
+        >
+          {isLoading ? 'Generating...' : 'Generate'}
+        </Button>
+      </div>
+    </div>
+  );
+};
+```
+
+### Workspace Management
+
+```jsx
+// components/open-canvas/WorkspacePanel.jsx
+export const WorkspacePanel = ({
+  tools,
+  results,
+  isLoading,
+  error,
+  onExecute,
+}) => {
+  return (
+    <div className="flex-1 p-4">
+      <div className="grid gap-4">
+        {tools.map((tool) => {
+          const Tool = availableTools[tool.type].component;
+          return (
+            <div key={tool.id} className="border rounded-lg p-4">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold">
+                  {availableTools[tool.type].name}
+                </h3>
+                <Badge>{tool.provider}</Badge>
+              </div>
+              <Tool
+                onExecute={(params) => onExecute(tool.id, params)}
+                provider={tool.provider}
+                isLoading={isLoading}
+              />
+              {results[tool.id] && (
+                <div className="mt-4">
+                  <ResultDisplay result={results[tool.id]} />
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      {error && (
+        <Alert variant="destructive" className="mt-4">
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error.message}</AlertDescription>
+        </Alert>
+      )}
+    </div>
+  );
+};
+```
+
+### Tool Selection
+
+```jsx
+// components/open-canvas/ToolPanel.jsx
+export const ToolPanel = ({
+  activeTools,
+  onAddTool,
+  onRemoveTool,
+}) => {
+  const [selectedTool, setSelectedTool] = useState('');
+  const [selectedProvider, setSelectedProvider] = useState('');
+
+  const handleAddTool = () => {
+    if (!selectedTool || !selectedProvider) return;
+
+    onAddTool({
+      id: generateId(),
+      type: selectedTool,
+      provider: selectedProvider,
+    });
+
+    setSelectedTool('');
+    setSelectedProvider('');
+  };
+
+  return (
+    <div className="w-64 border-r p-4">
+      <div className="space-y-4">
+        <div>
+          <Label>Select Tool</Label>
+          <Select
+            value={selectedTool}
+            onValueChange={setSelectedTool}
+          >
+            {Object.entries(availableTools).map(([id, tool]) => (
+              <SelectItem key={id} value={id}>
+                {tool.name}
+              </SelectItem>
+            ))}
+          </Select>
+        </div>
+
+        {selectedTool && (
+          <div>
+            <Label>Select Provider</Label>
+            <Select
+              value={selectedProvider}
+              onValueChange={setSelectedProvider}
+            >
+              {availableTools[selectedTool].providers.map(
+                (provider) => (
+                  <SelectItem key={provider} value={provider}>
+                    {provider}
+                  </SelectItem>
+                )
+              )}
+            </Select>
+          </div>
+        )}
+
+        <Button
+          onClick={handleAddTool}
+          disabled={!selectedTool || !selectedProvider}
+        >
+          Add Tool
+        </Button>
+
+        <div className="mt-8">
+          <h3 className="font-semibold mb-2">Active Tools</h3>
+          <div className="space-y-2">
+            {activeTools.map((tool) => (
+              <div
+                key={tool.id}
+                className="flex justify-between items-center"
+              >
+                <span>{availableTools[tool.type].name}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onRemoveTool(tool.id)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+```
+
+## Hooks
+
+### useOpenCanvas
+
+```javascript
+// hooks/useOpenCanvas.js
+export const useOpenCanvas = () => {
+  const store = useStore();
+  const activeTools = useStore((state) => state.activeTools);
+  const results = useStore((state) => state.results);
+  const isLoading = useStore((state) => state.isLoading);
+  const error = useStore((state) => state.error);
+
+  const executeWorkflow = async (toolId, params) => {
+    const tool = activeTools.find((t) => t.id === toolId);
+    if (!tool) return;
+
+    store.setLoading(true);
+    store.setError(null);
+
+    try {
+      const result = await availableTools[tool.type].execute({
+        ...params,
+        provider: tool.provider,
+      });
+
+      store.setResults(toolId, result);
+    } catch (error) {
+      store.setError(error);
+    } finally {
+      store.setLoading(false);
+    }
+  };
+
+  return {
+    activeTools,
+    results,
+    isLoading,
+    error,
+    addTool: store.addTool,
+    removeTool: store.removeTool,
+    executeWorkflow,
+  };
+};
+```
+
+## Best Practices
+
+1. **Tool Design**
+   - Keep tools modular and independent
+   - Implement consistent interfaces
+   - Handle errors gracefully
+
+2. **State Management**
+   - Use appropriate state scoping
+   - Implement proper cleanup
+   - Handle loading states
+
+3. **Performance**
+   - Optimize tool rendering
+   - Implement result caching
+   - Handle large datasets efficiently
+
+4. **User Experience**
+   - Provide clear feedback
+   - Implement intuitive workflows
+   - Maintain consistent styling

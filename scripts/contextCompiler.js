@@ -9,7 +9,7 @@ const sourceDirs = [
   'components',
   'actions',
 ];
-const targetDir = 'contextExport';
+const targetDir = 'data/js';
 
 async function createDirectoryIfNotExists(dir) {
   try {
@@ -19,44 +19,55 @@ async function createDirectoryIfNotExists(dir) {
   }
 }
 
-async function copyDirectory(src, dest) {
-  await createDirectoryIfNotExists(dest);
-
+async function processDirectory(src, destDir) {
   const entries = await fs.readdir(src, { withFileTypes: true });
 
   for (const entry of entries) {
     const srcPath = path.join(src, entry.name);
-    const destPath = path.join(dest, entry.name);
 
     if (entry.isDirectory()) {
-      await copyDirectory(srcPath, destPath);
+      // Recursively process subdirectories
+      await processDirectory(srcPath, destDir);
     } else {
-      // If the file is .jsx, change the extension to .js in the destination
-      const destFileName = entry.name.endsWith('.jsx')
+      // Generate a unique filename to avoid conflicts
+      const baseFileName = entry.name.endsWith('.jsx')
         ? entry.name.replace('.jsx', '.js')
         : entry.name;
-      const finalDestPath = path.join(path.dirname(destPath), destFileName);
 
-      await fs.copyFile(srcPath, finalDestPath);
-      console.log(`Copied: ${srcPath} -> ${finalDestPath}`);
+      // Create a filename that includes parent directory names to avoid conflicts
+      const parentDir = path.relative('src', path.dirname(srcPath));
+      const uniqueFileName = parentDir
+        .split(path.sep)
+        .filter(part => part !== '.')
+        .concat(baseFileName)
+        .join('_');
+
+      const destPath = path.join(destDir, uniqueFileName);
+
+      await fs.copyFile(srcPath, destPath);
+      console.log(`Copied: ${srcPath} -> ${destPath}`);
     }
   }
 }
 
 async function main() {
   try {
-    // Create the root contextExport directory
+    // Create or clean the contextExport directory
+    try {
+      await fs.rm(targetDir, { recursive: true });
+    } catch (err) {
+      // Directory doesn't exist, that's fine
+    }
     await createDirectoryIfNotExists(targetDir);
 
     // Process each source directory
     for (const dir of sourceDirs) {
       const sourcePath = path.join('src', dir);
-      const destPath = path.join(targetDir, dir);
 
       try {
         await fs.access(sourcePath);
         console.log(`Processing directory: ${dir}`);
-        await copyDirectory(sourcePath, destPath);
+        await processDirectory(sourcePath, targetDir);
       } catch (error) {
         console.warn(`Directory ${dir} not found in src, skipping...`);
       }

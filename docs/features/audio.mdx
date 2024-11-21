@@ -1,0 +1,434 @@
+---
+title: 'Audio Features'
+description: 'Guide to using and implementing audio transcription and generation features'
+---
+
+# Audio Features
+
+The Audio feature in the OpenAI Testing App provides capabilities for audio transcription, text-to-speech conversion, and audio processing using OpenAI's audio models.
+
+## Overview
+
+The Audio feature includes:
+- Speech-to-text transcription
+- Text-to-speech generation
+- Multiple voice options
+- Audio file management
+- Real-time processing
+
+## Implementation
+
+### Audio Service
+
+```javascript
+// services/audio/audioService.js
+export class AudioService {
+  constructor(openai) {
+    this.openai = openai;
+  }
+
+  async transcribe({
+    file,
+    model = 'whisper-1',
+    language,
+    prompt,
+    responseFormat = 'json',
+    temperature = 0,
+  }) {
+    try {
+      const response = await this.openai.audio.transcriptions.create({
+        file,
+        model,
+        language,
+        prompt,
+        response_format: responseFormat,
+        temperature,
+      });
+
+      return response;
+    } catch (error) {
+      console.error('Error transcribing audio:', error);
+      throw error;
+    }
+  }
+
+  async createSpeech({
+    input,
+    model = 'tts-1',
+    voice = 'alloy',
+    responseFormat = 'mp3',
+    speed = 1.0,
+  }) {
+    try {
+      const response = await this.openai.audio.speech.create({
+        input,
+        model,
+        voice,
+        response_format: responseFormat,
+        speed,
+      });
+
+      return response;
+    } catch (error) {
+      console.error('Error generating speech:', error);
+      throw error;
+    }
+  }
+}
+```
+
+### Components
+
+#### Audio Transcription Form
+
+```jsx
+// components/audio/TranscriptionForm.jsx
+export const TranscriptionForm = ({ onTranscribe, isLoading }) => {
+  const [file, setFile] = useState(null);
+  const [settings, setSettings] = useState({
+    language: '',
+    prompt: '',
+    temperature: 0,
+  });
+
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('settings', JSON.stringify(settings));
+
+    await onTranscribe(formData);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <Label htmlFor="file">Audio File</Label>
+        <Input
+          id="file"
+          type="file"
+          onChange={handleFileChange}
+          accept="audio/*"
+          required
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="language">Language (optional)</Label>
+        <Input
+          id="language"
+          value={settings.language}
+          onChange={(e) =>
+            setSettings((s) => ({ ...s, language: e.target.value }))
+          }
+          placeholder="en"
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="prompt">Prompt (optional)</Label>
+        <Textarea
+          id="prompt"
+          value={settings.prompt}
+          onChange={(e) =>
+            setSettings((s) => ({ ...s, prompt: e.target.value }))
+          }
+          placeholder="Add context to help with transcription..."
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="temperature">Temperature</Label>
+        <Slider
+          id="temperature"
+          value={[settings.temperature]}
+          onValueChange={([value]) =>
+            setSettings((s) => ({ ...s, temperature: value }))
+          }
+          min={0}
+          max={1}
+          step={0.1}
+        />
+      </div>
+
+      <Button type="submit" disabled={isLoading || !file}>
+        {isLoading ? 'Transcribing...' : 'Transcribe Audio'}
+      </Button>
+    </form>
+  );
+};
+```
+
+#### Text to Speech Form
+
+```jsx
+// components/audio/TextToSpeechForm.jsx
+export const TextToSpeechForm = ({ onGenerate, isLoading }) => {
+  const [settings, setSettings] = useState({
+    input: '',
+    voice: 'alloy',
+    speed: 1.0,
+  });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    await onGenerate(settings);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <Label htmlFor="input">Text</Label>
+        <Textarea
+          id="input"
+          value={settings.input}
+          onChange={(e) =>
+            setSettings((s) => ({ ...s, input: e.target.value }))
+          }
+          placeholder="Enter text to convert to speech..."
+          required
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="voice">Voice</Label>
+        <Select
+          id="voice"
+          value={settings.voice}
+          onValueChange={(value) =>
+            setSettings((s) => ({ ...s, voice: value }))
+          }
+        >
+          <SelectItem value="alloy">Alloy</SelectItem>
+          <SelectItem value="echo">Echo</SelectItem>
+          <SelectItem value="fable">Fable</SelectItem>
+          <SelectItem value="onyx">Onyx</SelectItem>
+          <SelectItem value="nova">Nova</SelectItem>
+          <SelectItem value="shimmer">Shimmer</SelectItem>
+        </Select>
+      </div>
+
+      <div>
+        <Label htmlFor="speed">Speed</Label>
+        <Slider
+          id="speed"
+          value={[settings.speed]}
+          onValueChange={([value]) =>
+            setSettings((s) => ({ ...s, speed: value }))
+          }
+          min={0.25}
+          max={4.0}
+          step={0.25}
+        />
+      </div>
+
+      <Button type="submit" disabled={isLoading}>
+        {isLoading ? 'Generating...' : 'Generate Speech'}
+      </Button>
+    </form>
+  );
+};
+```
+
+### Audio Player
+
+```jsx
+// components/audio/AudioPlayer.jsx
+export const AudioPlayer = ({ src, onDownload }) => {
+  return (
+    <div className="border rounded-lg p-4">
+      <audio
+        controls
+        className="w-full"
+        src={src}
+      >
+        Your browser does not support the audio element.
+      </audio>
+      {onDownload && (
+        <Button
+          variant="outline"
+          onClick={onDownload}
+          className="mt-2 w-full"
+        >
+          Download Audio
+        </Button>
+      )}
+    </div>
+  );
+};
+```
+
+### Audio Page
+
+```jsx
+// pages/AudioPage.jsx
+export const AudioPage = () => {
+  const [transcription, setTranscription] = useState('');
+  const [audioUrl, setAudioUrl] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const audioService = new AudioService(openai);
+
+  const handleTranscribe = async (formData) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const result = await audioService.transcribe({
+        file: formData.get('file'),
+        ...JSON.parse(formData.get('settings')),
+      });
+      setTranscription(result.text);
+    } catch (err) {
+      setError(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGenerate = async (settings) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await audioService.createSpeech(settings);
+      const blob = new Blob([response], { type: 'audio/mp3' });
+      const url = URL.createObjectURL(blob);
+      setAudioUrl(url);
+    } catch (err) {
+      setError(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDownload = () => {
+    const link = document.createElement('a');
+    link.href = audioUrl;
+    link.download = `generated-speech-${Date.now()}.mp3`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  return (
+    <div className="container mx-auto p-6 space-y-8">
+      <div className="prose max-w-none">
+        <h1>Audio Processing</h1>
+        <p>
+          Convert speech to text and generate speech from text using
+          OpenAI's audio models.
+        </p>
+      </div>
+
+      <div className="grid gap-8 md:grid-cols-2">
+        <div>
+          <h2 className="text-2xl font-bold mb-4">
+            Speech to Text
+          </h2>
+          <TranscriptionForm
+            onTranscribe={handleTranscribe}
+            isLoading={isLoading}
+          />
+          {transcription && (
+            <div className="mt-4">
+              <h3 className="font-semibold mb-2">Transcription</h3>
+              <div className="border rounded-lg p-4 bg-muted">
+                {transcription}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div>
+          <h2 className="text-2xl font-bold mb-4">
+            Text to Speech
+          </h2>
+          <TextToSpeechForm
+            onGenerate={handleGenerate}
+            isLoading={isLoading}
+          />
+          {audioUrl && (
+            <div className="mt-4">
+              <AudioPlayer
+                src={audioUrl}
+                onDownload={handleDownload}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error.message}</AlertDescription>
+        </Alert>
+      )}
+    </div>
+  );
+};
+```
+
+## Error Handling
+
+```javascript
+// utils/audio/errorHandler.js
+export const handleAudioError = (error) => {
+  if (error.response) {
+    switch (error.response.status) {
+      case 400:
+        return {
+          type: 'invalid_request',
+          message: 'Invalid request. Please check your inputs.',
+        };
+      case 413:
+        return {
+          type: 'file_too_large',
+          message: 'File size exceeds the maximum limit.',
+        };
+      default:
+        return {
+          type: 'api_error',
+          message: error.response.data?.error?.message || 'API error occurred.',
+        };
+    }
+  }
+
+  return {
+    type: 'network',
+    message: 'Network error occurred. Please check your connection.',
+  };
+};
+```
+
+## Best Practices
+
+1. **File Handling**
+   - Validate file types
+   - Check file sizes
+   - Handle file uploads efficiently
+
+2. **Performance**
+   - Stream audio when possible
+   - Implement proper cleanup
+   - Handle memory efficiently
+
+3. **User Experience**
+   - Show clear progress indicators
+   - Provide playback controls
+   - Implement error recovery
+
+4. **Security**
+   - Validate file sources
+   - Implement file scanning
+   - Handle user data properly

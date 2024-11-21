@@ -1,0 +1,415 @@
+I'll analyze your codebase and create a comprehensive project profile report. Let me break this down into sections.
+
+# OpenAI Testing Application - Project Profile Report
+
+## 1. Project Overview
+
+This is a comprehensive React-based testing application designed for OpenAI's APIs. The project serves as a development and testing platform for various OpenAI services, featuring a modern UI built with Shadcn UI components.
+
+From the README.md (lines 1-18), the core features include:
+- Complete OpenAI API Integration
+- Unified Service Architecture
+- Chat Completions Testing
+- Fine-tuning Management
+- File Operations
+- Content Moderation
+- Code Syntax Highlighting
+- Modern UI with Shadcn Components
+- Testing Infrastructure
+
+## 2. Technical Stack
+
+### Core Technologies
+- React + Vite
+- Tailwind CSS
+- Shadcn UI
+- OpenAI SDK
+- React Router
+- React Markdown
+- Testing Library + Vitest
+- Axios
+- Monaco Editor
+- Recharts for data visualization
+- Framer Motion for animations
+- LangChain integration
+- Supabase integration
+
+### Development Tools
+- ESLint
+- Prettier
+- Husky for git hooks
+- Vite Bundle Analyzer
+- TypeScript support
+
+## 3. Project Structure
+
+### Key Directories (from vite.config.js, lines 17-36):
+```javascript
+const DIRECTORIES = [
+  '__tests__',
+  'actions',
+  'ai',
+  'api',
+  'assets',
+  'components',
+  'config',
+  'constants',
+  'context',
+  'hooks',
+  'lib',
+  'middleware',
+  'pages',
+  'router',
+  'services',
+  'store',
+  'utils',
+  'workers'
+];
+```
+
+## 4. Core Features Analysis
+
+### 4.1 Function Handler System
+Located in `src/services/functions/functionHandler.js`, this system provides:
+- Universal function call handling
+- Schema validation
+- Function registry
+- Error handling
+- Core function implementations
+
+### 4.2 Data Analysis Capabilities
+Multiple implementations found in:
+
+```1:22:src/lib/agent/mentionFunctions/dataAnalysis.jsx
+export const calculateStatistics = data => {
+  return { mean: 0, median: 0, mode: 0, standardDeviation: 0 };
+};
+
+export const analyzeTrends = data => {
+  return { trend: 'upward', confidence: 0.85, keyPoints: [] };
+};
+
+export const compareDataSets = data => {
+  return { differences: [], similarities: [], correlations: {} };
+};
+
+export const generatePredictions = data => {
+  return { predictions: [], confidence: 0.75, factors: [] };
+};
+
+export default {
+  calculateStatistics,
+  analyzeTrends,
+  compareDataSets,
+  generatePredictions,
+};
+```
+
+
+### 4.3 Performance Monitoring
+Comprehensive monitoring system with:
+- API latency tracking
+- Error rate monitoring
+- Endpoint statistics
+- Real-time graphing
+
+```15:115:src/components/monitoring/PerformanceMonitor.jsx
+export const PerformanceMonitor = () => {
+  const [view, setView] = useState("overview");
+  
+  // Use shallow comparison to prevent unnecessary rerenders
+  const { 
+    apiLatency, 
+    endpointStats, 
+    apiErrors 
+  } = useStore(
+    (state) => ({
+      apiLatency: state.metrics.apiLatency,
+      endpointStats: state.metrics.endpointStats,
+      apiErrors: state.metrics.apiErrors,
+    }),
+    shallow
+  );
+
+  // Memoize data transformations
+  const formattedLatencyData = useMemo(() => 
+    apiLatency.map((m) => ({
+      timestamp: new Date(m.timestamp).toLocaleTimeString(),
+      value: m.duration,
+      name: m.endpoint,
+    })).slice(-20),
+    [apiLatency]
+  );
+
+  const totalRequests = useMemo(() => 
+    Object.values(endpointStats).reduce(
+      (acc, stat) => acc + stat.totalCalls,
+      0
+    ),
+    [endpointStats]
+  );
+
+  const errorRate = useMemo(() => 
+    apiLatency.length ? 
+      ((apiErrors.length / apiLatency.length) * 100).toFixed(1) : 
+      "0.0",
+    [apiErrors.length, apiLatency.length]
+  );
+
+  const renderOverview = () => (
+    <div className="space-y-4">
+      <h4 className="font-semibold">API Overview</h4>
+      <div className="grid grid-cols-2 gap-4">
+        <Card className="p-3">
+          <div className="text-sm font-medium">Total Requests</div>
+          <div className="text-2xl">{totalRequests}</div>
+        </Card>
+        <Card className="p-3">
+          <div className="text-sm font-medium">Error Rate</div>
+          <div className="text-2xl">{errorRate}%</div>
+        </Card>
+      </div>
+
+      <ResponsiveContainer width="100%" height={200}>
+        <LineChart data={formattedLatencyData}>
+          <XAxis dataKey="timestamp" />
+          <YAxis />
+          <Tooltip />
+          <Line type="monotone" dataKey="value" stroke="#8884d8" />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+  const renderEndpoints = () => (
+    <div className="space-y-4">
+      <h4 className="font-semibold">Endpoint Performance</h4>
+      <div className="space-y-2">
+        {Object.entries(endpointStats).map(([endpoint, stats]) => (
+          <Card key={endpoint} className="p-3">
+            <div className="text-sm font-medium">{endpoint}</div>
+            <div className="grid grid-cols-3 gap-2 mt-2 text-sm">
+              <div>Calls: {stats.totalCalls}</div>
+              <div>Avg: {stats.avgLatency.toFixed(0)}ms</div>
+              <div>Errors: {stats.errors}</div>
+            </div>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+
+  const renderErrors = () => (
+    <div className="space-y-4">
+      <h4 className="font-semibold">Recent Errors</h4>
+      <div className="space-y-2">
+        {apiErrors.slice(-10).map((error, index) => (
+          <Card key={index} className="p-3 bg-red-50">
+            <div className="text-sm font-medium">{error.endpoint}</div>
+            <div className="text-sm text-red-600">{error.error}</div>
+            <div className="text-xs text-gray-500">
+              {new Date(error.timestamp).toLocaleString()}
+            </div>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+```
+
+
+### 4.4 AI Integration
+- OpenAI API integration
+- LangChain integration
+- Content vectorization
+- Embeddings generation
+- Fine-tuning capabilities
+
+## 5. Statistics
+
+### Codebase Metrics
+- Total Components: ~30+ (estimated from imports)
+- Core Services: 8+ (OpenAI, LangChain, Monitoring, etc.)
+- Function Tools: 15+ (from tools.jsx)
+- API Endpoints: 10+ (estimated from services)
+
+### Dependencies
+Total Production Dependencies: 75+ (from package.json)
+Total Dev Dependencies: 20+
+
+### Key Limits (from constants/limits.js)
+- Profile Bio Max: 500 chars
+- Workspace Name Max: 100 chars
+- Assistant Prompt Max: 100000 chars
+- Collection Name Max: 100 chars
+
+## 6. Missing Components/Recommendations
+
+### Missing Features
+1. User Authentication System
+   - No clear auth implementation visible
+   - Missing user management features
+
+2. Database Schema
+   - No clear database schema definitions
+   - Missing migration scripts
+
+3. Error Boundary Components
+   - Limited error handling at component level
+
+4. Comprehensive Testing
+   - Limited test files visible
+   - Missing E2E testing setup
+
+### Recommended Additions
+1. Implement proper authentication system
+2. Add database migrations and schemas
+3. Add comprehensive error boundaries
+4. Implement E2E testing with Cypress or Playwright
+5. Add proper documentation system (JSDoc/TypeDoc)
+6. Implement proper logging system
+7. Add proper CI/CD pipeline configuration
+
+## 7. Architecture Notes
+
+### State Management
+- Uses multiple approaches including React Context and custom stores
+- Could benefit from more centralized state management
+
+### API Layer
+- Well-structured API integration
+- Good separation of concerns
+- Comprehensive error handling
+
+### Performance Optimization
+- Uses memoization effectively
+- Implements code splitting
+- Uses proper lazy loading
+
+## 8. Security Considerations
+
+### Current Implementation
+- Environment variables properly used
+- API key handling implemented
+
+### Missing Security Features
+1. Rate limiting
+2. Input sanitization
+3. CSRF protection
+4. Security headers
+5. Content Security Policy
+
+## 9. Build & Development Setup
+
+Build configuration (from vite.config.js) includes:
+- PWA support
+- Monaco editor integration
+- SVG handling
+- Bundle analysis
+- Path aliases
+- Compression
+
+## 10. /src folder structure
+src/
+├── ai/
+│   ├── config.jsx
+│   ├── functions.jsx
+│   └── systemMessage.jsx
+├── api/
+│   └── openai/
+├── assets/
+├── components/
+│   ├── artifacts/
+│   │   └── Editor.jsx
+│   ├── chat/
+│   │   ├── ChatInput.jsx
+│   │   ├── ChatMessage.jsx
+│   │   ├── EmptyChat.jsx
+│   │   └── SystemInstructions.jsx
+│   ├── layout/
+│   │   └── Layout.jsx
+│   ├── monitoring/
+│   │   └── PerformanceMonitor.jsx
+│   ├── open-canvas/
+│   │   ├── OpenCanvas.jsx
+│   │   ├── functionCalling.jsx
+│   │   ├── generateRelevantQuestions.jsx
+│   │   └── mentionTools.jsx
+│   ├── openai-testing/
+│   │   └── tabs/
+│   │       ├── AssistantTesting.jsx
+│   │       ├── AudioTesting.jsx
+│   │       ├── ChatTesting.jsx
+│   │       ├── CompletionTesting.jsx
+│   │       ├── FineTuneTesting.jsx
+│   │       ├── ImageTesting.jsx
+│   │       └── ModerationTesting.jsx
+│   ├── shared/
+│   │   └── ErrorBoundary.jsx
+│   └── ui/
+│       ├── button.jsx
+│       ├── card.jsx
+│       ├── progress.jsx
+│       ├── resizable.jsx
+│       ├── scroll-area.jsx
+│       ├── tabs.jsx
+│       ├── tooltip.jsx
+│       └── use-toast.jsx
+├── config/
+│   └── ai/
+│       └── agent.js
+├── constants/
+│   ├── api.jsx
+│   ├── functions.jsx
+│   ├── limits.js
+│   ├── prompts.jsx
+│   └── tools.jsx
+├── context/
+│   ├── ChatContext.jsx
+│   ├── OpenAIContext.jsx
+│   └── ThemeContext.jsx
+├── hooks/
+│   └── useLocalStorage.jsx
+├── lib/
+│   ├── agent/
+│   │   ├── generateRelevantQuestions.jsx
+│   │   ├── mentionFunctions/
+│   │   │   ├── analyzeUserSentiment.jsx
+│   │   │   ├── brightDataWebScraper.jsx
+│   │   │   ├── dataAnalysis.jsx
+│   │   │   ├── generateRecommendations.jsx
+│   │   │   └── performDataAnalysis.jsx
+│   │   └── mentionTools.jsx
+│   ├── constants/
+│   └── utils/
+├── pages/
+│   ├── ApiDashboard.jsx
+│   ├── AssistantInstancesTestPage.jsx
+│   ├── AssistantsPage.jsx
+│   ├── OpenAiTestPage.jsx
+│   └── OpenCanvas.jsx
+├── services/
+│   ├── ai/
+│   │   └── function-calling.jsx
+│   ├── functions/
+│   │   └── functionHandler.js
+│   └── openai/
+│       └── unifiedOpenAIService.js
+├── store/
+│   └── useStore.js
+├── utils/
+│   └── openAIUtils.js
+└── App.jsx
+
+## Conclusion
+
+This is a sophisticated OpenAI testing platform with robust features and modern architecture. While the core functionality is well-implemented, there are areas for improvement in testing, security, and documentation. The project shows good use of modern React practices and tools but could benefit from more standardized patterns and additional security measures.
+
+The codebase is well-structured but would benefit from:
+1. More comprehensive documentation
+2. Stronger typing (TypeScript migration)
+3. More robust testing
+4. Centralized state management
+5. Enhanced security measures
+6. Proper CI/CD pipeline
+
+Despite these areas for improvement, the project provides a solid foundation for OpenAI API testing and integration.

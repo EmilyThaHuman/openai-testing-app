@@ -104,7 +104,7 @@ export const ChatMessage = memo(
           </div>
         )}
 
-        {message.metadata?.model && (
+        {message?.metadata?.model && (
           <div className="mt-2 text-xs text-muted-foreground">
             Model: {message.metadata.model}
           </div>

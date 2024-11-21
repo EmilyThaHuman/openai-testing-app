@@ -1,90 +1,177 @@
-# OpenAI Testing Application
+# OpenAI Testing Platform
 
-## Overview
+A comprehensive React-based testing platform for OpenAI's APIs featuring a modern UI, built with Shadcn UI components and offering extensive testing capabilities for various OpenAI services.
 
-A comprehensive React-based testing application for OpenAI's APIs, featuring a modern UI built with Shadcn UI components and offering extensive testing capabilities for various OpenAI services.
+## ✨ Features
 
-## Features
+- **🤖 Complete OpenAI API Integration**
 
-- 🤖 Complete OpenAI API Integration
-- 🔄 Unified Service Architecture
-- 📝 Chat Completions Testing
-- 🎯 Fine-tuning Management
-- 📁 File Operations
-- ⚖️ Content Moderation
-- 🔍 Code Syntax Highlighting
-- 🎨 Modern UI with Shadcn Components
-- 🧪 Testing Infrastructure
+  - Chat Completions
+  - Assistants API
+  - File Operations
+  - Fine-tuning
+  - Image Generation
+  - Audio Processing
 
-## Tech Stack
+- **🎯 Advanced Testing Tools**
 
-- React + Vite
-- Tailwind CSS
-- Shadcn UI
-- OpenAI SDK
-- React Router
-- React Markdown
-- Testing Library + Vitest
-- Axios
+  - Interactive Chat Testing
+  - Assistant Instance Management
+  - File Processing & Vector Stores
+  - Function Calling Testing
+  - Performance Monitoring
+  - Code Interpretation
 
-# Shadcn UI
+- **💻 Developer Experience**
 
-https://ui.shadcn.com/docs/installation/nextjs
+  - Modern React Patterns
+  - Real-time API Metrics
+  - Syntax Highlighting
+  - File Upload Capabilities
+  - Customizable Settings
+  - Advanced Code Editor
 
-# Supabase
+- **🎨 UI/UX**
+  - Sleek Modern Interface
+  - Dark/Light Mode
+  - Responsive Design
+  - Interactive Components
+  - Real-time Updates
+  - Toast Notifications
 
-https://supabase.com/docs/reference/javascript/supabase-createclient
+## 🚀 Tech Stack
 
-# Tailwind CSS
+- **Frontend Framework**
 
-https://tailwindcss.com/docs/installation/play-cdn
+  - React 18
+  - Vite
+  - Framer Motion
+  - React Router
+  - Zustand (State Management)
 
-# Lucide Icons
+- **UI Components**
 
-https://lucide.dev/icons/
+  - Shadcn UI
+  - Tailwind CSS
+  - Radix UI
+  - Monaco Editor
+  - Recharts
 
-# React Router
+- **API Integration**
 
-https://reactrouter.com/en/main/start/overview
+  - OpenAI SDK
+  - Axios
+  - WebSocket Support
+  - Rate Limiting
+  - Error Handling
 
-# OpenAI
+- **Development Tools**
+  - TypeScript Support
+  - ESLint
+  - Prettier
+  - Vitest
+  - Testing Library
+  - Husky
 
-https://openai.com/api/
+## 🛠️ Installation
 
-# Axios
+1. **Clone the repository**
 
-https://axios-http.com/docs/intro
+```bash
+git clone https://github.com/yourusername/openai-testing-platform.git
+cd openai-testing-platform
+```
 
-# Prettier
+2. **Install dependencies**
 
-https://prettier.io/docs/en/options
+```bash
+npm install
+```
 
-# ESLint
+3. **Set up environment variables**
 
-https://eslint.org/docs/latest/use/getting-started
+```bash
+cp .env.example .env
+```
 
-# Prettier
+Add your OpenAI API key and other required variables to `.env`
 
-https://prettier.io/docs/en/options
+4. **Start development server**
 
-# Project Structure
+```bash
+npm run dev
+```
 
+## 📁 Project Structure
+
+```
 src/
-├── assets/
-├── components/
-│ ├── ui/
-│ └── layout/
-├── context/
-├── hooks/
-├── lib/
-├── pages/
-├── services/
-├── styles/
-└── utils/
+├── ai/                   # AI-related configurations
+├── components/           # React components
+│   ├── chat/            # Chat components
+│   ├── tools/           # Tool components
+│   └── ui/              # UI components
+├── context/             # React contexts
+├── hooks/               # Custom hooks
+├── lib/                 # Utility libraries
+├── pages/               # Page components
+├── services/            # API services
+├── store/               # State management
+└── utils/               # Utility functions
+```
 
-## Getting Started
+## 🔧 Configuration
 
-### Prerequisites
+The application can be configured through various settings:
 
-- Node.js (v16+)
-- OpenAI API Key
+- **API Settings**: Configure API endpoints and keys
+- **UI Preferences**: Customize theme and layout
+- **Tool Settings**: Configure available tools and features
+- **Performance**: Adjust rate limiting and caching
+
+## 🧪 Testing
+
+```bash
+# Run unit tests
+npm test
+
+# Run tests with coverage
+npm run test:coverage
+
+# Run tests in watch mode
+npm run test:watch
+```
+
+## 📚 Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+- `npm run lint` - Run ESLint
+- `npm run format` - Format code with Prettier
+- `npm run validate` - Run all checks (lint, types, build)
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a new branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- [OpenAI](https://openai.com/) for their amazing APIs
+- [Shadcn UI](https://ui.shadcn.com/) for the beautiful components
+- [Tailwind CSS](https://tailwindcss.com/) for the styling system
+- [Vite](https://vitejs.dev/) for the build tooling
+
+## 📧 Contact
+
+Your Name - [@yourusername](https://twitter.com/yourusername) - email@example.com
+
+Project Link: [https://github.com/yourusername/openai-testing-platform](https://github.com/yourusername/openai-testing-platform)

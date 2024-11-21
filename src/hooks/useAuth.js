@@ -1,0 +1,1 @@
+// This file can be removed as we're using AuthContext directly 

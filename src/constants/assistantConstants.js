@@ -14,7 +14,6 @@ export const TOOLS = {
   code_interpreter: "Code Interpreter",
   retrieval: "File Search & Retrieval",
   function: "Function Calling",
-  // Add more tools as needed
 };
 
 // Function Definitions (if distinct from tools)

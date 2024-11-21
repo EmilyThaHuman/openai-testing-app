@@ -1,0 +1,400 @@
+---
+title: 'Chat Feature'
+description: 'Guide to using and implementing the chat functionality'
+---
+
+# Chat Feature
+
+The chat feature in the OpenAI Testing App provides real-time communication with AI models, supporting multiple providers and advanced capabilities.
+
+## Overview
+
+The chat implementation includes:
+- Real-time message streaming
+- Multiple AI model support
+- Message history management
+- Markdown and code rendering
+- File attachments
+- Context preservation
+
+## Usage
+
+### Basic Chat Implementation
+
+```jsx
+import { useChat } from '@/hooks/useChat';
+import { ChatContainer } from '@/components/chat/ChatContainer';
+
+const ChatPage = () => {
+  const {
+    messages,
+    sendMessage,
+    isLoading,
+    error,
+  } = useChat();
+
+  return (
+    <div className="h-screen flex flex-col">
+      <ChatContainer
+        messages={messages}
+        onSendMessage={sendMessage}
+        isLoading={isLoading}
+        error={error}
+      />
+    </div>
+  );
+};
+```
+
+### Chat Hook
+
+```javascript
+// hooks/useChat.js
+export const useChat = (options = {}) => {
+  const [messages, setMessages] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const sendMessage = async (content) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Add user message to state
+      const userMessage = {
+        role: 'user',
+        content,
+        id: generateId(),
+      };
+      setMessages(prev => [...prev, userMessage]);
+
+      // Get AI response
+      const response = await createChatCompletion({
+        messages: [...messages, userMessage],
+        ...options,
+      });
+
+      // Add AI response to state
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: response.content,
+        id: generateId(),
+      }]);
+    } catch (err) {
+      setError(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return {
+    messages,
+    sendMessage,
+    isLoading,
+    error,
+  };
+};
+```
+
+## Components
+
+### Chat Container
+
+```jsx
+// components/chat/ChatContainer.jsx
+export const ChatContainer = ({
+  messages,
+  onSendMessage,
+  isLoading,
+  error,
+}) => {
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex-1 overflow-y-auto p-4">
+        <ChatMessages messages={messages} />
+      </div>
+      <div className="border-t p-4">
+        <ChatInput
+          onSend={onSendMessage}
+          isLoading={isLoading}
+          error={error}
+        />
+      </div>
+    </div>
+  );
+};
+```
+
+### Chat Messages
+
+```jsx
+// components/chat/ChatMessages.jsx
+export const ChatMessages = ({ messages }) => {
+  const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  return (
+    <div className="space-y-4">
+      {messages.map((message) => (
+        <ChatMessage
+          key={message.id}
+          message={message}
+        />
+      ))}
+      <div ref={messagesEndRef} />
+    </div>
+  );
+};
+```
+
+### Chat Message
+
+```jsx
+// components/chat/ChatMessage.jsx
+export const ChatMessage = ({ message }) => {
+  const { role, content } = message;
+
+  return (
+    <div
+      className={cn(
+        'flex',
+        role === 'user' ? 'justify-end' : 'justify-start'
+      )}
+    >
+      <div
+        className={cn(
+          'max-w-[80%] rounded-lg p-4',
+          role === 'user'
+            ? 'bg-primary text-primary-foreground'
+            : 'bg-muted'
+        )}
+      >
+        <ReactMarkdown
+          components={{
+            code: ({ node, inline, className, children, ...props }) => {
+              if (inline) {
+                return (
+                  <code className="bg-muted-foreground/20 rounded px-1" {...props}>
+                    {children}
+                  </code>
+                );
+              }
+              return (
+                <CodeBlock
+                  className={className}
+                  {...props}
+                >
+                  {children}
+                </CodeBlock>
+              );
+            },
+          }}
+        >
+          {content}
+        </ReactMarkdown>
+      </div>
+    </div>
+  );
+};
+```
+
+### Chat Input
+
+```jsx
+// components/chat/ChatInput.jsx
+export const ChatInput = ({ onSend, isLoading, error }) => {
+  const [message, setMessage] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!message.trim() || isLoading) return;
+
+    onSend(message);
+    setMessage('');
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="flex gap-2">
+      <Input
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        placeholder="Type your message..."
+        disabled={isLoading}
+      />
+      <Button type="submit" disabled={isLoading}>
+        {isLoading ? <Spinner /> : 'Send'}
+      </Button>
+    </form>
+  );
+};
+```
+
+## Advanced Features
+
+### Streaming Responses
+
+```javascript
+// services/chat/streamResponse.js
+export const streamChatResponse = async ({
+  messages,
+  onToken,
+  onComplete,
+}) => {
+  const stream = await openai.chat.completions.create({
+    messages,
+    model: 'gpt-4-turbo-preview',
+    stream: true,
+  });
+
+  let fullResponse = '';
+
+  for await (const chunk of stream) {
+    const token = chunk.choices[0]?.delta?.content || '';
+    fullResponse += token;
+    onToken?.(token);
+  }
+
+  onComplete?.(fullResponse);
+  return fullResponse;
+};
+```
+
+### Context Management
+
+```javascript
+// hooks/useChatContext.js
+export const useChatContext = (initialContext = '') => {
+  const [context, setContext] = useState(initialContext);
+  const [messages, setMessages] = useState([]);
+
+  const updateContext = (newContext) => {
+    setContext(newContext);
+  };
+
+  const getMessagesWithContext = () => {
+    if (!context) return messages;
+
+    return [
+      {
+        role: 'system',
+        content: context,
+      },
+      ...messages,
+    ];
+  };
+
+  return {
+    context,
+    updateContext,
+    messages,
+    setMessages,
+    getMessagesWithContext,
+  };
+};
+```
+
+### File Attachments
+
+```javascript
+// components/chat/ChatAttachment.jsx
+export const ChatAttachment = ({ onAttach }) => {
+  const handleFileChange = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const content = await readFileContent(file);
+      onAttach({
+        type: 'file',
+        name: file.name,
+        content,
+      });
+    } catch (error) {
+      console.error('Error reading file:', error);
+    }
+  };
+
+  return (
+    <Input
+      type="file"
+      onChange={handleFileChange}
+      accept=".txt,.md,.js,.jsx,.ts,.tsx"
+    />
+  );
+};
+```
+
+## Error Handling
+
+```javascript
+// utils/chat/errorHandler.js
+export const handleChatError = (error) => {
+  if (error.response) {
+    switch (error.response.status) {
+      case 401:
+        return 'Invalid API key. Please check your configuration.';
+      case 429:
+        return 'Rate limit exceeded. Please try again later.';
+      case 500:
+        return 'Server error. Please try again later.';
+      default:
+        return `Error: ${error.response.data.error.message}`;
+    }
+  }
+  return 'Network error. Please check your connection.';
+};
+```
+
+## Testing
+
+```javascript
+// __tests__/chat/ChatMessage.test.jsx
+describe('ChatMessage', () => {
+  it('renders user message correctly', () => {
+    const message = {
+      role: 'user',
+      content: 'Hello, world!',
+      id: '1',
+    };
+
+    const { getByText } = render(<ChatMessage message={message} />);
+    expect(getByText('Hello, world!')).toBeInTheDocument();
+  });
+
+  it('renders markdown content correctly', () => {
+    const message = {
+      role: 'assistant',
+      content: '**Bold** and *italic*',
+      id: '2',
+    };
+
+    const { getByText } = render(<ChatMessage message={message} />);
+    expect(getByText('Bold')).toHaveStyle({ fontWeight: 'bold' });
+  });
+});
+```
+
+## Best Practices
+
+1. **Performance**
+   - Implement message virtualization for long conversations
+   - Use proper memoization for components
+   - Optimize re-renders
+
+2. **User Experience**
+   - Show typing indicators
+   - Implement error recovery
+   - Provide clear feedback
+
+3. **Security**
+   - Sanitize user input
+   - Implement rate limiting
+   - Handle sensitive information properly
+
+4. **Accessibility**
+   - Ensure keyboard navigation
+   - Provide proper ARIA labels
+   - Maintain focus management
