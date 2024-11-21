@@ -1,4 +1,4 @@
-import { useStore } from '@/store/useStore';
+import { useStoreSelector } from '@/store/useStore';
 import { motion } from 'framer-motion';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Slider } from '@/components/ui/slider';
@@ -22,13 +22,19 @@ import {
 import { X, Info } from 'lucide-react';
 
 export function SettingsPanel() {
-  const { 
+  const {
     activeChat,
     updateChatSettings,
     models,
-    getSettingInfo 
-  } = useStore((state) => state.chat);
-  const { toggleSettings } = useStore((state) => state.ui);
+    getSettingInfo,
+    toggleSettings
+  } = useStoreSelector(state => ({
+    activeChat: state.activeChat,
+    updateChatSettings: state.updateChatSettings,
+    models: state.models,
+    getSettingInfo: state.getSettingInfo,
+    toggleSettings: state.toggleSettings
+  }));
 
   if (!activeChat) return null;
 

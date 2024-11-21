@@ -1,5 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import PropTypes from 'prop-types';
+import { useStoreSelector } from '@/store/useStore';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/components/ui/use-toast';
+import { Wand2, Loader2, ChevronDown } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -7,13 +12,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/components/ui/use-toast';
-import { Wand2, Loader2, ChevronDown } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 
-export const SystemInstructions = ({ value, onChange }) => {
+export function SystemInstructions({ value, onChange }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [description, setDescription] = useState('');
@@ -28,53 +28,20 @@ export const SystemInstructions = ({ value, onChange }) => {
   }, [value]);
 
   const handleGenerate = async () => {
-    const apiKey = localStorage.getItem('openai_api_key');
-
-    if (!apiKey) {
-      toast({
-        title: 'API Key Required',
-        description: 'Please add your OpenAI API key in the header first.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
+    if (!description.trim()) return;
     setIsGenerating(true);
+
     try {
-      const response = await fetch(
-        'https://api.openai.com/v1/chat/completions',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${apiKey}`,
-          },
-          body: JSON.stringify({
-            model: 'gpt-4',
-            messages: [
-              {
-                role: 'system',
-                content:
-                  "You are a helpful assistant that generates system messages for AI models. Generate clear, detailed system messages that define the AI's role, capabilities, and constraints based on the user's description.",
-              },
-              {
-                role: 'user',
-                content: `Generate a system message for an AI assistant with these requirements: ${description}`,
-              },
-            ],
-          }),
-        }
-      );
+      const response = await fetch('/api/generate-instructions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description }),
+      });
+
+      if (!response.ok) throw new Error('Failed to generate instructions');
 
       const data = await response.json();
-      if (!response.ok) {
-        throw new Error(
-          data.error?.message || 'Failed to generate instructions'
-        );
-      }
-
-      const generatedInstructions = data.choices[0].message.content;
-      onChange(generatedInstructions);
+      onChange(data.instructions);
       setDialogOpen(false);
       setIsExpanded(true);
       toast({
@@ -85,10 +52,7 @@ export const SystemInstructions = ({ value, onChange }) => {
     } catch (error) {
       toast({
         title: 'Generation failed',
-        description:
-          error instanceof Error
-            ? error.message
-            : 'Failed to generate system instructions. Please try again.',
+        description: error.message,
         variant: 'destructive',
       });
     } finally {
@@ -96,23 +60,10 @@ export const SystemInstructions = ({ value, onChange }) => {
     }
   };
 
-  const handleTextareaFocus = () => {
-    setIsExpanded(true);
-  };
-
-  const handleHeaderClick = () => {
-    setIsExpanded(!isExpanded);
-    if (!isExpanded) {
-      setTimeout(() => {
-        textareaRef.current?.focus();
-      }, 200);
-    }
-  };
-
   return (
     <div className="relative rounded-xl bg-black hover:bg-gray-900 transition-colors">
       <div
-        onClick={handleHeaderClick}
+        onClick={() => setIsExpanded(!isExpanded)}
         className="flex items-center justify-between p-3 cursor-pointer group"
       >
         <div className="flex items-center gap-2">
@@ -148,10 +99,7 @@ export const SystemInstructions = ({ value, onChange }) => {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{
-              height: { duration: 0.2, ease: 'easeOut' },
-              opacity: { duration: 0.15 },
-            }}
+            transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
             <div className="px-3 pb-3">
@@ -182,9 +130,6 @@ export const SystemInstructions = ({ value, onChange }) => {
               className="h-[150px] text-sm bg-black/50 border-gray-700 text-white focus:ring-1 focus:ring-white focus:border-white"
               disabled={isGenerating}
             />
-            <div className="mt-2 text-xs text-gray-500">
-              <span>Free beta</span>
-            </div>
           </div>
           <DialogFooter>
             <Button
@@ -214,11 +159,6 @@ export const SystemInstructions = ({ value, onChange }) => {
       </Dialog>
     </div>
   );
-};
-
-SystemInstructions.propTypes = {
-  value: PropTypes.string.isRequired,
-  onChange: PropTypes.func.isRequired,
-};
+}
 
 export default SystemInstructions;

@@ -1,19 +1,24 @@
-import React, { createContext, useContext, useState } from 'react';
+import React from 'react';
+import { useStoreSelector } from '@/store/useStore';
 import { supabase } from '@/lib/supabase/client';
 
-const DatabaseContext = createContext();
+const DatabaseContext = React.createContext(null);
 
 export const DatabaseProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-
-  // Add more global database and auth state management here
+  const databaseState = useStoreSelector((state) => ({
+    user: state.user,
+    setUser: state.setUser,
+    profile: state.profile,
+    updateProfile: state.updateProfile,
+    loading: state.loading,
+    error: state.error
+  }));
 
   return (
     <DatabaseContext.Provider
       value={{
-        supabase,
-        user,
-        setUser,
+        ...databaseState,
+        supabase
       }}
     >
       {children}
@@ -21,6 +26,12 @@ export const DatabaseProvider = ({ children }) => {
   );
 };
 
-export const useDatabase = () => useContext(DatabaseContext);
+export const useDatabase = () => {
+  const context = React.useContext(DatabaseContext);
+  if (context === undefined) {
+    throw new Error('useDatabase must be used within a DatabaseProvider');
+  }
+  return context;
+};
 
 export default DatabaseProvider;

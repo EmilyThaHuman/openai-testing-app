@@ -5,6 +5,7 @@ import { Loader2 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { markdownComponents } from './MarkdownComponents'
 import { cn } from '@/lib/utils'
+import { useStoreSelector } from '@/store/useStore';
 
 const MotionDiv = motion.div
 
@@ -20,7 +21,11 @@ const MarkdownContent = memo(({ content }) => (
 
 MarkdownContent.displayName = 'MarkdownContent'
 
-export const ChatMessage = memo(({ message, status, currentToolCall }) => {
+export const ChatMessage = memo(({ message, status }) => {
+  const { currentToolCall } = useStoreSelector(state => ({
+    currentToolCall: state.currentToolCall
+  }));
+
   const isAssistant = message.role === 'assistant'
   const isStreaming = message.isStreaming || status === 'in_progress'
 

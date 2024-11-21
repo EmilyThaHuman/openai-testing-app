@@ -2,25 +2,34 @@ import React, { useEffect, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useStoreShallow } from "@/store/useStore";
+import { useStoreSelector } from '@/store/useStore';
 import { MessageSquare } from "lucide-react";
 
 export default function ThreadMessages() {
-  const store = useStoreShallow();
-  const threads = store.threads[store.selectedAssistant?.id] || [];
-  const threadMessages = store.threadMessages;
-  const streamingMessages = store.streamingAssistantChatMessages;
+  const { 
+    threads,
+    selectedAssistant,
+    threadMessages,
+    streamingAssistantChatMessages,
+    fetchThreadMessages 
+  } = useStoreSelector(state => ({
+    threads: state.threads[state.selectedAssistant?.id] || [],
+    selectedAssistant: state.selectedAssistant,
+    threadMessages: state.threadMessages,
+    streamingAssistantChatMessages: state.streamingAssistantChatMessages,
+    fetchThreadMessages: state.fetchThreadMessages
+  }));
+
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const fetchThreadMessages = async () => {
+    const loadMessages = async () => {
       if (!threads || threads.length === 0) return;
       
       setIsLoading(true);
       try {
-        // Assuming store has a method to fetch messages for multiple threads
         await Promise.all(
-          threads.map(thread => store.fetchThreadMessages(thread.id))
+          threads.map(thread => fetchThreadMessages(thread.id))
         );
       } catch (error) {
         console.error("Error fetching thread messages:", error);
@@ -29,8 +38,8 @@ export default function ThreadMessages() {
       }
     };
 
-    fetchThreadMessages();
-  }, [threads, store]);
+    loadMessages();
+  }, [threads, fetchThreadMessages]);
 
   if (isLoading) {
     return (
@@ -92,10 +101,10 @@ export default function ThreadMessages() {
                   </div>
                 </div>
               ))}
-              {streamingMessages[threadId] && (
+              {streamingAssistantChatMessages[threadId] && (
                 <div className="rounded-lg p-3 bg-primary/10 ml-4">
                   <div className="text-sm font-medium mb-1">Assistant</div>
-                  <div className="text-sm">{streamingMessages[threadId]}</div>
+                  <div className="text-sm">{streamingAssistantChatMessages[threadId]}</div>
                 </div>
               )}
             </div>

@@ -1,3 +1,5 @@
+import React from "react";
+import { useStoreSelector } from '@/store/useStore';
 import {
   Dialog,
   DialogContent,
@@ -9,18 +11,23 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Database } from "lucide-react";
 
-// Props validation with PropTypes could be added if desired
-export function VectorStoreDialog({ open, onClose, onSelect }) {
-  const handleSelect = () => {
-    // For now, just pass the input value
-    const storeId = document.getElementById("vector-store-id")?.value;
-    if (storeId) {
-      onSelect(storeId);
-    }
-  };
+export function VectorStoreDialog() {
+  const {
+    isOpen,
+    storeId,
+    setStoreId,
+    handleClose,
+    handleSelect
+  } = useStoreSelector(state => ({
+    isOpen: state.vectorStoreDialogOpen,
+    storeId: state.vectorStoreId,
+    setStoreId: state.setVectorStoreId,
+    handleClose: state.closeVectorStoreDialog,
+    handleSelect: state.selectVectorStore
+  }));
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
           <DialogTitle>Attach vector store</DialogTitle>
@@ -32,7 +39,8 @@ export function VectorStoreDialog({ open, onClose, onSelect }) {
 
           <div className="w-full">
             <Input
-              id="vector-store-id"
+              value={storeId}
+              onChange={(e) => setStoreId(e.target.value)}
               placeholder="Enter vector store id"
               className="w-full"
             />
@@ -44,29 +52,18 @@ export function VectorStoreDialog({ open, onClose, onSelect }) {
         </div>
 
         <DialogFooter className="flex justify-between">
-          <Button variant="ghost" onClick={onClose} className="gap-2">
+          <Button variant="ghost" onClick={handleClose} className="gap-2">
             <ArrowLeft className="h-4 w-4" />
             Back
           </Button>
           <div className="space-x-2">
-            <Button variant="outline" onClick={onClose}>
+            <Button variant="outline" onClick={handleClose}>
               Cancel
             </Button>
-            <Button onClick={handleSelect}>Select</Button>
+            <Button onClick={() => handleSelect(storeId)}>Select</Button>
           </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
-
-// If you want to add prop validation, you can use PropTypes:
-/*
-import PropTypes from 'prop-types';
-
-VectorStoreDialog.propTypes = {
-  open: PropTypes.bool.isRequired,
-  onClose: PropTypes.func.isRequired,
-  onSelect: PropTypes.func.isRequired
-};
-*/

@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useCallback, useState } from "react";
+import React, { useEffect, useRef, useCallback } from "react";
+import { useStoreSelector } from '@/store/useStore';
 import {
   Dialog,
   DialogContent,
@@ -61,17 +62,26 @@ const AssistantInstructions = ({ instructions }) => {
 export function ChatDialog({
   open,
   onOpenChange,
-  messages = [],
-  onSendMessage,
   onFileUpload,
-  isLoading,
   assistant,
   error,
-  onRegenerate,
-  onFeedback,
-  onUpdateAssistant,
-
 }) {
+  const {
+    messages,
+    isLoading,
+    sendMessage,
+    onRegenerate,
+    onFeedback,
+    onUpdateAssistant
+  } = useStoreSelector(state => ({
+    messages: state.messages,
+    isLoading: state.isLoading,
+    sendMessage: state.sendMessage,
+    onRegenerate: state.regenerate,
+    onFeedback: state.submitFeedback,
+    onUpdateAssistant: state.updateAssistant
+  }));
+
   const scrollRef = useRef(null);
   const isNearBottomRef = useRef(true);
     const [detailsOpen, setDetailsOpen] = useState(true);
@@ -436,7 +446,7 @@ export function ChatDialog({
 
           <div className="p-4 bg-background border-t">
             <ChatInput
-              onSend={onSendMessage}
+              onSend={sendMessage}
               onFileUpload={onFileUpload}
               disabled={isLoading || isEditing}
               placeholder={
@@ -459,14 +469,9 @@ ChatDialog.displayName = "ChatDialog";
 ChatDialog.propTypes = {
   open: PropTypes.bool.isRequired,
   onOpenChange: PropTypes.func.isRequired,
-  messages: PropTypes.arrayOf(PropTypes.object).isRequired,
-  onSendMessage: PropTypes.func.isRequired,
   onFileUpload: PropTypes.func.isRequired,
-  isLoading: PropTypes.bool.isRequired, 
   assistant: PropTypes.object,
   error: PropTypes.object,
-  onRegenerate: PropTypes.func.isRequired,
-  onFeedback: PropTypes.func.isRequired,
 };
 
 export default React.memo(ChatDialog);

@@ -14,6 +14,7 @@ import {
   FaMoon,
   FaExternalLinkAlt 
 } from 'react-icons/fa'
+import { DOCS_URL } from '@/lib/constants'
 
 export function Navigation() {
   const navigate = useNavigate()
@@ -46,10 +47,19 @@ export function Navigation() {
       </motion.a>
 
       <nav className="hidden md:flex items-center space-x-6">
-        <NavLink href="/resources">Resources</NavLink>
-        <NavLink href="https://docs.reed-ai.dev" target="_blank">
-          <FaExternalLinkAlt className="h-4 w-4" />
-        </NavLink>
+        {/* Internal Links */}
+        <NavLink internal href="/resources">Resources</NavLink>
+        
+        {/* External Links */}
+        <ExternalLink href={DOCS_URL}>
+          Documentation
+          <FaExternalLinkAlt className="ml-2 h-3 w-3" />
+        </ExternalLink>
+        
+        <ExternalLink href="https://docs.reed-ai.dev">
+          API Reference
+          <FaExternalLinkAlt className="ml-2 h-3 w-3" />
+        </ExternalLink>
       </nav>
 
       <div className="flex items-center space-x-4">
@@ -103,16 +113,26 @@ export function Navigation() {
   )
 }
 
-function NavLink({ href, children }) {
+// Internal NavLink component for router navigation
+function NavLink({ internal = false, href, children }) {
   const navigate = useNavigate()
+  
+  const handleClick = (e) => {
+    e.preventDefault()
+    if (internal) {
+      navigate(href)
+    } else {
+      window.open(href, '_blank', 'noopener,noreferrer')
+    }
+  }
   
   return (
     <motion.button
-      onClick={() => navigate(href)}
+      onClick={handleClick}
       className="text-foreground/80 hover:text-primary relative"
       whileHover={{ y: -2 }}
     >
-      <span>{children}</span>
+      <span className="flex items-center">{children}</span>
       <motion.div
         className="absolute bottom-0 left-0 w-full h-0.5 bg-primary"
         initial={{ width: 0 }}
@@ -120,5 +140,26 @@ function NavLink({ href, children }) {
         transition={{ duration: 0.3 }}
       />
     </motion.button>
+  )
+}
+
+// External link component
+function ExternalLink({ href, children }) {
+  return (
+    <motion.a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-foreground/80 hover:text-primary relative flex items-center"
+      whileHover={{ y: -2 }}
+    >
+      <span className="flex items-center">{children}</span>
+      <motion.div
+        className="absolute bottom-0 left-0 w-full h-0.5 bg-primary"
+        initial={{ width: 0 }}
+        whileHover={{ width: '100%' }}
+        transition={{ duration: 0.3 }}
+      />
+    </motion.a>
   )
 }

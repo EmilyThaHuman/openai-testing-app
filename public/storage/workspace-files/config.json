@@ -1,0 +1,9 @@
+{
+  "apiVersion": "v1",
+  "environment": "development",
+  "features": {
+    "darkMode": true,
+    "analytics": false,
+    "notifications": true
+  }
+}

@@ -1,7 +1,7 @@
 import React from 'react';
-import OpenCanvas from '../components/open-canvas/OpenCanvas';
+import OpenCanvas from '../../components/open-canvas/OpenCanvas';
 
-const OpenCanvasPage = () => {
+export const OpenCanvasPage = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-6">

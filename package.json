@@ -24,7 +24,12 @@
     "test:coverage": "vitest run --coverage",
     "lint-staged": "lint-staged",
     "prepare": "husky install",
-    "postinstall": "node scripts/copy-monaco-workers.js"
+    "postinstall": "node scripts/copy-monaco-workers.js",
+    "docs": "mintlify dev",
+    "docs:build": "mintlify build",
+    "docs:publish": "mintlify publish",
+    "prepare-images": "node scripts/optimize-images.js",
+    "generate:storage": "node scripts/generate-storage-assets.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",
@@ -102,6 +107,7 @@
     "prop-types": "^15.8.1",
     "puppeteer": "^23.8.0",
     "react": "^18.2.0",
+    "react-chartjs-2": "^5.2.0",
     "react-dom": "^18.2.0",
     "react-dropzone": "^14.3.5",
     "react-hook-form": "^7.53.2",
@@ -165,6 +171,7 @@
     "prettier-plugin-tailwindcss": "^0.5.6",
     "rollup-plugin-node-polyfills": "^0.2.1",
     "shadcn-ui": "^0.9.3",
+    "sharp": "^0.33.5",
     "supabase": "^1.223.10",
     "tailwindcss": "^3.4.14",
     "tailwindcss-animate": "^1.0.7",

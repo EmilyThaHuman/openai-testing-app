@@ -1,5 +1,5 @@
 import React from 'react';
-import { useChat } from '@/context/ChatContext';
+import { useStoreSelector } from '@/store/useStore';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import {
@@ -17,7 +17,17 @@ import {
 } from "@/components/ui/accordion";
 
 export function ChatSettings() {
-  const { activeChat, updateChatSettings } = useChat();
+  const {
+    activeChat,
+    updateChatSettings,
+    models,
+    getSettingInfo
+  } = useStoreSelector(state => ({
+    activeChat: state.activeChat,
+    updateChatSettings: state.updateChatSettings,
+    models: state.models,
+    getSettingInfo: state.getSettingInfo
+  }));
 
   if (!activeChat) return null;
 
