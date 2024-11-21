@@ -1,96 +1,35 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { useStoreSelector } from '@/store/useStore';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
-import { UnifiedOpenAIService } from '@/services/openai/unifiedOpenAIService';
-import { useOpenAI } from "@/context/OpenAIContext";
-import { useToast } from "@/components/ui/use-toast";
 
 export default function CompletionTesting() {
-  const { apiKey } = useOpenAI();
-  const { toast } = useToast();
-  const [prompt, setPrompt] = useState('');
-  const [response, setResponse] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [settings, setSettings] = useState({
-    model: 'gpt-3.5-turbo-instruct',
-    temperature: 0.7,
-    maxTokens: 150,
-    topP: 1
-  });
-
-  useEffect(() => {
-    if (apiKey) {
-      UnifiedOpenAIService.initialize(apiKey);
-    }
-  }, [apiKey]);
+  const {
+    prompt,
+    response,
+    loading,
+    error,
+    settings,
+    setPrompt,
+    setSettings,
+    handleCompletion
+  } = useStoreSelector(state => ({
+    prompt: state.prompt,
+    response: state.response,
+    loading: state.loading,
+    error: state.error,
+    settings: state.completionSettings,
+    setPrompt: state.setPrompt,
+    setSettings: state.setCompletionSettings,
+    handleCompletion: state.handleCompletion
+  }));
 
   const handleSettingChange = (key, value) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
-  };
-
-  const handleCompletion = async () => {
-    if (!apiKey) {
-      const errorMsg = "Please set your OpenAI API key first";
-      setError(errorMsg);
-      toast({
-        title: "Error",
-        description: errorMsg,
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!prompt.trim()) {
-      const errorMsg = "Please enter a prompt";
-      setError(errorMsg);
-      toast({
-        title: "Error",
-        description: errorMsg,
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-    setResponse('');
-
-    try {
-      const completionResponse = await UnifiedOpenAIService.completions.create({
-        model: settings.model,
-        prompt: prompt.trim(),
-        temperature: settings.temperature,
-        max_tokens: settings.maxTokens,
-        top_p: settings.topP
-      });
-
-      if (!completionResponse?.choices?.length) {
-        throw new Error('No completion choices returned from API');
-      }
-
-      const completionText = completionResponse.choices[0].text;
-      if (typeof completionText !== 'string') {
-        throw new Error('Invalid completion response format');
-      }
-
-      setResponse(completionText);
-    } catch (err) {
-      const errorMessage = err?.message || 'An unexpected error occurred';
-      console.error('Completion error:', err);
-      setError(errorMessage);
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
+    setSettings({ ...settings, [key]: value });
   };
 
   return (

@@ -21,14 +21,22 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useStoreShallow } from "@/store/useStore";
+import { useStoreSelector } from '@/store/useStore';
 import { uniqueId } from "lodash";
 
 export function ThreadsManager({ onThreadSelect, selectedThread }) {
-  const store = useStoreShallow();
-  const selectedAssistantId = store.selectedAssistant?.id;
-  const threads = store?.threads?.[selectedAssistantId] || [];
-  const setThreads = store.setThreads;
+  const {
+    selectedAssistant,
+    threads,
+    setThreads,
+    fetchThreadsForAssistant
+  } = useStoreSelector(state => ({
+    selectedAssistant: state.selectedAssistant,
+    threads: state.threads[state.selectedAssistant?.id] || [],
+    setThreads: state.setThreads,
+    fetchThreadsForAssistant: state.fetchThreadsForAssistant
+  }));
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const { toast } = useToast();
@@ -108,10 +116,10 @@ export function ThreadsManager({ onThreadSelect, selectedThread }) {
   }, [fetchThreads]);
 
   useEffect(() => {
-    if (selectedAssistantId) {
-      store.fetchThreadsForAssistant(selectedAssistantId);
+    if (selectedAssistant) {
+      fetchThreadsForAssistant(selectedAssistant.id);
     }
-  }, [selectedAssistantId]);
+  }, [selectedAssistant, fetchThreadsForAssistant]);
 
   const handleCreateThread = async () => {
     try {

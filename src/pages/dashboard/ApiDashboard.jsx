@@ -2,7 +2,7 @@ import React from 'react';
 import { Card } from '@/components/ui/card';
 import MetricsDashboard from '@/services/MetricsDashboard';
 
-const ApiDashboard = () => {
+export const ApiDashboard = () => {
   return (
     <div className="container mx-auto py-8">
       <Card className="p-6">
@@ -13,4 +13,4 @@ const ApiDashboard = () => {
   );
 };
 
-export default ApiDashboard; 
+export default ApiDashboard;

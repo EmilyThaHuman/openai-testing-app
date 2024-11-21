@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
+import { useStoreSelector } from '@/store/useStore';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,34 +13,38 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Database, ArrowLeft, Search } from "lucide-react";
 
-export const VectorStoreManagement = ({
-  createVectorStore,
-  listVectorStores,
-  onSelect,
-  onBack,
-  onCancel,
-  onFileUpload,
-}) => {
-  const [vectorStoreId, setVectorStoreId] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [newStoreName, setNewStoreName] = useState("");
+export const VectorStoreManagement = () => {
+  const {
+    vectorStoreId,
+    newStoreName,
+    loading,
+    error,
+    isCreateDialogOpen,
+    setVectorStoreId,
+    setNewStoreName,
+    setIsCreateDialogOpen,
+    createVectorStore,
+    selectVectorStore,
+    handleBack,
+    handleCancel
+  } = useStoreSelector(state => ({
+    vectorStoreId: state.vectorStoreId,
+    newStoreName: state.newStoreName,
+    loading: state.vectorStoreLoading,
+    error: state.vectorStoreError,
+    isCreateDialogOpen: state.isCreateDialogOpen,
+    setVectorStoreId: state.setVectorStoreId,
+    setNewStoreName: state.setNewStoreName,
+    setIsCreateDialogOpen: state.setIsCreateDialogOpen,
+    createVectorStore: state.createVectorStore,
+    selectVectorStore: state.selectVectorStore,
+    handleBack: state.handleVectorStoreBack,
+    handleCancel: state.handleVectorStoreCancel
+  }));
 
   const handleCreateStore = async () => {
     if (!newStoreName.trim()) return;
-    try {
-      setLoading(true);
-      await createVectorStore(newStoreName);
-      setNewStoreName("");
-      setIsCreateDialogOpen(false);
-      setError(null);
-    } catch (err) {
-      setError("Failed to create vector store");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+    await createVectorStore(newStoreName);
   };
 
   return (
@@ -121,7 +126,7 @@ export const VectorStoreManagement = ({
         <div className="flex justify-between pt-4 border-t border-zinc-800">
           <Button
             variant="ghost"
-            onClick={onBack}
+            onClick={handleBack}
             className="text-white hover:bg-zinc-800"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -131,13 +136,13 @@ export const VectorStoreManagement = ({
           <div className="space-x-2">
             <Button
               variant="ghost"
-              onClick={onCancel}
+              onClick={handleCancel}
               className="text-white hover:bg-zinc-800"
             >
               Cancel
             </Button>
             <Button
-              onClick={() => onSelect(vectorStoreId)}
+              onClick={() => selectVectorStore(vectorStoreId)}
               disabled={!vectorStoreId.trim()}
               className="bg-zinc-100 text-zinc-900 hover:bg-zinc-200"
             >

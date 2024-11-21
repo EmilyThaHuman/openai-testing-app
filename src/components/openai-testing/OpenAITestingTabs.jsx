@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useStoreSelector } from '@/store/useStore';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AssistantTesting from './tabs/AssistantTesting';
 import ChatTesting from './tabs/ChatTesting';
@@ -9,12 +10,15 @@ import FileTesting from './tabs/FileTesting';
 import FineTuneTesting from './tabs/FineTuneTesting';
 
 export const OpenAITestingTabs = () => {
-  const [activeMainTab, setActiveMainTab] = useState('assistants');
+  const { activeTab, setActiveTab } = useStoreSelector(state => ({
+    activeTab: state.activeTab,
+    setActiveTab: state.setActiveTab
+  }));
 
   return (
     <Tabs 
-      value={activeMainTab} 
-      onValueChange={setActiveMainTab} 
+      value={activeTab} 
+      onValueChange={setActiveTab} 
       className="w-full"
     >
       <TabsList className="grid grid-cols-7 w-full">

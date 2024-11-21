@@ -1,28 +1,44 @@
-import { useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useSupabaseClient } from '@supabase/auth-helpers-react'
-import { useToast } from '@/components/ui/use-toast'
-import { motion } from 'framer-motion'
-import { AppIcon } from '@/components/ui/AppIcon'
-import { Loader2, CheckCircle2, XCircle } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useSupabaseClient } from '@supabase/auth-helpers-react';
+import { useToast } from '@/components/ui/use-toast';
+import { motion } from 'framer-motion';
+import { AppIcon } from '@/components/ui/AppIcon';
+import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-export function AuthCallback() {
-  const supabase = useSupabaseClient()
-  const navigate = useNavigate()
-  const { toast } = useToast()
+export default function AuthCallback() {
+  const supabase = useSupabaseClient();
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession()
+        const { data: { session }, error } = await supabase.auth.getSession();
 
-        if (error) throw error
-        if (!session) throw new Error('No session found')
+        if (error) {
+          throw error;
+        }
 
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .upsert({
+        if (!session) {
+          const params = new URLSearchParams(window.location.search);
+          const accessToken = params.get('access_token');
+          const refreshToken = params.get('refresh_token');
+
+          if (accessToken && refreshToken) {
+            const { error: setSessionError } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            });
+            if (setSessionError) throw setSessionError;
+          } else {
+            throw new Error('No session or tokens found');
+          }
+        }
+
+        const { error: profileError } = await supabase.from('profiles').upsert(
+          {
             id: session.user.id,
             email: session.user.email,
             full_name: session.user.user_metadata?.full_name,
@@ -34,67 +50,76 @@ export function AuthCallback() {
               language: 'en',
               notifications: {
                 email: true,
-                desktop: false
-              }
-            }
-          }, {
+                desktop: false,
+              },
+            },
+          },
+          {
             onConflict: 'id',
-            returning: 'minimal'
-          })
+            returning: 'minimal',
+          }
+        );
 
-        if (profileError) throw profileError
+        if (profileError) throw profileError;
 
         const { error: workspaceError } = await supabase
           .from('workspaces')
-          .upsert({
-            profile_id: session.user.id,
-            name: 'My Workspace',
-            description: 'My default workspace',
-            settings: {
-              default: true,
-              color: '#4f46e5'
+          .upsert(
+            {
+              profile_id: session.user.id,
+              name: 'My Workspace',
+              description: 'My default workspace',
+              settings: {
+                default: true,
+                color: '#4f46e5',
+              },
+            },
+            {
+              onConflict: 'profile_id,name',
+              returning: 'minimal',
             }
-          }, {
-            onConflict: 'profile_id,name',
-            returning: 'minimal'
-          })
+          );
 
-        if (workspaceError) throw workspaceError
+        if (workspaceError) throw workspaceError;
 
         const { error: preferencesError } = await supabase
           .from('user_preferences')
-          .upsert({
-            profile_id: session.user.id,
-            editor_settings: {
-              theme: 'vs-dark',
-              fontSize: 14,
-              tabSize: 2,
-              minimap: false,
-              wordWrap: 'on',
-              lineNumbers: 'on',
-              formatOnSave: true
+          .upsert(
+            {
+              profile_id: session.user.id,
+              editor_settings: {
+                theme: 'vs-dark',
+                fontSize: 14,
+                tabSize: 2,
+                minimap: false,
+                wordWrap: 'on',
+                lineNumbers: 'on',
+                formatOnSave: true,
+              },
+              chat_settings: {
+                streamResponses: true,
+                showTimestamps: true,
+                showAvatars: true,
+                soundEnabled: false,
+              },
+              ai_settings: {
+                model: 'gpt-4',
+                temperature: 0.7,
+                maxTokens: 2000,
+              },
             },
-            chat_settings: {
-              streamResponses: true,
-              showTimestamps: true,
-              showAvatars: true,
-              soundEnabled: false
-            },
-            ai_settings: {
-              model: 'gpt-4',
-              temperature: 0.7,
-              maxTokens: 2000
+            {
+              onConflict: 'profile_id',
+              returning: 'minimal',
             }
-          }, {
-            onConflict: 'profile_id',
-            returning: 'minimal'
-          })
+          );
 
-        if (preferencesError) throw preferencesError
+        if (preferencesError) throw preferencesError;
 
         const { data: profile, error: fetchError } = await supabase
           .from('profiles')
-          .select(`
+          .select(
+            `
             has_completed_onboarding,
             settings,
             workspaces (
@@ -102,31 +127,38 @@ export function AuthCallback() {
               name,
               settings
             )
-          `)
+          `
+          )
           .eq('id', session.user.id)
-          .single()
+          .single();
 
-        if (fetchError) throw fetchError
+        if (fetchError) throw fetchError;
 
         if (!profile?.has_completed_onboarding) {
-          navigate('/auth/onboarding')
+          navigate('/auth/onboarding');
         } else {
-          const defaultWorkspace = profile.workspaces?.find(w => w.settings?.default)
-          navigate(defaultWorkspace ? `/workspace/${defaultWorkspace.id}` : '/open-canvas')
+          const defaultWorkspace = profile.workspaces?.find(
+            w => w.settings?.default
+          );
+          navigate(
+            defaultWorkspace
+              ? `/workspace/${defaultWorkspace.id}`
+              : '/open-canvas'
+          );
         }
       } catch (error) {
-        console.error('Auth callback error:', error)
+        console.error('Auth callback error:', error);
         toast({
           variant: 'destructive',
           title: 'Authentication failed',
-          description: error.message
-        })
-        navigate('/auth/login')
+          description: error.message,
+        });
+        navigate('/auth/login');
       }
-    }
+    };
 
-    handleAuthCallback()
-  }, [supabase, navigate, toast])
+    handleAuthCallback();
+  }, [supabase, navigate, toast]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-background/95 flex items-center justify-center p-4">
@@ -140,10 +172,10 @@ export function AuthCallback() {
           <motion.div
             initial={{ scale: 0.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ 
-              type: "spring",
+            transition={{
+              type: 'spring',
               stiffness: 260,
-              damping: 20 
+              damping: 20,
             }}
             className="relative mx-auto"
           >
@@ -187,7 +219,7 @@ export function AuthCallback() {
         </div>
       </motion.div>
     </div>
-  )
+  );
 }
 
 // Step indicator component
@@ -198,29 +230,30 @@ function StepIndicator({ step, status, icon: Icon }) {
       animate={{ opacity: 1, x: 0 }}
       className="flex items-center gap-3"
     >
-      <div className={cn(
-        "flex items-center justify-center w-8 h-8 rounded-full",
-        status === 'complete' && "bg-primary/20 text-primary",
-        status === 'loading' && "bg-primary/20 text-primary",
-        status === 'pending' && "bg-muted text-muted-foreground"
-      )}>
-        <Icon 
-          className={cn(
-            "w-5 h-5",
-            status === 'loading' && "animate-spin"
-          )} 
+      <div
+        className={cn(
+          'flex items-center justify-center w-8 h-8 rounded-full',
+          status === 'complete' && 'bg-primary/20 text-primary',
+          status === 'loading' && 'bg-primary/20 text-primary',
+          status === 'pending' && 'bg-muted text-muted-foreground'
+        )}
+      >
+        <Icon
+          className={cn('w-5 h-5', status === 'loading' && 'animate-spin')}
         />
       </div>
-      <span className={cn(
-        "text-sm font-medium",
-        status === 'complete' && "text-foreground",
-        status === 'loading' && "text-foreground",
-        status === 'pending' && "text-muted-foreground"
-      )}>
+      <span
+        className={cn(
+          'text-sm font-medium',
+          status === 'complete' && 'text-foreground',
+          status === 'loading' && 'text-foreground',
+          status === 'pending' && 'text-muted-foreground'
+        )}
+      >
         {step}
       </span>
     </motion.div>
-  )
+  );
 }
 
 // Error state component
@@ -243,5 +276,5 @@ function ErrorState({ error, onRetry }) {
         Try Again
       </button>
     </motion.div>
-  )
-} 
+  );
+}

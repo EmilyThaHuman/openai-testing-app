@@ -23,9 +23,9 @@ const formSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').optional(),
 });
 
-export const AuthPage = () =>  {
+export const AuthPage = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [authMode, setAuthMode] = useState("signin");
+  const [authMode, setAuthMode] = useState('signin');
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -194,6 +194,6 @@ export const AuthPage = () =>  {
       </motion.div>
     </div>
   );
-} 
+};
 
 export default AuthPage;

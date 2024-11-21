@@ -8,21 +8,39 @@ import { OpenAIProvider } from '@/context/OpenAIContext';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { Toaster } from '@/components/ui/toaster';
 
-// Landing & Auth Pages
-import { HomePage } from '@/pages/HomePage';
-import { LoginPage } from '@/pages/auth/LoginPage';
-import { RegisterPage } from '@/pages/auth/RegisterPage';
-import { OnboardingPage } from '@/pages/auth/OnboardingPage';
-import { AuthCallback } from '@/pages/auth/AuthCallback';
+// Auth Pages
+import {
+  HomePage,
+  LoginPage,
+  RegisterPage,
+  OnboardingPage,
+  AuthCallback,
+} from '@/pages/auth';
 
-// App Pages
-import ApiDashboard from '@/pages/ApiDashboard';
-import OpenAiTestPage from '@/pages/OpenAiTestPage';
-import AssistantsPage from '@/pages/AssistantsPage';
-import ChatPage from '@/pages/ChatPage';
-import ImagePage from '@/pages/ImagePage';
-import AudioPage from '@/pages/AudioPage';
-import OpenCanvas from '@/pages/OpenCanvas';
+// Dashboard Pages
+import {
+  ApiDashboard,
+  ProfilePage,
+  SettingsPage,
+} from '@/pages/dashboard';
+
+// API Pages
+import {
+  OpenAiTestPage,
+  AssistantsPage,
+  ChatPage,
+  ImagePage,
+  AudioPage,
+} from '@/pages/api';
+
+// Canvas Pages
+import { OpenCanvasPage } from '@/pages/canvas';
+
+// Docs Pages
+import { DocsPage } from '@/pages/docs';
+
+// Billing Pages
+import { BillingPage } from '@/pages/billing';
 
 export const router = createBrowserRouter(
   [
@@ -105,7 +123,23 @@ export const router = createBrowserRouter(
             },
             {
               path: '/open-canvas',
-              element: <OpenCanvas />,
+              element: <OpenCanvasPage />,
+            },
+            {
+              path: '/settings',
+              element: <SettingsPage />,
+            },
+            {
+              path: '/profile',
+              element: <ProfilePage />,
+            },
+            {
+              path: '/docs',
+              element: <DocsPage />,
+            },
+            {
+              path: '/billing',
+              element: <BillingPage />,
             },
           ],
         },
@@ -121,9 +155,12 @@ export const router = createBrowserRouter(
   {
     future: {
       v7_startTransition: true,
+      v7_partialHydration: true,
+      v7_skipActionErrorRevalidation: true,
       v7_normalizeFormMethod: true,
       v7_relativeSplatPath: true,
-      v7_fetcherPersist: true
-    }
+      v7_fetcherPersist: true,
+      v7_routeLoader: true,
+    },
   }
 );

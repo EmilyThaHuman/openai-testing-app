@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { useOpenAI } from '@/context/OpenAIContext';
-import { UnifiedOpenAIService } from '@/services/openai/unifiedOpenAIService';
-import { Button } from '@/components/ui/button';
+import React from 'react';
+import { useStoreSelector } from '@/store/useStore';
+import { motion, AnimatePresence } from "framer-motion";
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
@@ -12,47 +12,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Download } from "lucide-react";
 
 export default function ImageTesting() {
-  const { apiKey } = useOpenAI();
-  const [prompt, setPrompt] = useState('');
-  const [images, setImages] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [size, setSize] = useState('1024x1024');
-  const [quality, setQuality] = useState('standard');
-  const [style, setStyle] = useState('vivid');
-  const [model, setModel] = useState('dall-e-3');
-
-  const sizes = ['1024x1024', '1024x1792', '1792x1024'];
-  const qualities = ['standard', 'hd'];
-  const styles = ['vivid', 'natural'];
-  const models = ['dall-e-2', 'dall-e-3'];
-
-  const generateImage = async () => {
-    if (!prompt.trim()) return;
-    setLoading(true);
-    setError('');
-
-    try {
-      const response = await UnifiedOpenAIService.images.generate({
-        prompt,
-        n: 1,
-        size,
-        quality,
-        style,
-        model
-      });
-      setImages(response.data);
-    } catch (error) {
-      console.error('Image generation error:', error);
-      setError(error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    prompt,
+    images,
+    loading,
+    error,
+    settings,
+    setPrompt,
+    setSettings,
+    generateImage
+  } = useStoreSelector(state => ({
+    prompt: state.imagePrompt,
+    images: state.generatedImages,
+    loading: state.isGeneratingImage,
+    error: state.imageError,
+    settings: state.imageSettings,
+    setPrompt: state.setImagePrompt,
+    setSettings: state.setImageSettings,
+    generateImage: state.generateImage
+  }));
 
   return (
     <motion.div 
@@ -64,63 +45,16 @@ export default function ImageTesting() {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-2">
             <Label>Model</Label>
-            <Select value={model} onValueChange={setModel}>
-              <SelectTrigger className="w-full">
+            <Select 
+              value={settings.model} 
+              onValueChange={(value) => setSettings({ ...settings, model: value })}
+            >
+              <SelectTrigger>
                 <SelectValue placeholder="Select model" />
               </SelectTrigger>
               <SelectContent>
-                {models.map((m) => (
-                  <SelectItem key={m} value={m}>
-                    {m}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Size</Label>
-            <Select value={size} onValueChange={setSize}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select size" />
-              </SelectTrigger>
-              <SelectContent>
-                {sizes.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {s}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Quality</Label>
-            <Select value={quality} onValueChange={setQuality}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select quality" />
-              </SelectTrigger>
-              <SelectContent>
-                {qualities.map((q) => (
-                  <SelectItem key={q} value={q}>
-                    {q}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Style</Label>
-            <Select value={style} onValueChange={setStyle}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select style" />
-              </SelectTrigger>
-              <SelectContent>
-                {styles.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {s}
-                  </SelectItem>
+                {settings.models.map((m) => (
+                  <SelectItem key={m} value={m}>{m}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -128,9 +62,8 @@ export default function ImageTesting() {
         </div>
 
         <div className="mt-6 space-y-2">
-          <Label htmlFor="prompt">Prompt</Label>
+          <Label>Prompt</Label>
           <Textarea
-            id="prompt"
             placeholder="Enter your image generation prompt..."
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
@@ -148,9 +81,7 @@ export default function ImageTesting() {
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Generating...
             </>
-          ) : (
-            'Generate Image'
-          )}
+          ) : 'Generate Image'}
         </Button>
       </Card>
 

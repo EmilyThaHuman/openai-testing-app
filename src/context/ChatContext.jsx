@@ -1,17 +1,10 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-  useMemo,
-} from "react";
-import { useStoreShallow } from "@/store/useStore";
+import React, { useEffect } from "react";
+import { useStoreSelector } from "@/store/useStore";
 
 export const ChatContext = React.createContext(null);
 
 export const ChatProvider = ({ children }) => {
-  const store = useStoreShallow((state) => ({
+  const chatState = useStoreSelector((state) => ({
     // State
     chats: state.chats,
     activeChat: state.activeChat,
@@ -40,15 +33,15 @@ export const ChatProvider = ({ children }) => {
     addMessage: state.addMessage,
   }));
 
-  // Initialize chat state
-  React.useEffect(() => {
-    store.loadChatsFromCache();
-  }, []);
+  useEffect(() => {
+    chatState.loadChatsFromCache();
+  }, [chatState.loadChatsFromCache]);
 
-  return <ChatContext.Provider value={store}>{children}</ChatContext.Provider>;
+  return (
+    <ChatContext.Provider value={chatState}>{children}</ChatContext.Provider>
+  );
 };
 
-// Helper hook that can be used instead of direct store access
 export const useChat = () => {
   const context = React.useContext(ChatContext);
   if (context === undefined) {

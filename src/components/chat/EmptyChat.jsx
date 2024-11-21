@@ -1,9 +1,14 @@
 import React from "react";
+import { useStoreSelector } from '@/store/useStore';
 import { MessageSquarePlus, Wand2, Settings2, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
-export const EmptyChat = ({ onNewChat }) => {
+export const EmptyChat = () => {
+  const { createChat } = useStoreSelector(state => ({
+    createChat: state.createChat
+  }));
+
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-8 bg-muted/50">
       <Card className="max-w-2xl w-full p-8 space-y-8">
@@ -25,7 +30,7 @@ export const EmptyChat = ({ onNewChat }) => {
             <p className="text-sm text-muted-foreground">
               Begin a fresh chat with customizable settings and features
             </p>
-            <Button onClick={onNewChat} className="w-full">
+            <Button onClick={createChat} className="w-full">
               Start Chat
             </Button>
           </Card>

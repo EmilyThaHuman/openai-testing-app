@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback } from "react";
-import { useStoreShallow } from "@/store/useStore";
+import { useStoreSelector } from "@/store/useStore";
 import {
   Card,
   CardContent,
@@ -62,6 +62,8 @@ const ToolCard = React.memo(({ tool, isSelected, onClick }) => {
   );
 });
 
+ToolCard.displayName = 'ToolCard';
+
 const JsonSchemaViewer = React.memo(({ schema }) => (
   <div className="font-mono text-sm">
     <pre className="bg-gray-50 dark:bg-gray-900 p-4 rounded-md overflow-auto max-h-[300px] scrollbar-thin">
@@ -70,28 +72,36 @@ const JsonSchemaViewer = React.memo(({ schema }) => (
   </div>
 ));
 
+JsonSchemaViewer.displayName = 'JsonSchemaViewer';
+
 export const AssistantToolsManager = () => {
-  const store = useStoreShallow((state) => ({
+  const {
+    selectedTool,
+    attachedTools,
+    setSelectedTool,
+    attachTool,
+    removeTool
+  } = useStoreSelector(state => ({
     selectedTool: state.selectedTool,
     attachedTools: state.attachedTools,
     setSelectedTool: state.setSelectedTool,
     attachTool: state.attachTool,
-    removeTool: state.removeTool,
+    removeTool: state.removeTool
   }));
   console.log("TOOLS", tools);
 
   const handleAttachTool = useCallback(
     (tool) => {
-      if (!store.attachedTools.some((t) => t.name === tool.name)) {
-        store.attachTool(tool);
+      if (!attachedTools.some((t) => t.name === tool.name)) {
+        attachTool(tool);
       }
     },
-    [store.attachedTools, store.attachTool]
+    [attachedTools, attachTool]
   );
 
   const toolsCount = useMemo(
-    () => store.attachedTools.length,
-    [store.attachedTools]
+    () => attachedTools.length,
+    [attachedTools]
   );
 
   return (
@@ -138,9 +148,9 @@ export const AssistantToolsManager = () => {
                                   key={uniqueId()}
                                   tool={tool}
                                   isSelected={
-                                    store.selectedTool?.id === tool.id
+                                    selectedTool?.id === tool.id
                                   }
-                                  onClick={() => store.setSelectedTool(tool)}
+                                  onClick={() => setSelectedTool(tool)}
                                 />
                               );
                             })}
@@ -157,7 +167,7 @@ export const AssistantToolsManager = () => {
                       </CardHeader>
                       <CardContent>
                         <AnimatePresence mode="wait">
-                          {store.selectedTool ? (
+                          {selectedTool ? (
                             <motion.div
                               initial={{ opacity: 0, y: 20 }}
                               animate={{ opacity: 1, y: 0 }}
@@ -169,7 +179,7 @@ export const AssistantToolsManager = () => {
                                   Description
                                 </h4>
                                 <p className="text-gray-600 dark:text-gray-300">
-                                  {store.selectedTool.description}
+                                  {selectedTool.description}
                                 </p>
                               </div>
                               <div>
@@ -177,20 +187,20 @@ export const AssistantToolsManager = () => {
                                   Parameters
                                 </h4>
                                 <JsonSchemaViewer
-                                  schema={store.selectedTool.parameters}
+                                  schema={selectedTool.parameters}
                                 />
                               </div>
                               <Button
                                 className="w-full"
                                 size="lg"
                                 onClick={handleAttachTool}
-                                disabled={store.attachedTools.some(
-                                  (t) => t.name === store.selectedTool.name
+                                disabled={attachedTools.some(
+                                  (t) => t.name === selectedTool.name
                                 )}
                               >
                                 <PlusCircle className="w-5 h-5 mr-2" />
-                                {store.attachedTools.some(
-                                  (t) => t.name === store.selectedTool.name
+                                {attachedTools.some(
+                                  (t) => t.name === selectedTool.name
                                 )
                                   ? "Already Attached"
                                   : "Attach Tool"}
@@ -222,9 +232,9 @@ export const AssistantToolsManager = () => {
                     </CardHeader>
                     <CardContent>
                       <AnimatePresence>
-                        {store.attachedTools.length > 0 ? (
+                        {attachedTools.length > 0 ? (
                           <motion.div layout className="grid gap-4">
-                            {store.attachedTools.map((tool) => (
+                            {attachedTools.map((tool) => (
                               <motion.div
                                 key={tool.name}
                                 layout

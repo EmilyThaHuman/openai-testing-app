@@ -1,13 +1,18 @@
 import React from "react";
+import { useStoreSelector } from '@/store/useStore';
 import { MessageSquarePlus, History, Star, Archive } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
 
-export const EmptySidebar = ({ onNewChat }) => {
+export const EmptySidebar = () => {
+  const { createChat } = useStoreSelector(state => ({
+    createChat: state.createChat
+  }));
+
   return (
     <div className="flex flex-col h-full">
-      <Button onClick={onNewChat} className="w-full mb-4 gap-2">
+      <Button onClick={createChat} className="w-full mb-4 gap-2">
         <MessageSquarePlus className="h-4 w-4" />
         New Chat
       </Button>

@@ -1,40 +1,59 @@
 {
   "$schema": "https://mintlify.com/schema.json",
-  "name": "OpenAI Testing Platform",
+  "name": "ReedAI API Platform",
   "logo": {
-    "light": "/providers/perplexity.png",
-    "dark": "/providers/perplexity.png"
+    "light": "/images/logo-light.png",
+    "dark": "/images/logo-dark.png"
   },
-  "favicon": "/providers/perplexity.png",
+  "favicon": "/images/favicon.png",
   "colors": {
-    "primary": "#0D9373",
-    "light": "#07C983",
-    "dark": "#0D9373",
+    "primary": "#0099ff",
+    "light": "#66c2ff",
+    "dark": "#0066cc",
     "anchors": {
-      "from": "#0D9373",
-      "to": "#07C983"
+      "from": "#0099ff",
+      "to": "#66c2ff"
     }
   },
   "topbarLinks": [
     {
-      "name": "GitHub",
-      "url": "https://github.com/yourusername/openai-testing-platform"
+      "name": "Dashboard",
+      "url": "https://app.reed-ai.dev/dashboard"
+    },
+    {
+      "name": "Support",
+      "url": "mailto:support@reed-ai.dev"
     }
   ],
   "topbarCtaButton": {
-    "name": "Get Started",
-    "url": "docs/quickstart"
+    "name": "Try API Playground",
+    "url": "https://app.reed-ai.dev/open-canvas"
   },
-  "anchors": [
+  "tabs": [
     {
       "name": "API Reference",
-      "icon": "rectangle-terminal",
       "url": "api-reference"
     },
     {
-      "name": "Features",
-      "icon": "sparkles",
-      "url": "features"
+      "name": "Examples",
+      "url": "examples"
+    }
+  ],
+  "anchors": [
+    {
+      "name": "API Reference",
+      "icon": "code",
+      "url": "api-reference"
+    },
+    {
+      "name": "Examples",
+      "icon": "file-code",
+      "url": "examples"
+    },
+    {
+      "name": "SDKs",
+      "icon": "box",
+      "url": "sdks"
     }
   ],
   "navigation": [
@@ -43,37 +62,77 @@
       "pages": [
         "introduction",
         "quickstart",
-        "development",
-        "architecture"
-      ]
-    },
-    {
-      "group": "Features",
-      "pages": [
-        "features/chat",
-        "features/assistants",
-        "features/open-canvas",
-        "features/images",
-        "features/audio"
+        "authentication",
+        "development"
       ]
     },
     {
       "group": "API Reference",
       "pages": [
-        "api-reference/authentication",
-        "api-reference/openai",
-        "api-reference/perplexity",
-        "api-reference/database"
+        "api-reference/overview",
+        {
+          "group": "Chat",
+          "pages": [
+            "api-reference/chat/overview",
+            "api-reference/chat/create",
+            "api-reference/chat/stream",
+            "api-reference/chat/functions"
+          ]
+        },
+        {
+          "group": "Assistants",
+          "pages": [
+            "api-reference/assistants/overview",
+            "api-reference/assistants/create",
+            "api-reference/assistants/threads",
+            "api-reference/assistants/messages"
+          ]
+        },
+        {
+          "group": "Images",
+          "pages": [
+            "api-reference/images/overview",
+            "api-reference/images/generate",
+            "api-reference/images/edit",
+            "api-reference/images/variations"
+          ]
+        },
+        {
+          "group": "Audio",
+          "pages": [
+            "api-reference/audio/overview",
+            "api-reference/audio/speech",
+            "api-reference/audio/transcription"
+          ]
+        }
       ]
     },
     {
-      "group": "Components",
+      "group": "Features",
       "pages": [
-        "components/overview"
+        "features/open-canvas",
+        "features/chat-interface",
+        "features/code-editor",
+        "features/api-testing"
       ]
     }
   ],
   "footerSocials": {
-    "github": "https://github.com/yourusername/openai-testing-platform"
+    "github": "https://github.com/reed-ai/api-platform"
+  },
+  "analytics": {
+    "ga4": {
+      "measurementId": "G-XXXXXXXXXX"
+    }
+  },
+  "feedback": {
+    "suggestEdit": true,
+    "raiseIssue": true
+  },
+  "search": {
+    "prompt": "Search documentation..."
+  },
+  "modeToggle": {
+    "default": "dark"
   }
 }

@@ -29,6 +29,7 @@ import {
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { motion } from "framer-motion";
+import { useStoreSelector } from '@/store/useStore';
 
 const AssistantCard = ({
   assistant,
@@ -37,8 +38,11 @@ const AssistantCard = ({
   onStartRun,
   onEdit,
   isSelected,
-  isRunning,
 }) => {
+  const { isRunning } = useStoreSelector(state => ({
+    isRunning: state.runningThreads.has(assistant?.id)
+  }));
+
   const { toast } = useToast();
 
   const handleCopy = async () => {

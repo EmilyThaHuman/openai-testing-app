@@ -1,0 +1,24 @@
+name: Mintlify Documentation
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/**'
+      - 'mint.json'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install Mintlify
+        run: npm i -g mintlify
+
+      - name: Deploy documentation
+        env:
+          MINTLIFY_TOKEN: ${{ secrets.MINTLIFY_TOKEN }}
+        run: |
+          mintlify deploy 

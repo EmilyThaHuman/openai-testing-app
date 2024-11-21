@@ -1,14 +1,27 @@
+import { useStoreSelector } from '@/store/useStore';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, MessageCircle } from "lucide-react";
 
-export function ChatHistory({ chats, activeChat, onChatSelect, onNewChat }) {
+export function ChatHistory() {
+  const { 
+    chats, 
+    activeChat, 
+    onChatSelect, 
+    createChat 
+  } = useStoreSelector(state => ({
+    chats: state.chats,
+    activeChat: state.activeChat,
+    onChatSelect: state.setActiveChat,
+    createChat: state.createChat
+  }));
+
   return (
     <div className="w-[260px] h-full bg-gray-50 border-r">
       <div className="p-4">
         <Button 
           className="w-full justify-start gap-2" 
-          onClick={onNewChat}
+          onClick={createChat}
         >
           <PlusCircle size={20} />
           New Chat

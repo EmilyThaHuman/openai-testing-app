@@ -1,0 +1,72 @@
+{
+  "name": "ReedAI API",
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
+  "api": {
+    "baseUrl": "https://api.reed-ai.dev"
+  },
+  "favicon": "/favicon.png",
+  "colors": {
+    "primary": "#0099ff",
+    "light": "#66c2ff",
+    "dark": "#0066cc"
+  },
+  "topbarLinks": [
+    {
+      "name": "Support",
+      "url": "mailto:support@reed-ai.dev"
+    }
+  ],
+  "topbarCtaButton": {
+    "name": "Dashboard",
+    "url": "https://app.reed-ai.dev"
+  },
+  "anchors": [
+    {
+      "name": "API Reference",
+      "icon": "code",
+      "url": "api"
+    },
+    {
+      "name": "Examples",
+      "icon": "file",
+      "url": "examples"
+    },
+    {
+      "name": "Community",
+      "icon": "users",
+      "url": "https://discord.gg/reed-ai"
+    }
+  ],
+  "navigation": [
+    {
+      "group": "Getting Started",
+      "pages": [
+        "introduction",
+        "quickstart",
+        "installation",
+        "authentication"
+      ]
+    },
+    {
+      "group": "API Reference",
+      "pages": [
+        "api/chat",
+        "api/assistants",
+        "api/images",
+        "api/audio"
+      ]
+    },
+    {
+      "group": "Examples",
+      "pages": [
+        "examples/chat",
+        "examples/images",
+        "examples/audio",
+        "examples/advanced"
+      ]
+    }
+  ]
+} 
