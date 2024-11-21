@@ -9,6 +9,7 @@ export const createAISettingsSlice = (set, get) => ({
   
   // Model Settings
   model: localStorage.getItem('preferred_model') || 'gpt-4-turbo-preview',
+  imageModel: localStorage.getItem('image_model') || 'dall-e-3',
   temperature: parseFloat(localStorage.getItem('temperature')) || 0.7,
   maxTokens: parseInt(localStorage.getItem('max_tokens')) || 2000,
   topP: parseFloat(localStorage.getItem('top_p')) || 1,

@@ -171,7 +171,7 @@ export function AppSidebar({ className, isCollapsed = false, setIsCollapsed, ...
   const { user, signOut } = useAuth();
   const { unreadCount } = useStore()
 
-  const isActive = useCallback((url) => {
+  const isActive = React.useCallback((url) => {
     return location.pathname === url || location.pathname.startsWith(`${url}/`)
   }, [location])
 

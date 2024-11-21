@@ -1,4 +1,3 @@
-import { PERPLEXITY_API_KEY } from '@/lib/constants/constants';
 
 export const perplexitySearch = async query => {
   try {
@@ -6,7 +5,7 @@ export const perplexitySearch = async query => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${PERPLEXITY_API_KEY}`,
+        Authorization: `Bearer ${import.meta.env.VITE_PERPLEXITY_API_KEY}`,
       },
       body: JSON.stringify({ query }),
     });

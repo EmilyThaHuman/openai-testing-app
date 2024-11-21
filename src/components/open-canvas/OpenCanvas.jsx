@@ -1,7 +1,13 @@
-import React, { useEffect, useCallback, memo } from 'react';
+import React, { useEffect, useCallback, memo, useState } from 'react';
 import { useStore } from '@/store/useStore';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, Loader2, PanelLeftClose, PanelLeftOpen, Key } from 'lucide-react';
+import {
+  AlertCircle,
+  Loader2,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Key,
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,31 +22,33 @@ import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
 import { UnifiedOpenAIService } from '@/services/openai/unifiedOpenAIService';
+import { useOpenAI } from '@/context/OpenAIContext';
 
 const containerVariants = {
   hidden: { opacity: 0 },
-  visible: { 
+  visible: {
     opacity: 1,
     transition: {
       duration: 0.3,
-      when: "beforeChildren",
-      staggerChildren: 0.1
-    }
-  }
+      when: 'beforeChildren',
+      staggerChildren: 0.1,
+    },
+  },
 };
 
 const panelVariants = {
   hidden: { opacity: 0, x: -20 },
-  visible: { 
-    opacity: 1, 
+  visible: {
+    opacity: 1,
     x: 0,
-    transition: { duration: 0.3 }
-  }
+    transition: { duration: 0.3 },
+  },
 };
 
 export function OpenCanvas() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { apiKey: contextApiKey, initialize: initializeContext } = useOpenAI();
 
   // Split into smaller selectors for better performance
   const {
@@ -50,7 +58,7 @@ export function OpenCanvas() {
     loading,
     error,
     initializeWorkspace,
-    apiKey,
+    apiKey: storeApiKey,
     isInitialized,
     initialize,
     resetOpenCanvas,
@@ -62,7 +70,7 @@ export function OpenCanvas() {
     setSelectedThread,
     assistants,
     selectedAssistant,
-    selectedThread
+    selectedThread,
   } = useStore(state => ({
     files: state.files,
     currentFile: state.currentFile,
@@ -80,13 +88,56 @@ export function OpenCanvas() {
     fetchAssistants: state.fetchAssistants,
     setSelectedAssistant: state.setSelectedAssistant,
     setSelectedThread: state.setSelectedThread,
-    assistants: state.assistants,
+    assistants: state.assistants || [],
     selectedAssistant: state.selectedAssistant,
-    selectedThread: state.selectedThread
+    selectedThread: state.selectedThread,
   }));
 
   // Track initialization state
-  const [hasInitialized, setHasInitialized] = React.useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
+  const [isOpenAIReady, setIsOpenAIReady] = useState(false);
+  const [threadId, setThreadId] = useState(
+    import.meta.env.VITE_OPENAI_THREAD_ID
+  );
+  const [assistantId, setAssistantId] = useState(
+    import.meta.env.VITE_OPENAI_ASSISTANT_ID
+  );
+  // Initialize OpenAI
+  const initializeOpenAI = useCallback(async () => {
+    const key = contextApiKey || storeApiKey;
+    if (!key) return false;
+
+    try {
+      // Initialize in context
+      await initializeContext(key);
+
+      // Initialize in service
+      UnifiedOpenAIService.initialize(key);
+
+      // Initialize in store if needed
+      if (!isInitialized) {
+        await initialize(key);
+      }
+
+      setIsOpenAIReady(true);
+      return true;
+    } catch (error) {
+      console.error('Failed to initialize OpenAI:', error);
+      toast({
+        title: 'OpenAI Initialization Failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return false;
+    }
+  }, [
+    contextApiKey,
+    storeApiKey,
+    initializeContext,
+    initialize,
+    isInitialized,
+    toast,
+  ]);
 
   // Initialization effect with cleanup
   useEffect(() => {
@@ -94,28 +145,32 @@ export function OpenCanvas() {
     let threadCheckInterval;
 
     const init = async () => {
-      if (!apiKey || hasInitialized) return;
-      
+      if (!contextApiKey && !storeApiKey) {
+        navigate('/account/settings');
+        return;
+      }
+
+      if (hasInitialized) return;
+
       try {
-        if (!isInitialized && mounted) {
-          UnifiedOpenAIService.initialize(apiKey);
-          await initialize(apiKey);
-        }
-        
+        // Ensure OpenAI is initialized first
+        const openAIInitialized = await initializeOpenAI();
+        if (!openAIInitialized || !mounted) return;
+
         if (mounted && (!files || files.length === 0)) {
           await initializeWorkspace();
         }
 
         if (mounted && (!selectedAssistant || !selectedThread)) {
-          const assistantId = import.meta.env.VITE_OPENAI_ASSISTANT_ID;
-          const threadId = import.meta.env.VITE_OPENAI_THREAD_ID;
-
-          if (!assistants.length) {
+          if (!assistants?.length) {
             try {
               const fetchedAssistants = await fetchAssistants();
-              if (assistantId && mounted) {
-                const assistant = fetchedAssistants.find(a => a.id === assistantId);
+              if (assistantId && mounted && Array.isArray(fetchedAssistants)) {
+                const assistant = fetchedAssistants.find(
+                  a => a.id === assistantId
+                );
                 if (assistant) {
+                  console.log('ASST', assistant);
                   setSelectedAssistant(assistant);
                 }
               }
@@ -124,8 +179,9 @@ export function OpenCanvas() {
               if (mounted) {
                 toast({
                   title: 'Error',
-                  description: 'Failed to fetch assistants. Please check your API key.',
-                  variant: 'destructive'
+                  description:
+                    'Failed to fetch assistants. Please check your API key.',
+                  variant: 'destructive',
                 });
               }
             }
@@ -134,7 +190,8 @@ export function OpenCanvas() {
           // Only fetch thread once
           if (threadId && !selectedThread && mounted) {
             try {
-              const thread = await UnifiedOpenAIService.threads.retrieve(threadId);
+              const thread =
+                await UnifiedOpenAIService.threads.retrieve(threadId);
               setSelectedThread(thread);
               setHasInitialized(true);
             } catch (error) {
@@ -148,7 +205,7 @@ export function OpenCanvas() {
           toast({
             title: 'Initialization Error',
             description: error.message || 'Failed to initialize workspace',
-            variant: 'destructive'
+            variant: 'destructive',
           });
         }
       }
@@ -164,11 +221,12 @@ export function OpenCanvas() {
       resetOpenCanvas?.();
     };
   }, [
-    apiKey, 
-    isInitialized, 
-    files, 
-    initialize, 
-    initializeWorkspace, 
+    contextApiKey,
+    storeApiKey,
+    isInitialized,
+    files,
+    initialize,
+    initializeWorkspace,
     resetOpenCanvas,
     fetchAssistants,
     setSelectedAssistant,
@@ -177,11 +235,15 @@ export function OpenCanvas() {
     selectedAssistant,
     selectedThread,
     hasInitialized,
-    toast
+    toast,
+    navigate,
+    initializeOpenAI,
+    threadId,
+    assistantId,
   ]);
 
-  // Show API key required message with button to settings
-  if (!apiKey) {
+  // Show API key required message
+  if (!contextApiKey && !storeApiKey) {
     return (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -195,10 +257,7 @@ export function OpenCanvas() {
             Please set your OpenAI API key in settings to use this feature.
           </AlertDescription>
         </Alert>
-        <Button 
-          onClick={() => navigate('/account/settings')}
-          className="gap-2"
-        >
+        <Button onClick={() => navigate('/account/settings')} className="gap-2">
           <Key className="w-4 h-4" />
           Go to Settings
         </Button>
@@ -206,8 +265,8 @@ export function OpenCanvas() {
     );
   }
 
-  // Loading state
-  if (loading && (!files || files.length === 0)) {
+  // Show loading state
+  if (loading || !isOpenAIReady) {
     return (
       <div className="flex items-center justify-center h-full">
         <motion.div
@@ -222,7 +281,7 @@ export function OpenCanvas() {
   }
 
   return (
-    <motion.div 
+    <motion.div
       variants={containerVariants}
       initial="hidden"
       animate="visible"
@@ -247,19 +306,13 @@ export function OpenCanvas() {
         direction="horizontal"
         className="h-full rounded-lg border bg-background"
       >
-        <ResizablePanel 
-          defaultSize={30} 
-          minSize={25} 
+        <ResizablePanel
+          defaultSize={30}
+          minSize={25}
           maxSize={40}
-          className={cn(
-            "transition-all duration-300",
-            "hidden md:block"
-          )}
+          className={cn('transition-all duration-300', 'hidden md:block')}
         >
-          <motion.div
-            variants={panelVariants}
-            className="h-full"
-          >
+          <motion.div variants={panelVariants} className="h-full">
             <ChatInterface />
           </motion.div>
         </ResizablePanel>
@@ -267,10 +320,7 @@ export function OpenCanvas() {
         <ResizableHandle withHandle className="hidden md:block" />
 
         <ResizablePanel defaultSize={70}>
-          <motion.div 
-            variants={panelVariants}
-            className="h-full flex flex-col"
-          >
+          <motion.div variants={panelVariants} className="h-full flex flex-col">
             <AnimatePresence mode="wait">
               {isFileExplorerOpen && (
                 <motion.div
@@ -285,10 +335,12 @@ export function OpenCanvas() {
               )}
             </AnimatePresence>
 
-            <div className={cn(
-              "flex-1 transition-all duration-200",
-              isFileExplorerOpen ? "h-[calc(100%-300px)]" : "h-full"
-            )}>
+            <div
+              className={cn(
+                'flex-1 transition-all duration-200',
+                isFileExplorerOpen ? 'h-[calc(100%-300px)]' : 'h-full'
+              )}
+            >
               {currentFile ? (
                 <CodeEditor key={currentFile.id} />
               ) : (

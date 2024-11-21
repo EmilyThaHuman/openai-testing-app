@@ -1,21 +1,34 @@
-import { SystemMessage, HumanMessage } from 'langchain/schema';
-import { ChatOpenAI } from 'langchain/chat_models/openai';
-import logger from '../utils/logger';
+import OpenAI from 'openai'
+import logger from '../utils/logger'
 
-const chatOpenAI = new ChatOpenAI({
-  modelName: import.meta.env.VITE_OPENAI_API_CHAT_COMPLETION_MODEL || 'gpt-3.5-turbo',
-  openAIApiKey: import.meta.env.VITE_OPENAI_API_PROJECT_KEY,
-});
+const openai = new OpenAI({
+  apiKey: import.meta.env.VITE_OPENAI_API_PROJECT_KEY,
+  dangerouslyAllowBrowser: true
+})
 
 export async function extractKeywords(text) {
-  const systemMessage = new SystemMessage(
-    'You are a helpful assistant that extracts main keywords from given text.'
-  );
-  const humanMessage = new HumanMessage(
-    `Extract the main keywords from the following text:\n\n${text}\n\nProvide the keywords as a comma-separated list.`
-  );
+  try {
+    const response = await openai.chat.completions.create({
+      model: import.meta.env.VITE_OPENAI_API_CHAT_COMPLETION_MODEL || 'gpt-3.5-turbo',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a helpful assistant that extracts main keywords from given text.'
+        },
+        {
+          role: 'user',
+          content: `Extract the main keywords from the following text:\n\n${text}\n\nProvide the keywords as a comma-separated list.`
+        }
+      ],
+      temperature: 0.3,
+      max_tokens: 200
+    })
 
-  const response = await chatOpenAI.call([systemMessage, humanMessage]);
-  logger.info(`Extracted keywords: ${response.content}`);
-  return response.content.split(',').map(keyword => keyword.trim());
+    const keywords = response.choices[0].message.content.trim()
+    logger.info(`Extracted keywords: ${keywords}`)
+    return keywords.split(',').map(keyword => keyword.trim())
+  } catch (error) {
+    logger.error('Error extracting keywords:', error)
+    throw new Error('Failed to extract keywords: ' + error.message)
+  }
 } 

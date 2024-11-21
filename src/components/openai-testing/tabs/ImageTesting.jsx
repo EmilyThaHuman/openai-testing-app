@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStoreSelector } from '@/store/useStore';
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Download } from "lucide-react";
+import { Loader2, Download } from 'lucide-react';
 
 export default function ImageTesting() {
   const {
@@ -21,22 +21,24 @@ export default function ImageTesting() {
     loading,
     error,
     settings,
+    aiSettings,
     setPrompt,
     setSettings,
-    generateImage
+    generateImage,
   } = useStoreSelector(state => ({
     prompt: state.imagePrompt,
     images: state.generatedImages,
     loading: state.isGeneratingImage,
     error: state.imageError,
     settings: state.imageSettings,
+    aiSettings: state.aiSettings,
     setPrompt: state.setImagePrompt,
     setSettings: state.setImageSettings,
-    generateImage: state.generateImage
+    generateImage: state.generateImage,
   }));
 
   return (
-    <motion.div 
+    <motion.div
       className="container max-w-4xl mx-auto space-y-6 p-4"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -45,16 +47,20 @@ export default function ImageTesting() {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-2">
             <Label>Model</Label>
-            <Select 
-              value={settings.model} 
-              onValueChange={(value) => setSettings({ ...settings, model: value })}
+            <Select
+              value={aiSettings.imageModel}
+              onValueChange={value =>
+                setSettings({ ...aiSettings, imageModel: value })
+              }
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select model" />
               </SelectTrigger>
               <SelectContent>
-                {settings.models.map((m) => (
-                  <SelectItem key={m} value={m}>{m}</SelectItem>
+                {settings.models.map(m => (
+                  <SelectItem key={m} value={m}>
+                    {m}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -66,13 +72,13 @@ export default function ImageTesting() {
           <Textarea
             placeholder="Enter your image generation prompt..."
             value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
+            onChange={e => setPrompt(e.target.value)}
             className="min-h-[100px] resize-none"
           />
         </div>
 
-        <Button 
-          onClick={generateImage} 
+        <Button
+          onClick={generateImage}
           disabled={loading || !prompt.trim()}
           className="mt-4 w-full sm:w-auto"
         >
@@ -81,7 +87,9 @@ export default function ImageTesting() {
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Generating...
             </>
-          ) : 'Generate Image'}
+          ) : (
+            'Generate Image'
+          )}
         </Button>
       </Card>
 
@@ -99,7 +107,7 @@ export default function ImageTesting() {
         )}
 
         {images.length > 0 && (
-          <motion.div 
+          <motion.div
             className="grid gap-6 sm:grid-cols-2"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -119,8 +127,8 @@ export default function ImageTesting() {
                     loading="lazy"
                   />
                   <div className="p-3 border-t bg-muted/50">
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       size="sm"
                       className="w-full"
                       onClick={() => window.open(image.url)}
@@ -137,4 +145,4 @@ export default function ImageTesting() {
       </AnimatePresence>
     </motion.div>
   );
-} 
+}

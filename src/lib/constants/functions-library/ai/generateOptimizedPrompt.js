@@ -1,6 +1,6 @@
-import { PromptTemplate } from 'langchain/prompts';
-import { SystemMessage } from 'langchain/schema';
-import { ChatOpenAI } from 'langchain/chat_models/openai';
+import { SystemMessage } from "@langchain/core/messages";
+import { PromptTemplate } from "@langchain/core/prompts";
+import { ChatOpenAI } from "@langchain/openai";
 
 export async function generateOptimizedPrompt(input) {
   const template = `

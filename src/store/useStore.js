@@ -28,7 +28,6 @@ const store = createWithEqualityFn(
           performanceMiddleware((set, get) => ({
             // Combine all slices
             ...createBillingSlice(set, get),
-            ...createOpenAISlice(set, get),
             ...createVectorStoreSlice(set, get),
             ...createMetricsSlice(set, get),
             ...createWorkspaceSlice(set, get),
@@ -45,7 +44,6 @@ const store = createWithEqualityFn(
             resetStore: () => {
               set({}, true); // Deep reset of all state
               get().resetBillingState();
-              get().resetOpenAIState();
               get().resetVectorStoreState();
               get().resetMetricsState();
               get().resetWorkspaceState();
@@ -69,11 +67,15 @@ const store = createWithEqualityFn(
           theme: state.theme,
           settings: state.settings,
           aiSettings: state.aiSettings,
-          apiKey: state.apiKey,
+          apiKey: state.apiKey || import.meta.env.VITE_OPENAI_API_KEY,
+          isInitialized: true,
           // chat
           activeChat: state.activeChat,
           // assistants
           assistants: state.assistants,
+          selectedThread: state.selectedThread,
+          selectedAssistant: state.selectedAssistant,
+          messages: state.messages,
           // open canvas
           currentFile: state.currentFile,
           // workspace

@@ -1,15 +1,16 @@
-import { window } from '@/utils/browser';
+import { getWindow } from '@/utils/browser';
 import logger from '../../utils/logger';
 
 export async function analyzeComponent({
   componentPath,
-  analysisDepth,
-  includeSubcomponents,
+  analysisDepth = 'basic',
+  includeSubcomponents = false,
   metrics = [],
 }) {
   try {
+    const window = getWindow();
     const content = await window.fs.readFile(componentPath, {
-      encoding: "utf8",
+      encoding: 'utf8',
     });
 
     const analysis = {
@@ -19,7 +20,7 @@ export async function analyzeComponent({
         stateComplexity: 0,
       },
       performance: {
-        reRenderRisk: "low",
+        reRenderRisk: 'low',
         memoizationOpportunities: [],
         heavyComputations: [],
       },
@@ -27,20 +28,20 @@ export async function analyzeComponent({
     };
 
     // Basic analysis
-    if (content.includes("useState")) {
+    if (content.includes('useState')) {
       analysis.complexity.stateComplexity++;
     }
 
-    if (!content.includes("memo") && !content.includes("useMemo")) {
+    if (!content.includes('memo') && !content.includes('useMemo')) {
       analysis.recommendations.push({
-        type: "performance",
-        suggestion: "Consider memoization for performance optimization",
-        priority: "medium",
+        type: 'performance',
+        suggestion: 'Consider memoization for performance optimization',
+        priority: 'medium',
       });
     }
 
     // Add depth-specific analysis
-    if (analysisDepth === "comprehensive") {
+    if (analysisDepth === 'comprehensive') {
       const imports = content.match(/import.*from.*/g) || [];
       analysis.complexity.dependencyCount = imports.length;
 
@@ -50,7 +51,7 @@ export async function analyzeComponent({
 
     return analysis;
   } catch (error) {
-    logger.error("Error analyzing component:", error);
+    logger.error('Error analyzing component:', error);
     throw error;
   }
-} 
+}

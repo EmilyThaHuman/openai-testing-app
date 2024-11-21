@@ -6,18 +6,18 @@ import { REACT_AGENT_CONFIG } from '@/config/ai/agent';
 import {
   get10BlueLinksContents,
   processAndVectorizeContent,
-} from './contentProcessing';
-import { functionCalling } from './functionCalling';
-import relevantQuestions from './generateRelevantQuestions';
+} from './archive/contentProcessing';
+import { functionCalling } from './archive/functionCalling';
+import relevantQuestions from './archive/generateRelevantQuestions';
 import { lookupTool } from './mentionTools';
-import { checkRateLimit } from './rateLimit';
+import { checkRateLimit } from './archive/rateLimit';
 import { getImages, getSearchResults, getVideos } from './searchProvider';
 import {
   clearSemanticCache,
   getFromSemanticCache,
   initializeSemanticCache,
   setInSemanticCache,
-} from './semanticCache';
+} from './archive/semanticCache';
 
 ('use server');
 // streamingChatCompletion.js

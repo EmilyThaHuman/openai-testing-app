@@ -1,7 +1,6 @@
 import { PuppeteerWebBaseLoader } from '@langchain/community/document_loaders/web/puppeteer';
 import fs from 'fs';
 import path from 'path';
-import logger from '../utils/logger';
 
 export async function scrapeWebsite({ url }) {
   try {
@@ -35,7 +34,7 @@ export async function scrapeWebsite({ url }) {
     await loader.load();
     return `Website HTML saved to ${saveFilePathWithDate}`;
   } catch (error) {
-    logger.error('Error occurred while scraping HTML:', error);
+    console.error('Error occurred while scraping HTML:', error);
     throw error;
   }
 }
