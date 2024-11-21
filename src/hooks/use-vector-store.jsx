@@ -3,7 +3,7 @@
 // import { useToast } from "@/components/ui/use-toast";
 
 // export function useVectorStore() {
-//   const store = useStoreShallow((state) => ({
+//   const store = useStoreSelector((state) => ({
 //     vectorStores: state.vectorStores,
 //     selectedVectorStore: state.selectedVectorStore,
 //     loading: state.loading,

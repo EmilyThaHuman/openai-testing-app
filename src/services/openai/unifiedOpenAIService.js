@@ -452,6 +452,16 @@ export const UnifiedOpenAIService = {
         });
       },
 
+      createStream: async (threadId, params) => {
+        return trackApiCall(
+          `threads.messages.createStream.${threadId}`,
+          async () => {
+            const openai = checkInitialization();
+            return await openai.beta.threads.messages.create(threadId, params);
+          }
+        );
+      },
+
       list: async threadId => {
         return trackApiCall(`threads.messages.list.${threadId}`, async () => {
           console.log('Listing messages...');

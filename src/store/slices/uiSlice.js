@@ -1,18 +1,37 @@
-export const createUISlice = (set, get) => ({
-  theme: 'light',
-  isLoading: false,
-  error: null,
-  commandPaletteOpen: false,
-  sidebarOpen: true,
+export const createUISlice = (set) => ({
+  theme: 'system',
+  settings: {
+    notifications: true,
+    autoSave: true,
+    fontSize: 14
+  },
+  isSettingsOpen: false,
 
-  setTheme: (theme) => set({ theme }),
-  setIsLoading: (loading) => set({ isLoading: loading }),
-  setError: (error) => set({ error }),
-  clearError: () => set({ error: null }),
-  toggleCommandPalette: () => set((state) => ({ 
-    commandPaletteOpen: !state.commandPaletteOpen 
-  })),
-  toggleSidebar: () => set((state) => ({ 
-    sidebarOpen: !state.sidebarOpen 
-  })),
-}) 
+  setTheme: (theme) => {
+    set({ theme });
+  },
+
+  updateSettings: (settings) => {
+    set((state) => ({
+      settings: { ...state.settings, ...settings }
+    }));
+  },
+
+  toggleSettings: () => {
+    set((state) => ({
+      isSettingsOpen: !state.isSettingsOpen
+    }));
+  },
+
+  resetUIState: () => {
+    set({
+      theme: 'system',
+      settings: {
+        notifications: true,
+        autoSave: true,
+        fontSize: 14
+      },
+      isSettingsOpen: false
+    });
+  }
+}); 

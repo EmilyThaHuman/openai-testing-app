@@ -1,4 +1,5 @@
-import React, { memo } from 'react';
+import React from 'react';
+import { useStoreSelector } from '@/store/useStore';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -7,26 +8,43 @@ import {
   Info, 
   MessageSquare,
   FileText,
-  Code
+  Code,
+  Trash2 
 } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
-export const ChatHeader = memo(({ 
+export function ChatHeader({ 
   assistant, 
-  onSettingsClick,
   messageCount = 0,
-  isStreaming 
-}) => {
+  isStreaming,
+  onClearChat,
+  onSettingsClick 
+}) {
+  const { isLoading } = useStoreSelector(state => ({
+    isLoading: state.isLoading
+  }));
+
   if (!assistant) return null;
 
   const toolIcons = {
     'code_interpreter': <Code className="h-4 w-4" />,
     'retrieval': <FileText className="h-4 w-4" />,
-    'function': <MessageSquare className="h-4 w-4" />,
+    'function': <MessageSquare className="h-4 w-4" />
   };
 
   return (
@@ -45,19 +63,41 @@ export const ChatHeader = memo(({
         </div>
 
         <div className="flex items-center gap-2">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="sm" onClick={onSettingsClick}>
-                <Settings className="h-4 w-4" />
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                disabled={isLoading || messageCount === 0}
+              >
+                <Trash2 className="h-4 w-4" />
               </Button>
-            </TooltipTrigger>
-            <TooltipContent>Assistant Settings</TooltipContent>
-          </Tooltip>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Clear chat history?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. All messages will be permanently deleted.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={onClearChat}>
+                  Clear
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <Info className="h-4 w-4" />
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={onSettingsClick}
+                disabled={isLoading}
+              >
+                <Settings className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
@@ -76,27 +116,31 @@ export const ChatHeader = memo(({
         </p>
       )}
 
-      <div className="flex flex-wrap gap-2">
-        {assistant.tools?.map((tool) => (
-          <Tooltip key={tool.type}>
-            <TooltipTrigger asChild>
-              <Badge variant="outline" className="flex items-center gap-1">
-                {toolIcons[tool.type]}
-                {tool.type}
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent>
-              {tool.type === 'function' 
-                ? `Function: ${tool.function?.name}`
-                : `${tool.type} enabled`}
-            </TooltipContent>
-          </Tooltip>
-        ))}
-      </div>
+      {assistant.tools?.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {assistant.tools.map((tool) => (
+            <Tooltip key={tool.type}>
+              <TooltipTrigger asChild>
+                <Badge variant="outline" className="flex items-center gap-1">
+                  {toolIcons[tool.type]}
+                  {tool.type}
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent>
+                {tool.type === 'function' 
+                  ? `Function: ${tool.function?.name}`
+                  : `${tool.type} enabled`}
+              </TooltipContent>
+            </Tooltip>
+          ))}
+        </div>
+      )}
 
       <Separator />
     </div>
   );
-});
+}
 
-ChatHeader.displayName = 'ChatHeader'; 
+ChatHeader.displayName = 'ChatHeader';
+
+export default React.memo(ChatHeader); 

@@ -1,79 +1,55 @@
-import { toast } from "@/components/ui/use-toast";
-import { UnifiedOpenAIService } from "@/services/openai/unifiedOpenAIService";
+import { UnifiedOpenAIService } from '@/services/openai/unifiedOpenAIService';
 
 export const createOpenAISlice = (set, get) => ({
-  messages: [],
-  data: null,
-  result: "",
+  // State
+  apiKey: localStorage.getItem('openai_api_key') || '',
   isInitialized: false,
   error: null,
-  loading: false,
-  apiKey: "",
-
-  initialize: () => {
-    const apiKey = get().apiKey;
-    if (apiKey && !get().isInitialized) {
-      UnifiedOpenAIService.initialize(apiKey);
-      set({ isInitialized: true });
-    }
-  },
-
-  setApiKey: (newApiKey) => {
+  
+  // Actions
+  initialize: async (key) => {
     try {
-      UnifiedOpenAIService.initialize(newApiKey);
-      if (typeof window !== "undefined") {
-        localStorage.setItem("openai_api_key", newApiKey);
+      if (!key) {
+        throw new Error('API key is required');
       }
 
+      // Initialize the OpenAI service
+      UnifiedOpenAIService.initialize(key);
+      
+      // Save the API key
+      localStorage.setItem('openai_api_key', key);
+      
       set({
-        apiKey: newApiKey,
+        apiKey: key,
         isInitialized: true,
-        error: null,
+        error: null
       });
-      toast({
-        title: "API Key Updated",
-        description: "Your OpenAI API key has been successfully updated.",
+    } catch (err) {
+      set({
+        error: err.message,
+        isInitialized: false
       });
-    } catch (error) {
-      set({ error: error.message });
-      toast({
-        variant: "destructive",
-        title: "API Key Error",
-        description: error.message,
-      });
+      throw err;
     }
   },
 
-  sendMessage: async (content, options = {}) => {
-    const userMessage = { role: "user", content };
-
-    set((state) => ({
-      messages: [...state.messages, userMessage],
-    }));
-
-    try {
-      const response = await UnifiedOpenAIService.chat.create({
-        model: options.model || "gpt-4",
-        messages: get().messages,
-        ...options,
-      });
-
-      const assistantMessage = response.choices[0].message;
-      set((state) => ({
-        messages: [...state.messages, assistantMessage],
-      }));
-      return assistantMessage;
-    } catch (error) {
-      console.error("Error in sendMessage:", error);
-      set({ error: error.message });
-      toast({
-        variant: "destructive",
-        title: "Message Error",
-        description: error.message,
-      });
-      throw error;
-    }
+  clearApiKey: () => {
+    localStorage.removeItem('openai_api_key');
+    set({
+      apiKey: '',
+      isInitialized: false
+    });
   },
 
-  clearMessages: () => set({ messages: [] }),
+  setError: (error) => set({ error }),
+
+  // Selectors
+  getOpenAIState: () => {
+    const state = get();
+    return {
+      apiKey: state.apiKey,
+      isInitialized: state.isInitialized,
+      error: state.error
+    };
+  }
 });

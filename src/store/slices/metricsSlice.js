@@ -1,149 +1,67 @@
-import { supabase } from '@/lib/supabase/client'
+import { UnifiedOpenAIService } from '@/services/openai/unifiedOpenAIService';
+import { processMetricsData } from '@/lib/utils/metrics';
+import { getTimeRangeDate } from '@/lib/utils/date';
 
 export const createMetricsSlice = (set, get) => ({
-  // Metrics State
-  metrics: {
-    total: 0,
-    chat: 0,
-    images: 0,
-    audio: 0,
-    embeddings: 0,
-    history: [],
-    responseTimes: [],
-    recentActivity: [],
-    errorRates: {},
-    costBreakdown: {},
-    modelUsage: {}
-  },
+  // State
+  metrics: null,
   isLoadingMetrics: false,
   metricsError: null,
-  timeRange: '24h',
+  apiLatency: [],
+  endpointStats: {},
+  apiErrors: [],
 
   // Actions
-  setTimeRange: (range) => set({ timeRange: range }),
-
-  // Fetch metrics data
-  fetchMetrics: async (timeRange = '24h') => {
-    const { supabase } = get()
-    set({ isLoadingMetrics: true, metricsError: null })
-
+  fetchMetrics: async (timeRange = '7d') => {
+    set({ isLoadingMetrics: true, metricsError: null });
     try {
-      const { data: metricsData, error } = await supabase
-        .from('api_metrics')
-        .select('*')
-        .eq('profile_id', supabase.auth.user()?.id)
-        .gte('timestamp', getTimeRangeDate(timeRange))
-        .order('timestamp', { ascending: false })
-
-      if (error) throw error
-
-      // Process metrics data
-      const processedData = processMetricsData(metricsData)
-      set({ metrics: processedData })
-
-      // Subscribe to real-time updates
-      subscribeToMetrics()
-
+      const startDate = getTimeRangeDate(timeRange);
+      const response = await UnifiedOpenAIService.metrics.get(startDate);
+      const processedMetrics = processMetricsData(response.data);
+      set({ metrics: processedMetrics, isLoadingMetrics: false });
     } catch (error) {
-      set({ metricsError: error.message })
-    } finally {
-      set({ isLoadingMetrics: false })
+      set({ metricsError: error.message, isLoadingMetrics: false });
+      throw error;
     }
   },
 
-  // Subscribe to real-time metrics updates
-  subscribeToMetrics: () => {
-    const { supabase } = get()
-    
-    const channel = supabase
-      .channel('api_metrics')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'api_metrics',
-          filter: `profile_id=eq.${supabase.auth.user()?.id}`
-        },
-        (payload) => {
-          // Update metrics in real-time
-          set((state) => ({
-            metrics: updateMetricsWithPayload(state.metrics, payload)
-          }))
+  trackApiCall: (endpoint, duration) => {
+    set((state) => ({
+      apiLatency: [...state.apiLatency, { endpoint, duration, timestamp: Date.now() }],
+      endpointStats: {
+        ...state.endpointStats,
+        [endpoint]: {
+          totalCalls: (state.endpointStats[endpoint]?.totalCalls || 0) + 1,
+          avgLatency: state.endpointStats[endpoint]?.avgLatency 
+            ? (state.endpointStats[endpoint].avgLatency + duration) / 2 
+            : duration,
+          errors: state.endpointStats[endpoint]?.errors || 0
         }
-      )
-      .subscribe()
-
-    return () => {
-      channel.unsubscribe()
-    }
+      }
+    }));
   },
 
-  // Export metrics data
-  exportMetrics: async (format = 'json') => {
-    const { metrics } = get()
-    
-    switch (format) {
-      case 'csv':
-        return exportToCsv(metrics)
-      case 'pdf':
-        return exportToPdf(metrics)
-      default:
-        return JSON.stringify(metrics, null, 2)
-    }
-  }
-})
+  trackApiError: (endpoint, error) => {
+    set((state) => ({
+      apiErrors: [...state.apiErrors, { endpoint, error, timestamp: Date.now() }],
+      endpointStats: {
+        ...state.endpointStats,
+        [endpoint]: {
+          ...state.endpointStats[endpoint],
+          errors: (state.endpointStats[endpoint]?.errors || 0) + 1
+        }
+      }
+    }));
+  },
 
-// Helper functions
-const getTimeRangeDate = (range) => {
-  const now = new Date()
-  switch (range) {
-    case '24h':
-      return new Date(now.setHours(now.getHours() - 24))
-    case '7d':
-      return new Date(now.setDate(now.getDate() - 7))
-    case '30d':
-      return new Date(now.setDate(now.getDate() - 30))
-    default:
-      return new Date(now.setHours(now.getHours() - 24))
+  resetMetricsState: () => {
+    set({
+      metrics: null,
+      isLoadingMetrics: false,
+      metricsError: null,
+      apiLatency: [],
+      endpointStats: {},
+      apiErrors: []
+    });
   }
-}
-
-const processMetricsData = (data) => {
-  return {
-    total: data.reduce((acc, curr) => acc + curr.total_calls, 0),
-    chat: data.reduce((acc, curr) => acc + curr.chat_calls, 0),
-    images: data.reduce((acc, curr) => acc + curr.image_calls, 0),
-    audio: data.reduce((acc, curr) => acc + curr.audio_calls, 0),
-    embeddings: data.reduce((acc, curr) => acc + curr.embedding_calls, 0),
-    history: processHistoryData(data),
-    responseTimes: processResponseTimes(data),
-    recentActivity: processRecentActivity(data),
-    errorRates: calculateErrorRates(data),
-    costBreakdown: calculateCosts(data),
-    modelUsage: calculateModelUsage(data)
-  }
-}
-
-const updateMetricsWithPayload = (currentMetrics, payload) => {
-  const { new: newMetric } = payload
-  
-  return {
-    ...currentMetrics,
-    total: currentMetrics.total + newMetric.total_calls,
-    chat: currentMetrics.chat + newMetric.chat_calls,
-    images: currentMetrics.images + newMetric.image_calls,
-    audio: currentMetrics.audio + newMetric.audio_calls,
-    history: [newMetric, ...currentMetrics.history].slice(0, 100),
-    recentActivity: [
-      {
-        id: newMetric.id,
-        type: newMetric.type,
-        description: newMetric.description,
-        timestamp: newMetric.timestamp,
-        duration: newMetric.duration
-      },
-      ...currentMetrics.recentActivity
-    ].slice(0, 50)
-  }
-} 
+});

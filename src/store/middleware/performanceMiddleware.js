@@ -1,25 +1,37 @@
 import { subscribeWithSelector } from 'zustand/middleware';
 
-export const performanceMiddleware = (config) => (set, get, api) =>
-  config(
+export const performanceMiddleware = (config) => (set, get, api) => {
+  let updateScheduled = false
+  
+  return config(
     (...args) => {
-      const before = performance.now();
-      const state = get();
-      const result = set(...args);
-      const after = performance.now();
+      if (updateScheduled) {
+        return
+      }
+
+      updateScheduled = true
       
-      console.debug(
-        `State update took ${after - before}ms`,
-        {
-          action: args[0],
-          timeTaken: after - before,
-          previousState: state,
-          newState: get(),
+      // Schedule state update for next frame
+      requestAnimationFrame(() => {
+        const before = performance.now()
+        set(...args)
+        const after = performance.now()
+        
+        if (after - before > 16) {
+          console.warn(
+            `Slow state update detected (${Math.round(after - before)}ms)`,
+            {
+              action: args[0],
+              timeTaken: after - before,
+              previousState: get(),
+            }
+          )
         }
-      );
-      
-      return result;
+        
+        updateScheduled = false
+      })
     },
     get,
     api
-  ); 
+  )
+} 

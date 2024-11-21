@@ -10,6 +10,7 @@ import {
   LogOut,
   Settings,
   User,
+  HelpCircle,
 } from 'lucide-react'
 import {
   Avatar,
@@ -26,6 +27,40 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
+
+const userNavigation = [
+  {
+    title: 'Profile',
+    url: '/account/profile',
+    icon: User,
+  },
+  {
+    title: 'Billing',
+    url: '/account/billing',
+    icon: CreditCard,
+    badge: 'Pro'
+  },
+  {
+    title: 'Settings',
+    url: '/account/settings',
+    icon: Settings,
+  },
+  {
+    title: 'Help',
+    url: '/help',
+    icon: HelpCircle,
+  },
+  {
+    title: 'Notifications',
+    url: '/account/notifications',
+    icon: Bell,
+  },
+  {
+    title: 'Subscription',
+    url: '/account/subscription',
+    icon: BadgeCheck,
+  },
+]
 
 export function NavUser({ user, isCollapsed, className }) {
   const navigate = useNavigate()
@@ -78,31 +113,23 @@ export function NavUser({ user, isCollapsed, className }) {
           <DropdownMenuSeparator />
           
           <DropdownMenuGroup>
-            <DropdownMenuItem onClick={() => navigate('/profile')}>
-              <User className="mr-2 h-4 w-4" />
-              Profile
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate('/billing')}>
-              <CreditCard className="mr-2 h-4 w-4" />
-              Billing
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate('/settings')}>
-              <Settings className="mr-2 h-4 w-4" />
-              Settings
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-          
-          <DropdownMenuSeparator />
-          
-          <DropdownMenuGroup>
-            <DropdownMenuItem onClick={() => navigate('/notifications')}>
-              <Bell className="mr-2 h-4 w-4" />
-              Notifications
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate('/subscription')}>
-              <BadgeCheck className="mr-2 h-4 w-4" />
-              Subscription
-            </DropdownMenuItem>
+            {userNavigation.map((item) => (
+              <DropdownMenuItem 
+                key={item.url}
+                onClick={() => navigate(item.url)}
+                className="flex items-center justify-between"
+              >
+                <span className="flex items-center gap-2">
+                  <item.icon className="h-4 w-4" />
+                  {item.title}
+                </span>
+                {item.badge && (
+                  <span className="text-xs font-medium text-primary">
+                    {item.badge}
+                  </span>
+                )}
+              </DropdownMenuItem>
+            ))}
           </DropdownMenuGroup>
           
           <DropdownMenuSeparator />

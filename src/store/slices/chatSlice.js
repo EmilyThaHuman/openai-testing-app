@@ -1,85 +1,111 @@
-import { chatService } from '@/services/openai/chatService';
+import { UnifiedOpenAIService } from '@/services/openai/unifiedOpenAIService';
+import { processStreamingResponse } from '@/lib/utils/streaming';
 
 export const createChatSlice = (set, get) => ({
   // State
-  currentThread: null,
+  chats: [],
+  activeChat: null,
   messages: [],
-  isLoading: false,
-  error: null,
-  systemPrompt: '',
-  messageInput: '',
+  isStreaming: false,
 
   // Actions
-  setCurrentThread: (thread) => set({ currentThread: thread }),
-  setMessages: (messages) => set({ messages }),
-  setSystemPrompt: (prompt) => set({ systemPrompt: prompt }),
-  setMessageInput: (input) => set({ messageInput: input }),
-  
-  initializeChat: async () => {
-    try {
-      set({ isLoading: true });
-      const thread = await chatService.createThread();
-      set({ currentThread: thread });
-      return thread;
-    } catch (error) {
-      set({ error: error.message });
-      throw error;
-    } finally {
-      set({ isLoading: false });
+  createChat: () => {
+    const newChat = {
+      id: Date.now().toString(),
+      title: 'New Chat',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    set((state) => ({
+      chats: [newChat, ...state.chats],
+      activeChat: newChat,
+      messages: []
+    }));
+    return newChat;
+  },
+
+  setActiveChat: (chatId) => {
+    const chat = get().chats.find(c => c.id === chatId);
+    if (chat) {
+      set({ 
+        activeChat: chat,
+        messages: chat.messages || []
+      });
     }
   },
 
-  loadMessages: async (threadId) => {
-    try {
-      set({ isLoading: true });
-      const messages = await chatService.getMessages(threadId);
-      set({ messages });
-      return messages;
-    } catch (error) {
-      set({ error: error.message });
-      throw error;
-    } finally {
-      set({ isLoading: false });
-    }
-  },
+  sendMessage: async (content) => {
+    const message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content,
+      timestamp: new Date().toISOString()
+    };
 
-  sendMessage: async (message, currentFile = null) => {
-    const state = get();
-    if (!state.currentThread?.id) return;
+    set((state) => ({
+      messages: [...state.messages, message],
+      isStreaming: true
+    }));
 
     try {
-      set({ isLoading: true });
+      const stream = await UnifiedOpenAIService.chat.streamCompletion({
+        messages: [...get().messages, message]
+      });
+
+      let assistantResponse = '';
       
-      // Add optimistic message
-      const optimisticMessage = {
-        role: 'user',
-        content: message,
-        timestamp: new Date().toISOString()
-      };
-      set({ messages: [...state.messages, optimisticMessage] });
+      await processStreamingResponse(stream, (chunk) => {
+        assistantResponse += chunk;
+        set((state) => ({
+          messages: [
+            ...state.messages,
+            {
+              id: 'streaming',
+              role: 'assistant',
+              content: assistantResponse,
+              timestamp: new Date().toISOString()
+            }
+          ]
+        }));
+      });
 
-      // Send message and get updated messages
-      const messages = await chatService.sendMessage(
-        state.currentThread.id,
-        message,
-        [], // fileIds
-        {
-          file_id: currentFile?.id,
-          file_name: currentFile?.name,
-          system_prompt: state.systemPrompt
-        }
-      );
+      // Update with final message
+      set((state) => ({
+        messages: [
+          ...state.messages.filter(m => m.id !== 'streaming'),
+          {
+            id: Date.now().toString(),
+            role: 'assistant',
+            content: assistantResponse,
+            timestamp: new Date().toISOString()
+          }
+        ],
+        isStreaming: false
+      }));
 
-      set({ messages });
-      set({ messageInput: '' });
+      // Update chat
+      const chat = get().activeChat;
+      if (chat) {
+        set((state) => ({
+          chats: state.chats.map(c => 
+            c.id === chat.id 
+              ? { ...c, messages: get().messages, updatedAt: new Date().toISOString() }
+              : c
+          )
+        }));
+      }
     } catch (error) {
-      set({ error: error.message });
+      set({ isStreaming: false });
       throw error;
-    } finally {
-      set({ isLoading: false });
     }
   },
 
-  clearMessages: () => set({ messages: [] }),
-  clearError: () => set({ error: null })
+  resetChatState: () => {
+    set({
+      chats: [],
+      activeChat: null,
+      messages: [],
+      isStreaming: false
+    });
+  }
 });

@@ -1,159 +1,165 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useOpenAI } from '@/hooks/use-openai';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UnifiedOpenAIService } from '@/services/openai/unifiedOpenAIService';
-import { Loader2, RefreshCw } from 'lucide-react';
-import { useOpenAI } from '@/context/openaiContext';
+import { Loader2 } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 
 export default function FineTuneTesting() {
-  const { apiKey } = useOpenAI();
-  const [file, setFile] = useState(null);
-  const [model, setModel] = useState('gpt-3.5-turbo');
+  const { isInitialized } = useOpenAI();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [jobs, setJobs] = useState([]);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState(null);
+  const [formData, setFormData] = useState({
+    model: 'gpt-3.5-turbo',
+    trainingFile: '',
+    validationFile: '',
+    epochs: 3,
+    batchSize: 1
+  });
 
-  useEffect(() => {
-    if (apiKey) {
-      fetchJobs();
-    }
-  }, [apiKey]);
-
-  const fetchJobs = async () => {
-    try {
-      const response = await UnifiedOpenAIService.fineTuning.list();
-      setJobs(response.data);
-    } catch (error) {
-      console.error('Error fetching jobs:', error);
-      setError(error.message);
-    }
-  };
-
-  const handleFileUpload = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    setLoading(true);
-    setError('');
-
-    try {
-      const response = await UnifiedOpenAIService.files.upload(file, 'fine-tune');
-      setFile(response);
-    } catch (error) {
-      console.error('File upload error:', error);
-      setError(error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createFineTuningJob = async () => {
-    if (!file) return;
-    setLoading(true);
-    setError('');
-
-    try {
-      await UnifiedOpenAIService.fineTuning.create({
-        training_file: file.id,
-        model,
+  const handleFineTune = async () => {
+    if (!isInitialized) {
+      toast({
+        title: 'Error',
+        description: 'OpenAI is not initialized',
+        variant: 'destructive'
       });
-      await fetchJobs();
-    } catch (error) {
-      console.error('Fine-tuning error:', error);
-      setError(error.message);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await UnifiedOpenAIService.fineTuning.create({
+        training_file: formData.trainingFile,
+        validation_file: formData.validationFile,
+        model: formData.model,
+        hyperparameters: {
+          n_epochs: formData.epochs,
+          batch_size: formData.batchSize
+        }
+      });
+      setResult(response);
+      toast({
+        title: 'Success',
+        description: 'Fine-tune job created successfully'
+      });
+    } catch (err) {
+      setError(err.message);
+      toast({
+        title: 'Error',
+        description: err.message,
+        variant: 'destructive'
+      });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="grid gap-4 p-4">
-      <Card className="p-4">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">Create Fine-tune</h2>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={fetchJobs}
-            disabled={loading}
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          </Button>
-        </div>
-
-        <div className="space-y-4">
-          <div>
-            <Label>Training File</Label>
-            <Input
-              type="file"
-              onChange={handleFileUpload}
-              disabled={loading}
-            />
-          </div>
-
-          <div>
+    <div className="space-y-6">
+      <Card className="p-6">
+        <form onSubmit={(e) => {
+          e.preventDefault();
+          handleFineTune();
+        }} className="space-y-4">
+          <div className="space-y-2">
             <Label>Model</Label>
+            <Select
+              value={formData.model}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, model: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select model" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo</SelectItem>
+                <SelectItem value="davinci">Davinci</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Training File ID</Label>
             <Input
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
+              value={formData.trainingFile}
+              onChange={(e) => setFormData(prev => ({ ...prev, trainingFile: e.target.value }))}
+              placeholder="Enter training file ID"
             />
           </div>
 
-          <Button
-            onClick={createFineTuningJob}
-            disabled={loading || !file}
+          <div className="space-y-2">
+            <Label>Validation File ID (Optional)</Label>
+            <Input
+              value={formData.validationFile}
+              onChange={(e) => setFormData(prev => ({ ...prev, validationFile: e.target.value }))}
+              placeholder="Enter validation file ID"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Epochs</Label>
+              <Input
+                type="number"
+                value={formData.epochs}
+                onChange={(e) => setFormData(prev => ({ ...prev, epochs: parseInt(e.target.value) }))}
+                min={1}
+                max={10}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Batch Size</Label>
+              <Input
+                type="number"
+                value={formData.batchSize}
+                onChange={(e) => setFormData(prev => ({ ...prev, batchSize: parseInt(e.target.value) }))}
+                min={1}
+                max={256}
+              />
+            </div>
+          </div>
+
+          <Button 
+            type="submit" 
+            disabled={loading || !formData.trainingFile}
             className="w-full"
           >
             {loading ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Creating...
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Creating Fine-tune
               </>
-            ) : 'Create Fine-tune'}
+            ) : (
+              'Create Fine-tune'
+            )}
           </Button>
-        </div>
+        </form>
       </Card>
 
-      <Card className="p-4">
-        <h2 className="text-xl font-bold mb-4">Fine-tunes List</h2>
-        {error && (
-          <div className="text-red-500 mb-4">
-            Error: {error}
-          </div>
-        )}
-        <div className="space-y-2">
-          {jobs.map((job) => (
-            <div
-              key={job.id}
-              className="p-4 border rounded hover:bg-gray-50 cursor-pointer"
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="font-medium">{job.fine_tuned_model || 'Processing...'}</p>
-                  <p className="text-sm text-gray-500">Status: {job.status}</p>
-                </div>
-                <div className="flex gap-2">
-                  {job.fine_tuned_model && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteModel(job.fine_tuned_model);
-                      }}
-                    >
-                      Delete Model
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </Card>
+      {result && (
+        <Card className="p-6">
+          <h3 className="text-lg font-semibold mb-4">Fine-tune Job Created</h3>
+          <pre className="bg-muted p-4 rounded-lg overflow-auto">
+            {JSON.stringify(result, null, 2)}
+          </pre>
+        </Card>
+      )}
+
+      {error && (
+        <Card className="p-6 border-destructive">
+          <h3 className="text-lg font-semibold text-destructive mb-2">Error</h3>
+          <p className="text-destructive">{error}</p>
+        </Card>
+      )}
     </div>
   );
 } 

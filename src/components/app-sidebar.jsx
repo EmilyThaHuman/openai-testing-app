@@ -27,7 +27,16 @@ import {
   Bell,
   CreditCard,
   User,
-  HelpCircle
+  HelpCircle,
+  LayoutDashboard,
+  Code,
+  Bot,
+  Sparkles,
+  Mic,
+  Gauge,
+  FileCode,
+  Braces,
+  Keyboard
 } from 'lucide-react';
 import * as React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -43,22 +52,22 @@ import {
 
 const navigationData = [
   {
-    title: 'All APIs',
-    url: '/openai-test',
-    icon: Command,
-    description: 'Test all OpenAI APIs',
-  },
-  {
-    title: 'API Dashboard',
+    title: 'Dashboard',
     url: '/dashboard',
-    icon: Inbox,
-    description: 'API usage metrics',
+    icon: LayoutDashboard,
+    description: 'Overview and metrics',
   },
   {
-    title: 'Open Canvas',
-    url: '/open-canvas',
-    icon: File,
-    description: 'Interactive coding environment',
+    title: 'API Testing',
+    url: '/openai-test',
+    icon: Code,
+    description: 'Test OpenAI APIs',
+  },
+  {
+    title: 'Assistants',
+    url: '/assistants',
+    icon: Bot,
+    description: 'Manage AI assistants',
   },
   {
     title: 'Chat',
@@ -67,10 +76,10 @@ const navigationData = [
     description: 'Chat with AI',
   },
   {
-    title: 'Assistants',
-    url: '/assistants',
-    icon: ArchiveX,
-    description: 'Manage AI assistants',
+    title: 'Open Canvas',
+    url: '/open-canvas',
+    icon: FileCode,
+    description: 'Interactive coding environment',
   },
   {
     title: 'Images',
@@ -81,26 +90,32 @@ const navigationData = [
   {
     title: 'Audio',
     url: '/audio',
-    icon: Music,
+    icon: Mic,
     description: 'Audio processing',
+  },
+  {
+    title: 'API Usage',
+    url: '/api-dashboard',
+    icon: Gauge,
+    description: 'API usage metrics',
   },
 ];
 
 const userNavigation = [
   {
     title: 'Profile',
-    url: '/profile',
+    url: '/account/profile',
     icon: User,
   },
   {
     title: 'Billing',
-    url: '/billing',
+    url: '/account/billing',
     icon: CreditCard,
     badge: 'Pro'
   },
   {
     title: 'Settings',
-    url: '/settings',
+    url: '/account/settings',
     icon: Settings,
   },
   {
@@ -113,7 +128,7 @@ const userNavigation = [
 // Add sidebar animation variants
 const sidebarVariants = {
   expanded: {
-    width: '200px',
+    width: '240px',
     transition: {
       duration: 0.3,
       ease: 'easeInOut',
@@ -156,12 +171,17 @@ export function AppSidebar({ className, isCollapsed = false, setIsCollapsed, ...
   const { user, signOut } = useAuth();
   const { unreadCount } = useStore()
 
+  const isActive = useCallback((url) => {
+    return location.pathname === url || location.pathname.startsWith(`${url}/`)
+  }, [location])
+
   return (
     <motion.div
       variants={sidebarVariants}
       initial={false}
       animate={isCollapsed ? 'collapsed' : 'expanded'}
       className={cn(
+        'fixed top-0 left-0 z-30 h-screen',
         'border-r bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60',
         'transition-all duration-300 ease-in-out hover:bg-accent/50',
         className
@@ -207,7 +227,7 @@ export function AppSidebar({ className, isCollapsed = false, setIsCollapsed, ...
                   <SidebarMenuItem className="px-2">
                     <SidebarMenuButton
                       onClick={() => navigate(item.url)}
-                      isActive={location.pathname === item.url}
+                      isActive={isActive(item.url)}
                       className={cn(
                         'w-full py-2 hover:bg-accent/80 transition-all duration-200',
                         'rounded-md relative overflow-hidden',

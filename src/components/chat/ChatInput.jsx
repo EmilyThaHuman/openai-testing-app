@@ -1,59 +1,56 @@
 import React, { useRef, useCallback } from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { useStoreSelector } from '@/store/useStore';
 import { useToast } from "@/components/ui/use-toast";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { ALLOWED_FILE_TYPES } from "@/constants/fileConstants";
 import { useFileHandler } from "@/hooks/useFileHandler";
 import FilePreview from "./FilePreview";
 import { MessageInput } from "./MessageInput";
 
-export function ChatInput({
-  onSend,
-  onFileUpload,
-  disabled = false,
-  placeholder = "Type your message...",
-}) {
+export function ChatInput() {
   const { toast } = useToast();
   const [input, setInput] = React.useState("");
-  const [isUploading, setIsUploading] = React.useState(false);
   const fileInputRef = useRef(null);
 
-  const { files, setFiles, uploadProgress, handleFileSelect, removeFile } =
-    useFileHandler();
+  const {
+    isLoading,
+    error,
+    sendMessage,
+    uploadFile,
+    uploadProgress,
+    clearUploadProgress
+  } = useStoreSelector(state => ({
+    isLoading: state.isLoading,
+    error: state.error,
+    sendMessage: state.sendMessage,
+    uploadFile: state.uploadFile,
+    uploadProgress: state.uploadProgress,
+    clearUploadProgress: state.clearUploadProgress
+  }));
 
-  const handleSubmit = async (e) => {
+  const { files, setFiles, handleFileSelect, removeFile } = useFileHandler();
+
+  const handleSubmit = useCallback(async (e) => {
     e?.preventDefault();
-    if ((!input.trim() && files.length === 0) || isUploading) return;
+    if ((!input.trim() && files.length === 0) || isLoading) return;
 
-    setIsUploading(true);
     try {
       const uploadedFileIds = await Promise.all(
-        files.map(async (file) => {
-          try {
-            const response = await onFileUpload?.(file);
-            return response?.id;
-          } catch (error) {
-            console.error(`Error uploading ${file.name}:`, error);
-            throw new Error(`Failed to upload ${file.name}`);
-          }
-        })
+        files.map(file => uploadFile(file))
       );
 
-      const successfulUploads = uploadedFileIds.filter(Boolean);
-      await onSend?.(input, successfulUploads);
-
+      await sendMessage(input, uploadedFileIds.filter(Boolean));
       setInput("");
       setFiles([]);
+      clearUploadProgress();
     } catch (error) {
-      console.error("Error:", error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to send message",
+        title: "Error sending message",
+        description: error.message,
         variant: "destructive",
       });
-    } finally {
-      setIsUploading(false);
     }
-  };
+  }, [input, files, isLoading, uploadFile, sendMessage, clearUploadProgress, toast]);
 
   const handleFileInput = useCallback(
     (e) => {
@@ -87,12 +84,12 @@ export function ChatInput({
     [handleFileSelect]
   );
 
-  const handleKeyDown = (e) => {
+  const handleKeyDown = useCallback((e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSubmit(e);
+      handleSubmit();
     }
-  };
+  }, [handleSubmit]);
 
   return (
     <form
@@ -124,9 +121,9 @@ export function ChatInput({
           onKeyDown={handleKeyDown}
           onSubmit={handleSubmit}
           onFileClick={() => fileInputRef.current?.click()}
-          disabled={disabled}
-          isUploading={isUploading}
-          placeholder={placeholder}
+          disabled={isLoading}
+          isUploading={isLoading}
+          placeholder="Type your message..."
           hasContent={input.trim() || files.length > 0}
         />
       </div>
@@ -143,4 +140,4 @@ export function ChatInput({
   );
 }
 
-export default ChatInput;
+export default React.memo(ChatInput);

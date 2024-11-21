@@ -1,39 +1,42 @@
-import { useState } from 'react'
-import { useStoreSelector } from '@/store/useStore'
-import { UnifiedOpenAIService } from '@/services/openai/unifiedOpenAIService'
-import { useForm, Controller } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { motion, AnimatePresence } from 'framer-motion'
-import { FileUp, AlertCircle } from 'lucide-react'
-import { z } from 'zod'
+import { useState } from 'react';
+import { useStoreSelector } from '@/store/useStore';
+import { UnifiedOpenAIService } from '@/services/openai/unifiedOpenAIService';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FileUp, AlertCircle } from 'lucide-react';
+import { z } from 'zod';
 
 // UI Components
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
-import { Slider } from '@/components/ui/slider'
-import { useToast } from '@/components/ui/use-toast'
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Slider } from '@/components/ui/slider';
+import { useToast } from '@/components/ui/use-toast';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@/components/ui/select';
 
 // Custom Components
-import { FileList } from '../shared/FileList'
-import { FileUploader } from '../shared/FileUploader'
-import { InstructionsGenerator } from '../shared/InstructionsGenerator'
-import { FunctionsSection } from '../tools/functions/FunctionsSection'
+import { FileList } from '../shared/FileList';
+import { FileUploader } from '../shared/FileUploader';
+import { InstructionsGenerator } from '../shared/InstructionsGenerator';
+import { FunctionsSection } from '../tools/functions/FunctionsSection';
 
 // Constants and Types
-import { MODELS, TOOLS } from '@/constants/assistantConstants'
-import { GENERATOR_TYPES } from '@/utils/instructionsGenerator'
-import { DEFAULT_ASSISTANT } from '@/store/slices/assistantSlice'
+import {
+  DEFAULT_ASSISTANT,
+  MODELS,
+  TOOLS,
+} from '@/constants/assistantConstants';
+import { GENERATOR_TYPES } from '@/utils/instructionsGenerator';
 
 // Form Schema
 const assistantSchema = z.object({
@@ -43,41 +46,53 @@ const assistantSchema = z.object({
   temperature: z.number().min(0).max(2),
   top_p: z.number().min(0).max(1),
   response_format: z.string(),
-  tools: z.array(z.object({
-    type: z.enum(['code_interpreter', 'retrieval', 'function', 'file_search']),
-    function: z.object({
-      name: z.string(),
-      description: z.string().optional(),
-      parameters: z.object({
-        type: z.literal('object'),
-        properties: z.record(z.any()),
-        required: z.array(z.string()).optional()
+  tools: z
+    .array(
+      z.object({
+        type: z.enum([
+          'code_interpreter',
+          'retrieval',
+          'function',
+          'file_search',
+        ]),
+        function: z
+          .object({
+            name: z.string(),
+            description: z.string().optional(),
+            parameters: z.object({
+              type: z.literal('object'),
+              properties: z.record(z.any()),
+              required: z.array(z.string()).optional(),
+            }),
+          })
+          .optional(),
       })
-    }).optional()
-  })).optional(),
+    )
+    .optional(),
   file_ids: z.array(z.string()).optional(),
-  fileSearchEnabled: z.boolean().default(false)
-})
+  fileSearchEnabled: z.boolean().default(false),
+});
 
 const formAnimations = {
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -20 }
-}
+  exit: { opacity: 0, y: -20 },
+};
 
 export function AssistantForm({ mode = 'create', assistant, onSubmit }) {
-  const { toast } = useToast()
-  const [isLoading, setIsLoading] = useState(false)
-  const [isFileDialogOpen, setIsFileDialogOpen] = useState(false)
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
 
   // Store selectors
-  const { selectedVectorStore, updateAssistant, createAssistant } = useStoreSelector(state => ({
-    selectedVectorStore: state.selectedVectorStore,
-    updateAssistant: state.updateAssistant,
-    createAssistant: state.createAssistant
-  }))
+  const { selectedVectorStore, updateAssistant, createAssistant } =
+    useStoreSelector(state => ({
+      selectedVectorStore: state.selectedVectorStore,
+      updateAssistant: state.updateAssistant,
+      createAssistant: state.createAssistant,
+    }));
 
-  const isEdit = mode === 'edit'
+  const isEdit = mode === 'edit';
 
   // Form setup
   const {
@@ -86,95 +101,98 @@ export function AssistantForm({ mode = 'create', assistant, onSubmit }) {
     reset,
     watch,
     setValue,
-    formState: { errors, isDirty }
+    formState: { errors, isDirty },
   } = useForm({
     resolver: zodResolver(assistantSchema),
-    defaultValues: isEdit ? { ...DEFAULT_ASSISTANT, ...assistant } : DEFAULT_ASSISTANT
-  })
+    defaultValues: isEdit
+      ? { ...DEFAULT_ASSISTANT, ...assistant }
+      : DEFAULT_ASSISTANT,
+  });
 
   // Watched values
-  const tools = watch('tools') || []
-  const file_ids = watch('file_ids') || []
+  const tools = watch('tools') || [];
+  const file_ids = watch('file_ids') || [];
 
   // Tool handling
-  const toggleTool = (toolId) => {
-    const currentTools = tools
+  const toggleTool = toolId => {
+    const currentTools = tools;
     const newTools = currentTools.includes(toolId)
       ? currentTools.filter(t => t !== toolId)
-      : [...currentTools, toolId]
-    setValue('tools', newTools, { shouldDirty: true })
-  }
+      : [...currentTools, toolId];
+    setValue('tools', newTools, { shouldDirty: true });
+  };
 
   // File handling
-  const handleFileUpload = async (files) => {
+  const handleFileUpload = async files => {
     try {
-      setIsLoading(true)
+      setIsLoading(true);
       const uploadedFiles = await Promise.all(
-        files.map(file => UnifiedOpenAIService.files.create({
-          file,
-          purpose: 'assistants'
-        }))
-      )
+        files.map(file =>
+          UnifiedOpenAIService.files.create({
+            file,
+            purpose: 'assistants',
+          })
+        )
+      );
 
       setValue('file_ids', [...file_ids, ...uploadedFiles.map(f => f.id)], {
-        shouldDirty: true
-      })
+        shouldDirty: true,
+      });
 
       toast({
         title: 'Files uploaded successfully',
-        description: `${files.length} files uploaded`
-      })
+        description: `${files.length} files uploaded`,
+      });
     } catch (error) {
       toast({
         title: 'Upload failed',
         description: error.message,
-        variant: 'destructive'
-      })
+        variant: 'destructive',
+      });
     } finally {
-      setIsLoading(false)
-      setIsFileDialogOpen(false)
+      setIsLoading(false);
+      setIsFileDialogOpen(false);
     }
-  }
+  };
 
-  const handleFileRemove = (fileId) => {
+  const handleFileRemove = fileId => {
     setValue(
       'file_ids',
       file_ids.filter(id => id !== fileId),
       { shouldDirty: true }
-    )
-  }
+    );
+  };
 
   // Form submission
-  const onFormSubmit = async (data) => {
+  const onFormSubmit = async data => {
     try {
-      setIsLoading(true)
+      setIsLoading(true);
       const formattedData = {
         ...data,
-        tools: data.tools?.map(tool => ({ type: tool.type })) || []
-      }
+        tools: data.tools?.map(tool => ({ type: tool.type })) || [],
+      };
 
       if (isEdit) {
-        await updateAssistant(assistant.id, formattedData)
+        await updateAssistant(assistant.id, formattedData);
       } else {
-        await createAssistant(formattedData)
+        await createAssistant(formattedData);
       }
 
       toast({
-        title: `Assistant ${isEdit ? 'updated' : 'created'} successfully`
-      })
+        title: `Assistant ${isEdit ? 'updated' : 'created'} successfully`,
+      });
 
-      if (!isEdit) reset()
-      
+      if (!isEdit) reset();
     } catch (error) {
       toast({
         title: `Failed to ${isEdit ? 'update' : 'create'} assistant`,
         description: error.message,
-        variant: 'destructive'
-      })
+        variant: 'destructive',
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <motion.div
@@ -232,7 +250,7 @@ export function AssistantForm({ mode = 'create', assistant, onSubmit }) {
               component={Select}
               options={{
                 text: 'Text',
-                json_object: 'JSON'
+                json_object: 'JSON',
               }}
               error={errors.response_format}
             />
@@ -284,8 +302,10 @@ export function AssistantForm({ mode = 'create', assistant, onSubmit }) {
               <div className="flex items-center justify-between">
                 <Switch
                   checked={watch('fileSearchEnabled')}
-                  onCheckedChange={(checked) => 
-                    setValue('fileSearchEnabled', checked, { shouldDirty: true })
+                  onCheckedChange={checked =>
+                    setValue('fileSearchEnabled', checked, {
+                      shouldDirty: true,
+                    })
                   }
                 />
                 <Button
@@ -299,10 +319,7 @@ export function AssistantForm({ mode = 'create', assistant, onSubmit }) {
                 </Button>
               </div>
 
-              <FileList
-                files={file_ids}
-                onRemove={handleFileRemove}
-              />
+              <FileList files={file_ids} onRemove={handleFileRemove} />
             </div>
           </FormSection>
 
@@ -325,8 +342,10 @@ export function AssistantForm({ mode = 'create', assistant, onSubmit }) {
                   <span className="animate-spin mr-2">⌛</span>
                   {isEdit ? 'Updating...' : 'Creating...'}
                 </span>
+              ) : isEdit ? (
+                'Update'
               ) : (
-                isEdit ? 'Update' : 'Create'
+                'Create'
               )}
             </Button>
           </div>
@@ -339,13 +358,13 @@ export function AssistantForm({ mode = 'create', assistant, onSubmit }) {
           accept={{
             'application/pdf': ['.pdf'],
             'text/plain': ['.txt'],
-            'text/markdown': ['.md']
+            'text/markdown': ['.md'],
           }}
           multiple
         />
       </Card>
     </motion.div>
-  )
+  );
 }
 
 // Helper Components
@@ -354,9 +373,16 @@ const FormSection = ({ title, children }) => (
     <h3 className="text-lg font-semibold">{title}</h3>
     {children}
   </div>
-)
+);
 
-const FormField = ({ control, name, label, component: Component = Input, error, ...props }) => (
+const FormField = ({
+  control,
+  name,
+  label,
+  component: Component = Input,
+  error,
+  ...props
+}) => (
   <Controller
     name={name}
     control={control}
@@ -373,7 +399,7 @@ const FormField = ({ control, name, label, component: Component = Input, error, 
       </div>
     )}
   />
-)
+);
 
 const ToolsGrid = ({ tools, selectedTools, onToggle }) => (
   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -388,6 +414,6 @@ const ToolsGrid = ({ tools, selectedTools, onToggle }) => (
       </Badge>
     ))}
   </div>
-)
+);
 
-export default AssistantForm
+export default AssistantForm;

@@ -2,39 +2,39 @@ import { UnifiedOpenAIService } from "@/services/openai/unifiedOpenAIService";
 
 export const createVectorStoreSlice = (set, get) => ({
   vectorStores: [],
-  vectorStoreFiles: [],
   selectedVectorStore: null,
+  vectorStoreFiles: [],
   loading: false,
   error: null,
 
-  setVectorStores: (vectorStores) => set({ vectorStores }),
-  setVectorStoreFiles: (vectorStoreFiles) => set({ vectorStoreFiles }),
-  setSelectedVectorStore: (store) => set({ selectedVectorStore: store }),
+  setVectorStores: (stores) => set({ vectorStores: stores }),
+  selectVectorStore: (store) => set({ selectedVectorStore: store }),
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
 
   createVectorStore: async (params) => {
-    set({ loading: true });
+    set({ loading: true, error: null });
     try {
       const response = await UnifiedOpenAIService.vectorStores.create(params);
       set((state) => ({
-        vectorStores: [...state.vectorStores, response],
-        loading: false,
+        vectorStores: [...state.vectorStores, response.data],
+        loading: false
       }));
-      return response;
+      return response.data;
     } catch (error) {
       set({ error: error.message, loading: false });
       throw error;
     }
   },
 
-  deleteVectorStore: async (id) => {
-    set({ loading: true });
+  deleteVectorStore: async (storeId) => {
+    set({ loading: true, error: null });
     try {
-      await UnifiedOpenAIService.vectorStores.delete(id);
+      await UnifiedOpenAIService.vectorStores.delete(storeId);
       set((state) => ({
-        vectorStores: state.vectorStores.filter((store) => store.id !== id),
-        loading: false,
+        vectorStores: state.vectorStores.filter((s) => s.id !== storeId),
+        selectedVectorStore: state.selectedVectorStore?.id === storeId ? null : state.selectedVectorStore,
+        loading: false
       }));
     } catch (error) {
       set({ error: error.message, loading: false });
@@ -43,7 +43,7 @@ export const createVectorStoreSlice = (set, get) => ({
   },
 
   fetchVectorStores: async () => {
-    set({ loading: true });
+    set({ loading: true, error: null });
     try {
       const response = await UnifiedOpenAIService.vectorStores.list();
       set({ vectorStores: response.data, loading: false });
@@ -76,4 +76,13 @@ export const createVectorStoreSlice = (set, get) => ({
       vectorStoreFiles: state.vectorStoreFiles.filter((f) => f.id !== fileId),
     })),
   clearVectorStoreFiles: () => set({ vectorStoreFiles: [] }),
+  resetVectorStoreState: () => {
+    set({
+      vectorStores: [],
+      selectedVectorStore: null,
+      vectorStoreFiles: [],
+      loading: false,
+      error: null
+    });
+  }
 });

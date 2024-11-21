@@ -1,78 +1,106 @@
-import { create } from 'zustand';
+import { getDefaultFiles } from '@/lib/utils/files';
 
 export const createOpenCanvasSlice = (set, get) => ({
-  // UI State
-  isFileExplorerOpen: false,
-  isFullscreen: false,
-  
-  // Content State
+  // State
   files: [],
   currentFile: null,
-  editorContent: '',
-  
-  // Chat State
-  messages: [],
-  systemPrompt: '',
-  currentThread: null,
-  
-  // Loading States
+  isFileExplorerOpen: true,
   loading: false,
   error: null,
+  content: '',
+  layout: {
+    chatWidth: 30,
+    editorWidth: 70,
+  },
 
   // Actions
-  setIsFileExplorerOpen: (isOpen) => set({ isFileExplorerOpen: isOpen }),
-  toggleFileExplorer: () => set(state => ({ isFileExplorerOpen: !state.isFileExplorerOpen })),
-  
-  setFiles: (files) => set({ files }),
-  setCurrentFile: (file) => {
-    if (file?.id !== get().currentFile?.id) {
-      set({ currentFile: file });
-    }
-  },
-  
-  setEditorContent: (content) => {
-    if (content !== get().editorContent) {
-      set({ editorContent: content });
-    }
+  setFiles: files => {
+    set({ files });
   },
 
-  // Initialization
-  initializeWorkspace: async (defaultFiles) => {
+  setCurrentFile: file => {
+    set({ currentFile: file });
+  },
+
+  toggleFileExplorer: () => {
+    set(state => ({
+      isFileExplorerOpen: !state.isFileExplorerOpen,
+    }));
+  },
+
+  setContent: content => {
+    set({ content });
+  },
+
+  updateLayout: layout => {
+    set(state => ({
+      layout: {
+        ...state.layout,
+        ...layout,
+      },
+    }));
+  },
+
+  setLoading: loading => {
+    set({ loading });
+  },
+
+  setError: error => {
+    set({ error });
+  },
+
+  initializeOpenCanvas: async () => {
+    set({ loading: true, error: null });
     try {
-      set({ loading: true, error: null });
-      set({ 
+      // Initialize any required resources
+      const defaultFiles = (await get().getDefaultFiles?.()) || [];
+      set({
         files: defaultFiles,
-        currentFile: defaultFiles[0],
-        editorContent: defaultFiles[0]?.content || ''
+        currentFile: defaultFiles[0] || null,
+        loading: false,
       });
     } catch (error) {
-      set({ error: error.message });
-      throw error;
-    } finally {
-      set({ loading: false });
+      set({
+        error: error.message,
+        loading: false,
+      });
     }
   },
 
   // Reset state
   resetOpenCanvas: () => {
     set({
-      // Reset UI State
-      isFileExplorerOpen: false,
-      isFullscreen: false,
-      
-      // Reset Content State
       files: [],
       currentFile: null,
-      editorContent: '',
-      
-      // Reset Chat State
-      messages: [],
-      systemPrompt: '',
-      currentThread: null,
-      
-      // Reset Loading States
+      isFileExplorerOpen: true,
       loading: false,
-      error: null
+      error: null,
+      content: '',
+      layout: {
+        chatWidth: 30,
+        editorWidth: 70,
+      },
     });
-  }
+  },
+
+  addFile: async fileData => {
+    const state = get();
+    try {
+      const newFile = {
+        id: crypto.randomUUID(),
+        ...fileData,
+      };
+
+      set(state => ({
+        files: [...state.files, newFile],
+        currentFile: newFile,
+        isFileExplorerOpen: true,
+      }));
+
+      return newFile;
+    } catch (error) {
+      console.error('Failed to add file:', error);
+      throw error;
+    }
+  },
 });
