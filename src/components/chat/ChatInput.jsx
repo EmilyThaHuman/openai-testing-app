@@ -143,4 +143,4 @@ export function ChatInput({
   );
 }
 
-export default { ChatInput };
+export default ChatInput;

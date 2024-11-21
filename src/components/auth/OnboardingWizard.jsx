@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { databaseUtils } from '@/lib/supabase';
+import { databaseUtils } from '@/lib/supabase/client';
 import { Card } from '../ui/card';
 import { Step, Stepper } from '../ui/stepper';
 import StepLabel from './StepLabel';

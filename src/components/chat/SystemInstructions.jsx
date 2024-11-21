@@ -13,7 +13,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Wand2, Loader2, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const SystemInstructions = ({ value, onChange }) => {
+export const SystemInstructions = ({ value, onChange }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [description, setDescription] = useState('');

@@ -1,119 +1,114 @@
-import React, { memo, useMemo } from "react";
-import { cn } from "@/lib/utils";
-import { Card } from "@/components/ui/card";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import remarkMath from "remark-math";
-import rehypeKatex from "rehype-katex";
-import "katex/dist/katex.min.css";
-import FilePreview from "./FilePreview";
-import { markdownComponents } from "./MarkdownComponents";
-import { MessageToolbar } from "./MessageToolbar";
-import { formatDistanceToNow } from "date-fns";
+import { memo } from 'react'
+import { m as motion } from 'framer-motion'
+import { Badge } from '@/components/ui/badge'
+import { Loader2 } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import { markdownComponents } from './MarkdownComponents'
+import { cn } from '@/lib/utils'
 
-export const ChatMessage = memo(
-  ({ message, isUser, files, onRegenerate, onFeedback }) => {
-    const formattedTime = message.timestamp
-      ? formatDistanceToNow(new Date(message.timestamp), { addSuffix: true })
-      : "";
-    // Ensure message content is a string
-    const messageContent =
-      typeof message.content === "string"
-        ? message.content
-        : JSON.stringify(message.content);
+const MotionDiv = motion.div
 
-    // Process message content with proper type handling
-    const processedContent = useMemo(() => {
-      if (!message.content) return "";
+const MarkdownContent = memo(({ content }) => (
+  <div className="prose prose-sm dark:prose-invert max-w-none break-words">
+    <ReactMarkdown
+      components={markdownComponents}
+    >
+      {content}
+    </ReactMarkdown>
+  </div>
+))
 
-      // Handle array of content
-      if (Array.isArray(message.content)) {
-        return message.content
-          .map((item) => {
-            if (typeof item === "string") return item;
-            if (item.type === "text") return item.text;
-            if (typeof item.content === "string") return item.content;
-            return "";
-          })
-          .filter(Boolean)
-          .join("\n");
-      }
+MarkdownContent.displayName = 'MarkdownContent'
 
-      // Handle object content
-      if (typeof message.content === "object") {
-        if (message.content.type === "text") return message.content.text;
-        if (message.content.content) return message.content.content;
-        return JSON.stringify(message.content, null, 2);
-      }
+export const ChatMessage = memo(({ message, status, currentToolCall }) => {
+  const isAssistant = message.role === 'assistant'
+  const isStreaming = message.isStreaming || status === 'in_progress'
 
-      // Handle string content
-      if (typeof message.content === "string") {
-        return message.content;
-      }
+  // Debug message content
+  console.log('Message content:', message.content)
 
-      // Fallback
-      return JSON.stringify(message.content, null, 2);
-    }, [message.content]);
+  const getMessageContent = () => {
+    if (typeof message.content === 'string') {
+      return message.content
+    }
+    
+    if (Array.isArray(message.content)) {
+      return message.content
+        .map(c => {
+          if (typeof c === 'string') return c
+          if (c.text?.value) return c.text.value
+          if (c.content) return c.content
+          return ''
+        })
+        .join('\n')
+    }
 
-    // Debug logging
-    console.log("Processed content:", {
-      original: message.content,
-      processed: processedContent,
-    });
+    if (message.content?.text?.value) {
+      return message.content.text.value
+    }
 
-    return (
-      <Card
-        className={cn(
-          "p-4 rounded-lg group relative",
-          isUser ? "ml-8 bg-accent" : "mr-8 bg-muted"
-        )}
-      >
-        <div className="flex justify-between items-start mb-2">
+    return ''
+  }
+
+  const messageContent = getMessageContent()
+  
+  // Debug processed content
+  console.log('Processed content:', messageContent)
+
+  return (
+    <div className="w-full py-2 relative z-10">
+      <div className={cn(
+        "flex flex-col max-w-3xl mx-auto",
+        isAssistant ? "items-start" : "items-end"
+      )}>
+        <div className={cn(
+          "flex flex-col gap-2 px-4 py-3 rounded-lg max-w-[90%] relative",
+          "shadow-sm border border-border/50",
+          isAssistant ? "bg-secondary/30" : "bg-primary/10",
+          isStreaming && "animate-pulse"
+        )}>
           <div className="flex items-center gap-2">
-            <p className="text-xs font-medium text-muted-foreground">
-              {message.role.charAt(0).toUpperCase() + message.role.slice(1)}
-            </p>
-            <p className="text-xs text-muted-foreground">{formattedTime}</p>
+            <Badge
+              variant={isAssistant ? 'secondary' : 'default'}
+              className="capitalize z-20"
+            >
+              {message.role}
+            </Badge>
+            {isStreaming && (
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+            )}
           </div>
 
-          <MessageToolbar
-            message={message}
-            onRegenerate={onRegenerate}
-            onFeedback={onFeedback}
-            isAssistant={!isUser}
-          />
-        </div>
+          <div className={cn(
+            "relative z-10",
+            isStreaming && "opacity-90"
+          )}>
+            {messageContent ? (
+              <MarkdownContent content={messageContent} />
+            ) : (
+              <div className="text-muted-foreground italic">Empty message</div>
+            )}
+          </div>
 
-        <div className="prose prose-sm dark:prose-invert max-w-none">
-          {processedContent && (
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm, remarkMath]}
-              rehypePlugins={[rehypeKatex]}
-              components={markdownComponents}
-            >
-              {processedContent}
-            </ReactMarkdown>
+          {message.metadata?.model && (
+            <div className="mt-1 text-xs text-muted-foreground">
+              Model: {message.metadata.model}
+            </div>
+          )}
+
+          {isAssistant && currentToolCall && (
+            <div className="mt-2 p-2 bg-muted rounded-md">
+              <pre className="text-xs overflow-x-auto whitespace-pre-wrap">
+                {JSON.stringify(currentToolCall, null, 2)}
+              </pre>
+            </div>
           )}
         </div>
+      </div>
+    </div>
+  )
+})
 
-        {files?.length > 0 && (
-          <div className="mt-4 flex flex-wrap gap-2">
-            {files.map((file, index) => (
-              <FilePreview key={index} file={file} />
-            ))}
-          </div>
-        )}
+ChatMessage.displayName = 'ChatMessage'
 
-        {message?.metadata?.model && (
-          <div className="mt-2 text-xs text-muted-foreground">
-            Model: {message.metadata.model}
-          </div>
-        )}
-      </Card>
-    );
-  }
-);
-
-ChatMessage.displayName = "ChatMessage";
-
-export default { ChatMessage };
+export default ChatMessage

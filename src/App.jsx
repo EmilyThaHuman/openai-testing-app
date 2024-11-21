@@ -8,7 +8,7 @@ import { ThemeProvider } from './context/ThemeContext'
 import { OpenAIProvider } from './context/OpenAIContext'
 import { AuthProvider } from './context/AuthContext'
 import { SidebarProvider } from './components/ui/sidebar'
-import { supabase } from './lib/supabase-client'
+import { supabase } from './lib/supabase/client'
 
 export function App() {
   return (
