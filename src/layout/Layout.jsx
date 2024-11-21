@@ -3,40 +3,53 @@ import { useOpenAI } from '@/context/OpenAIContext';
 import { ApiKeyInput } from '@/components/shared/ApiKeyInput';
 import { AppSidebar } from '@/components/app-sidebar';
 import { Toaster } from '@/components/ui/toaster';
-import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Breadcrumbs } from '@/components/ui/breadcrumbs';
 import { SettingsDialog } from '@/components/ui/settings-dialog';
 import { Button } from '@/components/ui/button';
-import { Settings } from 'lucide-react';
+import { Settings, Menu } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
 export function Layout() {
   const { apiKey } = useOpenAI();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed(!isSidebarCollapsed);
+  };
 
   return (
-    <div className={cn(
-      "min-h-screen bg-background flex",
-      "transition-all duration-300 ease-in-out"
-    )}>
-      <AppSidebar 
-        isOpen={isSidebarOpen} 
-        onToggle={() => setIsSidebarOpen(!isSidebarOpen)} 
-      />
+    <div className="min-h-screen bg-background">
+      <div className="fixed top-0 left-0 h-full z-30">
+        <AppSidebar 
+          isCollapsed={isSidebarCollapsed}
+          setIsCollapsed={toggleSidebar}
+        />
+      </div>
       
       <main className={cn(
-        "flex-1 flex flex-col",
-        isSidebarOpen ? 'ml-64' : 'ml-0'
+        "flex-1 flex flex-col min-h-screen transition-all duration-300",
+        isSidebarCollapsed ? "pl-[60px]" : "pl-[200px]"
       )}>
         <div className="container py-4 flex-grow">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
-              <SidebarTrigger 
-                isOpen={isSidebarOpen}
-                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleSidebar}
+                className={cn(
+                  "relative z-50 p-2 hover:bg-secondary rounded-lg",
+                  "before:absolute before:inset-0 before:-z-10 before:rounded-lg",
+                  "hover:before:bg-secondary/50"
+                )}
+              >
+                <Menu className={cn(
+                  "h-5 w-5 transition-transform",
+                  !isSidebarCollapsed ? "rotate-0" : "rotate-180"
+                )} />
+              </Button>
               <Breadcrumbs />
             </div>
             <Button 

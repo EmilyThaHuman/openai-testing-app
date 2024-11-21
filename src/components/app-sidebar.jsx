@@ -10,12 +10,10 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  useSidebar,
 } from '@/components/ui/sidebar';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
-import { useStoreShallow } from '@/store/useStore';
 import {
   ArchiveX,
   Command,
@@ -76,20 +74,17 @@ const navigationData = [
   },
 ];
 
-export function AppSidebar({ className, ...props }) {
-  const store = useStoreShallow();
+export function AppSidebar({ className, isCollapsed = false, setIsCollapsed, ...props }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { theme, setTheme } = useTheme();
   const { user, signOut } = useAuth();
-  const { isCollapsed, setIsCollapsed } = useSidebar();
 
   const [activeItem, setActiveItem] = React.useState(
     navigationData.find(item => item.url === location.pathname) ||
       navigationData[0]
   );
 
-  // Update active item when route changes
   React.useEffect(() => {
     const currentItem = navigationData.find(
       item => item.url === location.pathname
@@ -116,15 +111,15 @@ export function AppSidebar({ className, ...props }) {
   return (
     <Sidebar
       className={cn(
-        'border-r bg-background transition-all duration-300 ease-in-out',
-        isCollapsed ? 'w-[80px]' : 'w-[240px]',
+        'border-r bg-background transition-all duration-300 ease-in-out hover:bg-accent/50',
+        isCollapsed ? 'w-[60px]' : 'w-[200px]',
         className
       )}
       {...props}
     >
-      <SidebarHeader className="border-b p-4">
-        <Link to="/" className="flex items-center space-x-2">
-          <AppIcon size={isCollapsed ? "md" : "sm"} animate={false} />
+      <SidebarHeader className="border-b p-2">
+        <Link to="/" className="flex items-center gap-2">
+          <AppIcon size={isCollapsed ? "sm" : "sm"} animate={false} />
           {!isCollapsed && (
             <div className="flex items-center">
               <span className="font-semibold text-primary">ReedAI</span>
@@ -134,18 +129,18 @@ export function AppSidebar({ className, ...props }) {
         </Link>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="p-0">
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
               {navigationData.map(item => (
-                <SidebarMenuItem key={item.url}>
+                <SidebarMenuItem key={item.url} className="px-2">
                   <SidebarMenuButton
                     onClick={() => handleNavigation(item)}
                     isActive={activeItem?.url === item.url}
                     className={cn(
-                      'w-full',
-                      isCollapsed ? 'justify-center' : 'justify-start'
+                      'w-full py-2 hover:bg-accent',
+                      isCollapsed ? 'justify-center' : 'justify-start px-2'
                     )}
                     tooltip={
                       isCollapsed
@@ -153,8 +148,8 @@ export function AppSidebar({ className, ...props }) {
                         : null
                     }
                   >
-                    <item.icon className="h-5 w-5" />
-                    {!isCollapsed && <span className="ml-3">{item.title}</span>}
+                    <item.icon className="h-4 w-4 shrink-0" />
+                    {!isCollapsed && <span className="ml-2 text-sm">{item.title}</span>}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -163,40 +158,49 @@ export function AppSidebar({ className, ...props }) {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t p-4">
-        <div className="space-y-4">
+      <SidebarFooter className="border-t p-2">
+        <div className="space-y-2">
           <Button
             variant="ghost"
             size="sm"
-            className="w-full justify-start"
+            className={cn(
+              "w-full h-8 hover:bg-accent",
+              isCollapsed ? "justify-center" : "justify-start"
+            )}
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           >
             {theme === 'dark' ? '🌙' : '☀️'}
-            {!isCollapsed && <span className="ml-2">Theme</span>}
+            {!isCollapsed && <span className="ml-2 text-sm">Theme</span>}
           </Button>
 
           <Button
             variant="ghost"
             size="sm"
-            className="w-full justify-start"
+            className={cn(
+              "w-full h-8 hover:bg-accent",
+              isCollapsed ? "justify-center" : "justify-start"
+            )}
             onClick={() => navigate('/settings')}
           >
-            <Settings className="h-5 w-5" />
-            {!isCollapsed && <span className="ml-2">Settings</span>}
+            <Settings className="h-4 w-4" />
+            {!isCollapsed && <span className="ml-2 text-sm">Settings</span>}
           </Button>
 
           <Button
             variant="ghost"
             size="sm"
-            className="w-full justify-start text-destructive"
+            className={cn(
+              "w-full h-8 hover:bg-accent text-destructive",
+              isCollapsed ? "justify-center" : "justify-start"
+            )}
             onClick={handleSignOut}
           >
-            <LogOut className="h-5 w-5" />
-            {!isCollapsed && <span className="ml-2">Sign out</span>}
+            <LogOut className="h-4 w-4" />
+            {!isCollapsed && <span className="ml-2 text-sm">Sign out</span>}
           </Button>
         </div>
 
-        <NavUser user={user} isCollapsed={isCollapsed} className="mt-4" />
+        <NavUser user={user} isCollapsed={isCollapsed} className="mt-2" />
       </SidebarFooter>
     </Sidebar>
   );

@@ -8,7 +8,7 @@ import { Github, Mail } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
 import { AppIcon } from '@/components/ui/AppIcon'
 import { motion } from 'framer-motion'
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase/client'
 
 export function RegisterPage() {
   const { signUp, signInWithProvider } = useAuth()
