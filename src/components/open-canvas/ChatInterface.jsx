@@ -106,25 +106,26 @@ export const ChatInterface = memo(({ className }) => {
 
   return (
     <div className={cn(
-      'flex flex-col h-full max-h-full',
+      'flex flex-col h-full',
       'bg-background',
       className
     )}>
       {/* Status Bar */}
-      <div className="flex-none p-2 border-b bg-background sticky top-0 z-30">
+      <div className="flex-none p-2 border-b bg-background/95 backdrop-blur sticky top-0 z-30">
         <StatusDisplay status={status} />
       </div>
 
       {/* System Instructions */}
-      <div className="flex-none px-4 pt-4 bg-background sticky top-12 z-20">
+      <div className="flex-none px-4 pt-4 bg-background/95 backdrop-blur sticky top-12 z-20">
         <SystemInstructions />
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-hidden relative">
+      <div className="flex-1 min-h-0 relative">
         <ScrollArea 
           ref={scrollRef}
-          className="h-[calc(100vh-15rem)] w-full absolute inset-0"
+          className="h-[calc(100vh-15rem)] w-full"
+          style={{ paddingBottom: '100px' }}
         >
           <div className="p-4 space-y-4">
             <AnimatePresence mode="popLayout" initial={false}>
@@ -140,7 +141,6 @@ export const ChatInterface = memo(({ className }) => {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ duration: 0.2 }}
-                    className="relative"
                   >
                     <ChatMessage 
                       message={processedMessage}
@@ -149,28 +149,6 @@ export const ChatInterface = memo(({ className }) => {
                   </motion.div>
                 )
               })}
-
-              {/* Streaming Content */}
-              {/* {streamingContent && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <ChatMessage
-                    message={{
-                      id: 'streaming',
-                      role: 'assistant',
-                      content: streamingContent,
-                      created_at: new Date().toISOString(),
-                      isStreaming: true,
-                      metadata: { model: 'gpt-4' }
-                    }}
-                    status="in_progress"
-                  />
-                </motion.div>
-              )} */}
 
               {/* Tool Call Display */}
               {currentToolCall && (
@@ -197,13 +175,15 @@ export const ChatInterface = memo(({ className }) => {
       </div>
 
       {/* Input Area */}
-      <div className="flex-none p-4 border-t bg-background sticky bottom-0 z-30">
-        <CanvasChatInput
-          onSend={handleSendMessage}
-          disabled={isInitializing || !threadId || !assistantId}
-          isStreaming={isStreaming}
-          status={status}
-        />
+      <div className="flex-none mt-auto border-t bg-background/95 backdrop-blur z-30">
+        <div className="p-4 max-w-[100vw]">
+          <CanvasChatInput
+            onSend={handleSendMessage}
+            disabled={isInitializing || !threadId || !assistantId}
+            isStreaming={isStreaming}
+            status={status}
+          />
+        </div>
       </div>
     </div>
   )

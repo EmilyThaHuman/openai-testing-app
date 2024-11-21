@@ -7,10 +7,31 @@ import { Loading } from '@/components/ui/loading';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { useToast } from '@/components/ui/use-toast';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const ChatPage = () => {
+  const { toast } = useToast();
+  const chatContext = useChat();
+  const [showSettings, setShowSettings] = useState(false);
+  const [messageInput, setMessageInput] = useState('');
+  const [isSending, setIsSending] = useState(false);
+
+  // Handle null chat context
+  if (!chatContext) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-4">
+        <Alert variant="destructive">
+          <AlertDescription>
+            Chat service is currently unavailable. Please try again later.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
   const { 
-    chats,
+    chats = [],
     activeChat,
     activeChatId,
     isLoading, 
@@ -21,125 +42,126 @@ const ChatPage = () => {
     clearChat,
     sendMessage,
     setActiveChatId
-  } = useChat();
-  
-  const [input, setInput] = useState('');
-  const [showSettings, setShowSettings] = useState(false);
+  } = chatContext;
 
   // Create initial chat if none exists
   useEffect(() => {
-    if (chats.length === 0) {
-      createChat();
-    }
-  }, [chats.length]);
+    const initializeChat = async () => {
+      if (!chats || chats.length === 0) {
+        try {
+          await createChat();
+        } catch (error) {
+          console.error('Failed to create initial chat:', error);
+          toast({
+            title: 'Error',
+            description: 'Failed to initialize chat. Please refresh the page.',
+            variant: 'destructive'
+          });
+        }
+      }
+    };
+
+    initializeChat();
+  }, [chats, createChat, toast]);
 
   const handleSend = async (message) => {
-    if (!message.trim() || isLoading) return;
+    if (!message?.trim() || !activeChatId) return;
+
+    setIsSending(true);
     try {
-      await sendMessage(message);
+      await sendMessage({
+        chatId: activeChatId,
+        content: message,
+        role: 'user'
+      });
+      setMessageInput('');
     } catch (error) {
-      console.error('Chat error:', error);
+      console.error('Failed to send message:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to send message. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsSending(false);
     }
   };
 
-  return (
-    <div className="flex h-screen">
-      {/* Chat History Sidebar */}
-      <div className="w-64 border-r bg-background p-4 flex flex-col">
-        <Button 
-          className="w-full mb-4"
-          onClick={() => createChat()}
-        >
-          New Chat
-        </Button>
+  if (error) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-4">
+        <Alert variant="destructive">
+          <AlertDescription>
+            {error.message || 'An error occurred. Please try again.'}
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
-        <ScrollArea className="flex-1">
-          <div className="space-y-2">
-            {chats.map(chat => (
-              <Card 
+  return (
+    <div className="flex-1 flex flex-col min-h-0 w-full">
+      <div className="flex-1 flex min-h-0">
+        {/* Sidebar */}
+        <div className="w-64 border-r bg-background p-4 flex flex-col min-h-0">
+          <Button 
+            className="w-full mb-4"
+            onClick={() => createChat()}
+            disabled={isLoading}
+          >
+            New Chat
+          </Button>
+
+          <ScrollArea className="flex-1">
+            {chats?.map((chat) => (
+              <Card
                 key={chat.id}
-                className={`p-3 cursor-pointer hover:bg-accent ${
-                  chat.id === activeChatId ? 'bg-accent' : ''
-                }`}
+                className={cn(
+                  'mb-2 p-3 cursor-pointer hover:bg-accent transition-colors',
+                  chat.id === activeChatId && 'bg-accent'
+                )}
                 onClick={() => setActiveChatId(chat.id)}
               >
-                <div className="flex justify-between items-center">
-                  <p className="text-sm font-medium truncate">{chat.title}</p>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteChat(chat.id);
-                    }}
-                  >
-                    ×
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {new Date(chat.updatedAt).toLocaleDateString()}
+                <p className="truncate text-sm">
+                  {chat.title || 'New Chat'}
                 </p>
               </Card>
             ))}
+          </ScrollArea>
+
+          <Button
+            variant="outline"
+            className="mt-4"
+            onClick={() => setShowSettings(!showSettings)}
+          >
+            {showSettings ? 'Hide Settings' : 'Show Settings'}
+          </Button>
+        </div>
+        
+        {/* Main Chat Area */}
+        <div className="flex-1 flex flex-col min-h-0">
+          {/* Messages */}
+          <ScrollArea className="flex-1 p-4">
+            {activeChat?.messages?.map((message, index) => (
+              <ChatMessage
+                key={`${message.id || index}`}
+                message={message}
+                isLast={index === activeChat.messages.length - 1}
+              />
+            ))}
+            {isLoading && <Loading className="my-4" />}
+          </ScrollArea>
+
+          {/* Chat Input */}
+          <div className="p-4 border-t">
+            <ChatInput
+              value={messageInput}
+              onChange={setMessageInput}
+              onSend={handleSend}
+              disabled={isSending || isLoading || !activeChatId}
+              isLoading={isSending}
+            />
           </div>
-        </ScrollArea>
-
-        <Button
-          variant="outline"
-          className="mt-4"
-          onClick={() => setShowSettings(!showSettings)}
-        >
-          {showSettings ? 'Hide Settings' : 'Show Settings'}
-        </Button>
-      </div>
-      
-      {/* Main Chat Area */}
-      <div className="flex-1 flex">
-        <div className={`flex-1 flex flex-col ${showSettings ? 'mr-80' : ''}`}>
-          {activeChat ? (
-            <>
-              <div className="border-b p-4 flex justify-between items-center">
-                <input
-                  type="text"
-                  value={activeChat.title}
-                  onChange={(e) => updateChatTitle(activeChatId, e.target.value)}
-                  className="text-lg font-semibold bg-transparent border-none focus:outline-none"
-                />
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => clearChat(activeChatId)}
-                >
-                  Clear Chat
-                </Button>
-              </div>
-
-              <ScrollArea className="flex-1">
-                <div className="p-4 space-y-4">
-                  {activeChat.messages.map((message) => (
-                    <ChatMessage
-                      key={message.id}
-                      message={message}
-                      isUser={message.role === 'user'}
-                    />
-                  ))}
-                  {isLoading && (
-                    <div className="flex justify-center">
-                      <Loading />
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
-
-              <div className="border-t p-4">
-                <ChatInput onSend={handleSend} disabled={isLoading} />
-              </div>
-            </>
-          ) : (
-            <div className="flex-1 flex items-center justify-center text-muted-foreground">
-              Select a chat or create a new one to start
-            </div>
-          )}
         </div>
 
         {/* Settings Sidebar */}
@@ -149,12 +171,6 @@ const ChatPage = () => {
           </div>
         )}
       </div>
-
-      {error && (
-        <div className="absolute bottom-4 right-4 p-4 bg-destructive text-destructive-foreground rounded-md">
-          {error}
-        </div>
-      )}
     </div>
   );
 };

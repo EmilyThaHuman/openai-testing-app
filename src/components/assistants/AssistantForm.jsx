@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useStoreSelector } from '@/store/useStore';
+import { useStore, useStoreSelector } from '@/store/useStore';
 import { UnifiedOpenAIService } from '@/services/openai/unifiedOpenAIService';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -86,7 +86,7 @@ export function AssistantForm({ mode = 'create', assistant, onSubmit }) {
 
   // Store selectors
   const { selectedVectorStore, updateAssistant, createAssistant } =
-    useStoreSelector(state => ({
+    useStore(state => ({
       selectedVectorStore: state.selectedVectorStore,
       updateAssistant: state.updateAssistant,
       createAssistant: state.createAssistant,
@@ -257,7 +257,7 @@ export function AssistantForm({ mode = 'create', assistant, onSubmit }) {
           </FormSection>
 
           <FormSection title="Parameters">
-            <FormField
+            {/* <FormField
               control={control}
               name="temperature"
               label="Temperature"
@@ -266,9 +266,9 @@ export function AssistantForm({ mode = 'create', assistant, onSubmit }) {
               max={2}
               step={0.1}
               error={errors.temperature}
-            />
+            /> */}
 
-            <FormField
+            {/* <FormField
               control={control}
               name="top_p"
               label="Top P"
@@ -277,7 +277,7 @@ export function AssistantForm({ mode = 'create', assistant, onSubmit }) {
               max={1}
               step={0.1}
               error={errors.top_p}
-            />
+            /> */}
           </FormSection>
 
           <FormSection title="Tools & Capabilities">

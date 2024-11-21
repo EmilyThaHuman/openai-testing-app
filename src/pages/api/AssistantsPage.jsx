@@ -35,7 +35,7 @@ export function AssistantsPage() {
     handleChatMessage,
     handleFileUpload,
     regenerateResponse,
-    submitFeedback
+    submitFeedback,
   } = useStoreSelector(state => ({
     activeTab: state.assistantsActiveTab,
     assistants: state.assistants,
@@ -55,96 +55,99 @@ export function AssistantsPage() {
     handleChatMessage: state.sendAssistantMessage,
     handleFileUpload: state.uploadAssistantFile,
     regenerateResponse: state.regenerateAssistantResponse,
-    submitFeedback: state.submitAssistantFeedback
+    submitFeedback: state.submitAssistantFeedback,
   }));
 
   return (
-    <div className="container max-w-7xl mx-auto p-6">
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <div className="flex justify-between items-center mb-6">
-          <TabsList>
-            <TabsTrigger value="assistants" className="gap-2">
-              <MessageSquare className="h-4 w-4" />
-              Assistants
-            </TabsTrigger>
-            <TabsTrigger value="create" className="gap-2">
-              <Plus className="h-4 w-4" />
-              Create
-            </TabsTrigger>
-            <TabsTrigger value="tools" className="gap-2">
-              <Settings2 className="h-4 w-4" />
-              Tools
-            </TabsTrigger>
-            <TabsTrigger value="threads" className="gap-2">
-              <Database className="h-4 w-4" />
-              Threads
-            </TabsTrigger>
-          </TabsList>
-        </div>
+    <div className="flex-1 flex flex-col min-h-0 w-full">
+      <div className="container py-6">
+        {' '}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <div className="flex justify-between items-center mb-6">
+            <TabsList>
+              <TabsTrigger value="assistants" className="gap-2">
+                <MessageSquare className="h-4 w-4" />
+                Assistants
+              </TabsTrigger>
+              <TabsTrigger value="create" className="gap-2">
+                <Plus className="h-4 w-4" />
+                Create
+              </TabsTrigger>
+              <TabsTrigger value="tools" className="gap-2">
+                <Settings2 className="h-4 w-4" />
+                Tools
+              </TabsTrigger>
+              <TabsTrigger value="threads" className="gap-2">
+                <Database className="h-4 w-4" />
+                Threads
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.2 }}
-          >
-            <TabsContent value="assistants">
-              <Card className="p-6">
-                <AssistantList
-                  assistants={assistants}
-                  selectedAssistant={selectedAssistant}
-                  onStartEdit={handleStartEdit}
-                  onStartRun={handleStartRun}
-                  loading={loading}
-                />
-              </Card>
-            </TabsContent>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.2 }}
+            >
+              <TabsContent value="assistants">
+                <Card className="p-6">
+                  <AssistantList
+                    assistants={assistants}
+                    selectedAssistant={selectedAssistant}
+                    onStartEdit={handleStartEdit}
+                    onStartRun={handleStartRun}
+                    loading={loading}
+                  />
+                </Card>
+              </TabsContent>
 
-            <TabsContent value="create">
-              <Card className="p-6">
-                <AssistantForm
-                  onSubmit={createAssistant}
-                  loading={loading}
-                />
-              </Card>
-            </TabsContent>
+              <TabsContent value="create">
+                <Card className="p-6">
+                  <AssistantForm
+                    onSubmit={createAssistant}
+                    loading={loading}
+                    assistant={selectedAssistant}
+                  />
+                </Card>
+              </TabsContent>
 
-            <TabsContent value="tools">
-              <Card className="p-6">
-                <AssistantToolsManager />
-              </Card>
-            </TabsContent>
+              <TabsContent value="tools">
+                <Card className="p-6">
+                  <AssistantToolsManager />
+                </Card>
+              </TabsContent>
 
-            <TabsContent value="threads">
-              <Card className="p-6">
-                <ThreadList
-                  threads={selectedAssistant?.threads}
-                  selectedAssistant={selectedAssistant}
-                  onThreadSelect={handleThreadSelect}
-                />
-                <ThreadMessages />
-              </Card>
-            </TabsContent>
-          </motion.div>
-        </AnimatePresence>
-      </Tabs>
-
-      <ChatDialog
-        open={chatOpen}
-        onOpenChange={setChatOpen}
-        messages={messages}
-        onSendMessage={handleChatMessage}
-        onFileUpload={handleFileUpload}
-        onRegenerate={regenerateResponse}
-        onFeedback={submitFeedback}
-        isLoading={loading}
-        assistant={selectedAssistant}
-        error={error}
-      />
+              <TabsContent value="threads">
+                <Card className="p-6">
+                  <ThreadList
+                    threads={selectedAssistant?.threads}
+                    selectedAssistant={selectedAssistant}
+                    onThreadSelect={handleThreadSelect}
+                  />
+                  <ThreadMessages />
+                </Card>
+              </TabsContent>
+            </motion.div>
+          </AnimatePresence>
+        </Tabs>
+        <ChatDialog
+          open={chatOpen}
+          onOpenChange={setChatOpen}
+          messages={messages}
+          onSendMessage={handleChatMessage}
+          onFileUpload={handleFileUpload}
+          onRegenerate={regenerateResponse}
+          onFeedback={submitFeedback}
+          isLoading={loading}
+          assistant={selectedAssistant}
+          error={error}
+        />
+      </div>
     </div>
   );
 }
 
-export default AssistantsPage; 
+export default AssistantsPage;

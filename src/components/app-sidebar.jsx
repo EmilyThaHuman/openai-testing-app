@@ -36,19 +36,19 @@ import {
   Gauge,
   FileCode,
   Braces,
-  Keyboard
+  Keyboard,
 } from 'lucide-react';
 import * as React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AppIcon } from '@/components/ui/AppIcon';
-import { motion, AnimatePresence } from 'framer-motion'
-import { useStore } from '@/store/useStore'
-import { NotificationsCenter } from '@/components/notifications/NotificationsCenter'
+import { motion, AnimatePresence } from 'framer-motion';
+import { useStore } from '@/store/useStore';
+import { NotificationsCenter } from '@/components/notifications/NotificationsCenter';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover'
+} from '@/components/ui/popover';
 
 const navigationData = [
   {
@@ -93,12 +93,6 @@ const navigationData = [
     icon: Mic,
     description: 'Audio processing',
   },
-  {
-    title: 'API Usage',
-    url: '/api-dashboard',
-    icon: Gauge,
-    description: 'API usage metrics',
-  },
 ];
 
 const userNavigation = [
@@ -111,7 +105,7 @@ const userNavigation = [
     title: 'Billing',
     url: '/account/billing',
     icon: CreditCard,
-    badge: 'Pro'
+    badge: 'Pro',
   },
   {
     title: 'Settings',
@@ -132,18 +126,18 @@ const sidebarVariants = {
     transition: {
       duration: 0.3,
       ease: 'easeInOut',
-      when: 'beforeChildren'
-    }
+      when: 'beforeChildren',
+    },
   },
   collapsed: {
     width: '60px',
     transition: {
       duration: 0.3,
       ease: 'easeInOut',
-      when: 'afterChildren'
-    }
-  }
-}
+      when: 'afterChildren',
+    },
+  },
+};
 
 const itemVariants = {
   expanded: {
@@ -151,29 +145,39 @@ const itemVariants = {
     x: 0,
     transition: {
       duration: 0.2,
-      ease: 'easeOut'
-    }
+      ease: 'easeOut',
+    },
   },
   collapsed: {
     opacity: 0,
     x: -10,
     transition: {
       duration: 0.2,
-      ease: 'easeIn'
-    }
-  }
-}
+      ease: 'easeIn',
+    },
+  },
+};
 
-export function AppSidebar({ className, isCollapsed = false, setIsCollapsed, ...props }) {
+export function AppSidebar({
+  className,
+  isCollapsed = false,
+  setIsCollapsed,
+  ...props
+}) {
   const navigate = useNavigate();
   const location = useLocation();
   const { theme, setTheme } = useTheme();
   const { user, signOut } = useAuth();
-  const { unreadCount } = useStore()
+  const { unreadCount } = useStore();
 
-  const isActive = React.useCallback((url) => {
-    return location.pathname === url || location.pathname.startsWith(`${url}/`)
-  }, [location])
+  const isActive = React.useCallback(
+    url => {
+      return (
+        location.pathname === url || location.pathname.startsWith(`${url}/`)
+      );
+    },
+    [location]
+  );
 
   return (
     <motion.div
@@ -190,11 +194,8 @@ export function AppSidebar({ className, isCollapsed = false, setIsCollapsed, ...
     >
       <SidebarHeader className="border-b p-2">
         <Link to="/" className="flex items-center gap-2">
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <AppIcon size={isCollapsed ? "sm" : "sm"} animate={false} />
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <AppIcon size={isCollapsed ? 'sm' : 'sm'} animate={false} />
           </motion.div>
           <AnimatePresence mode="wait">
             {!isCollapsed && (
@@ -271,8 +272,8 @@ export function AppSidebar({ className, isCollapsed = false, setIsCollapsed, ...
                   variant="ghost"
                   size="sm"
                   className={cn(
-                    "w-full h-8 hover:bg-accent transition-colors relative",
-                    isCollapsed ? "justify-center" : "justify-start"
+                    'w-full h-8 hover:bg-accent transition-colors relative',
+                    isCollapsed ? 'justify-center' : 'justify-start'
                   )}
                 >
                   <Bell className="h-4 w-4" />
@@ -296,24 +297,24 @@ export function AppSidebar({ className, isCollapsed = false, setIsCollapsed, ...
                   </AnimatePresence>
                 </Button>
               </PopoverTrigger>
-              <PopoverContent 
-                side="right" 
+              <PopoverContent
+                side="right"
                 className="w-80 p-0"
-                align={isCollapsed ? "start" : "center"}
+                align={isCollapsed ? 'start' : 'center'}
               >
                 <NotificationsCenter />
               </PopoverContent>
             </Popover>
           </motion.div>
 
-          {userNavigation.map((item) => (
+          {userNavigation.map(item => (
             <motion.div key={item.url} whileHover={{ scale: 1.02 }}>
               <Button
                 variant="ghost"
                 size="sm"
                 className={cn(
-                  "w-full h-8 hover:bg-accent transition-colors relative",
-                  isCollapsed ? "justify-center" : "justify-start"
+                  'w-full h-8 hover:bg-accent transition-colors relative',
+                  isCollapsed ? 'justify-center' : 'justify-start'
                 )}
                 onClick={() => navigate(item.url)}
               >
@@ -340,7 +341,7 @@ export function AppSidebar({ className, isCollapsed = false, setIsCollapsed, ...
             </motion.div>
           ))}
 
-          <motion.div 
+          <motion.div
             whileHover={{ scale: 1.02 }}
             className="opacity-90 hover:opacity-100"
           >
@@ -348,8 +349,8 @@ export function AppSidebar({ className, isCollapsed = false, setIsCollapsed, ...
               variant="ghost"
               size="sm"
               className={cn(
-                "w-full h-8 hover:bg-destructive/10 text-destructive transition-colors",
-                isCollapsed ? "justify-center" : "justify-start"
+                'w-full h-8 hover:bg-destructive/10 text-destructive transition-colors',
+                isCollapsed ? 'justify-center' : 'justify-start'
               )}
               onClick={signOut}
             >
@@ -371,10 +372,7 @@ export function AppSidebar({ className, isCollapsed = false, setIsCollapsed, ...
           </motion.div>
         </div>
 
-        <motion.div 
-          whileHover={{ scale: 1.02 }}
-          className="mt-2"
-        >
+        <motion.div whileHover={{ scale: 1.02 }} className="mt-2">
           <NavUser user={user} isCollapsed={isCollapsed} />
         </motion.div>
       </SidebarFooter>
