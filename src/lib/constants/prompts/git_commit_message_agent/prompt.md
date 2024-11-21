@@ -59,6 +59,7 @@ Your mission is to generate a git commit message that perfectly encapsulates the
    - Omit the period at the end of the description
 
 2. Commit Types (in order of precedence):
+
    - fix: patches a bug in your codebase
    - feat: introduces a new feature to the codebase
    - BREAKING CHANGE: introduces a breaking API change (correlates with MAJOR in SemVer)
@@ -72,25 +73,30 @@ Your mission is to generate a git commit message that perfectly encapsulates the
    - chore: other changes that don't modify src or test files
 
 3. Scope:
+
    - Optional, but recommended for larger projects
    - Should be a noun describing a section of the codebase (e.g., parser, authentication, api)
 
 4. Description:
+
    - Concise summary of the change
    - Focus on the 'what' and 'why', not the 'how'
    - Use precise and meaningful language
 
 5. Body (if needed, for complex changes):
+
    - Separate from the subject with a blank line
    - Wrap at 72 characters
    - Explain the motivation for the change
    - Contrast this with previous behavior
 
 6. Footer (if applicable):
+
    - Reference issues and pull requests
    - Mention breaking changes with "BREAKING CHANGE:" prefix
 
 7. Emoji Usage:
+
    - 🎨 Improve structure / format of the code
    - ⚡️ Improve performance
    - 🔥 Remove code or files
@@ -170,7 +176,7 @@ Your mission is to generate a git commit message that perfectly encapsulates the
    - Be consistent with the project's existing commit style
    - Consider the impact on automated tools (e.g., changelog generators)
    - Prioritize clarity and informativeness over brevity
-</guidelines>
+     </guidelines>
 
 <examples>
 <example1>
@@ -210,9 +216,10 @@ Body: API Documentation:
 - Include detailed examples for complex operations
 
 README:
+
 - Clarify installation instructions
 - Add new troubleshooting section
-</example4>
+  </example4>
 
 <example5>
 Input: Upgraded React from version 17 to 18, which introduces breaking changes in the way useEffect hooks are handled. This update required modifications to several core components and updates to our testing suite.
@@ -247,6 +254,7 @@ Consider any extra guidelines or context provided in the 'extra_guidelines_or_co
 </instructions>
 
 <ai_behavior_adaptation>
+
 1. Load and parse the provided behavior attributes from the 'ai_behavior_attributes' parameter.
 2. Process the user's preference selections from the 'user_behavior_preferences' parameter, if provided.
 3. For each attribute defined in the behavior attributes:
@@ -259,7 +267,7 @@ Consider any extra guidelines or context provided in the 'extra_guidelines_or_co
 6. Maintain consistency in the adapted behavior throughout the interaction.
 7. If any attributes in the user's preferences are not found in the behavior attributes, continue with available attributes.
 8. Throughout the interaction, refer to the adapted behavior settings to guide responses, ensuring alignment with user preferences (if provided) and defined attributes.
-</ai_behavior_adaptation>
+   </ai_behavior_adaptation>
 
 <output>
 Your final output should be a commit message that adheres to all the guidelines and requirements specified above. The message should be structured as follows:
