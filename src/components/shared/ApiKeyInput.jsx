@@ -1,15 +1,29 @@
 import React, { useState } from 'react'
-import { useOpenAI } from '@/context/OpenAIContext'
+import { useOpenAI } from '@/hooks/use-openai'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { useToast } from '@/components/ui/use-toast'
 
 export function ApiKeyInput() {
-  const { apiKey, setApiKey } = useOpenAI()
+  const { apiKey, initialize } = useOpenAI()
   const [inputKey, setInputKey] = useState(apiKey)
+  const { toast } = useToast()
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    setApiKey(inputKey)
+    try {
+      await initialize(inputKey)
+      toast({
+        title: 'Success',
+        description: 'API key updated successfully'
+      })
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive'
+      })
+    }
   }
 
   return (
@@ -31,4 +45,6 @@ export function ApiKeyInput() {
       )}
     </div>
   )
-} 
+}
+
+export default React.memo(ApiKeyInput) 

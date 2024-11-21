@@ -1,153 +1,134 @@
-import React from "react";
+import React, { useCallback } from 'react';
 import { useStoreSelector } from '@/store/useStore';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Database, ArrowLeft, Search } from "lucide-react";
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/components/ui/use-toast';
+import { Plus, Loader2 } from 'lucide-react';
 
 export const VectorStoreManagement = () => {
   const {
-    vectorStoreId,
-    newStoreName,
+    vectorStores,
+    selectedStore,
     loading,
     error,
-    isCreateDialogOpen,
-    setVectorStoreId,
-    setNewStoreName,
-    setIsCreateDialogOpen,
-    createVectorStore,
-    selectVectorStore,
-    handleBack,
-    handleCancel
+    createStore,
+    selectStore,
+    deleteStore
   } = useStoreSelector(state => ({
-    vectorStoreId: state.vectorStoreId,
-    newStoreName: state.newStoreName,
-    loading: state.vectorStoreLoading,
-    error: state.vectorStoreError,
-    isCreateDialogOpen: state.isCreateDialogOpen,
-    setVectorStoreId: state.setVectorStoreId,
-    setNewStoreName: state.setNewStoreName,
-    setIsCreateDialogOpen: state.setIsCreateDialogOpen,
-    createVectorStore: state.createVectorStore,
-    selectVectorStore: state.selectVectorStore,
-    handleBack: state.handleVectorStoreBack,
-    handleCancel: state.handleVectorStoreCancel
+    vectorStores: state.vectorStores,
+    selectedStore: state.selectedVectorStore,
+    loading: state.loading,
+    error: state.error,
+    createStore: state.createVectorStore,
+    selectStore: state.selectVectorStore,
+    deleteStore: state.deleteVectorStore
   }));
 
-  const handleCreateStore = async () => {
-    if (!newStoreName.trim()) return;
-    await createVectorStore(newStoreName);
-  };
+  const { toast } = useToast();
+
+  const handleCreateStore = useCallback(async (name) => {
+    try {
+      await createStore({ name });
+      toast({
+        title: 'Success',
+        description: 'Vector store created successfully'
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  }, [createStore, toast]);
+
+  const handleStoreSelect = useCallback((store) => {
+    selectStore(store);
+  }, [selectStore]);
+
+  const handleStoreDelete = useCallback(async (storeId) => {
+    try {
+      await deleteStore(storeId);
+      toast({
+        title: 'Success',
+        description: 'Vector store deleted successfully'
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  }, [deleteStore, toast]);
 
   return (
     <div className="w-[440px] bg-zinc-900 rounded-lg p-6">
       <div className="space-y-6">
         <h2 className="text-xl font-semibold text-white">
-          Attach vector store
+          Vector Store Management
         </h2>
 
         <div className="space-y-4">
-          <div className="flex justify-center">
-            <Database className="h-12 w-12 text-zinc-400" />
-          </div>
-
-          <h3 className="text-center text-white text-lg">
-            Select existing vector store
-          </h3>
-
-          <div className="relative">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
+          <div className="flex gap-2">
             <Input
-              placeholder="Enter vector store id"
-              value={vectorStoreId}
-              onChange={(e) => setVectorStoreId(e.target.value)}
-              className="pl-9 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
+              placeholder="New store name..."
+              disabled={loading}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  handleCreateStore(e.target.value);
+                  e.target.value = '';
+                }
+              }}
             />
+            <Button
+              onClick={() => handleCreateStore('New Store')}
+              disabled={loading}
+            >
+              {loading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Plus className="h-4 w-4" />
+              )}
+            </Button>
           </div>
-
-          <button
-            onClick={() => window.open("/vector-stores", "_blank")}
-            className="w-full text-center text-emerald-400 hover:text-emerald-300 transition-colors"
-          >
-            Vector stores ↗
-          </button>
 
           {error && (
-            <Alert
-              variant="destructive"
-              className="bg-red-900/50 border-red-900"
-            >
-              <AlertDescription className="text-red-300">
-                {error}
-              </AlertDescription>
-            </Alert>
+            <div className="text-sm text-red-500">
+              {error}
+            </div>
           )}
-        </div>
 
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button
-              variant="outline"
-              className="w-full bg-zinc-800 border-zinc-700 text-white hover:bg-zinc-700"
-            >
-              Create new vector store
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="bg-zinc-900 text-white">
-            <DialogHeader>
-              <DialogTitle>Create New Vector Store</DialogTitle>
-            </DialogHeader>
-            <Input
-              value={newStoreName}
-              onChange={(e) => setNewStoreName(e.target.value)}
-              placeholder="Vector Store Name"
-              className="my-4 bg-zinc-800 border-zinc-700"
-            />
-            <DialogFooter>
-              <Button
-                onClick={handleCreateStore}
-                disabled={loading || !newStoreName.trim()}
-                className="bg-emerald-600 hover:bg-emerald-500"
+          <div className="space-y-2">
+            {vectorStores.map((store) => (
+              <Card
+                key={store.id}
+                className={`p-4 cursor-pointer transition-colors ${
+                  selectedStore?.id === store.id ? 'bg-accent' : ''
+                }`}
+                onClick={() => handleStoreSelect(store)}
               >
-                Create
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        <div className="flex justify-between pt-4 border-t border-zinc-800">
-          <Button
-            variant="ghost"
-            onClick={handleBack}
-            className="text-white hover:bg-zinc-800"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
-          </Button>
-
-          <div className="space-x-2">
-            <Button
-              variant="ghost"
-              onClick={handleCancel}
-              className="text-white hover:bg-zinc-800"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={() => selectVectorStore(vectorStoreId)}
-              disabled={!vectorStoreId.trim()}
-              className="bg-zinc-100 text-zinc-900 hover:bg-zinc-200"
-            >
-              Select
-            </Button>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="font-medium">{store.name}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {store.documentCount || 0} documents
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleStoreDelete(store.id);
+                    }}
+                  >
+                    Delete
+                  </Button>
+                </div>
+              </Card>
+            ))}
           </div>
         </div>
       </div>
@@ -155,4 +136,4 @@ export const VectorStoreManagement = () => {
   );
 };
 
-export default { VectorStoreManagement };
+export default React.memo(VectorStoreManagement);

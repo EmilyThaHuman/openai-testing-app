@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Command } from 'cmdk';
-import { useStore } from '@/store/useStore';
+import { useStoreSelector } from '@/store/useStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   MessageSquarePlus,
@@ -25,9 +25,23 @@ export function CommandPalette() {
     clearChat,
     exportChat,
     shareChat
-  } = useStore((state) => state.chat);
+  } = useStoreSelector((state) => ({
+    chats: state.chats,
+    activeChat: state.activeChat,
+    createChat: state.createChat,
+    setActiveChat: state.setActiveChat,
+    clearChat: state.clearChat,
+    exportChat: state.exportChat,
+    shareChat: state.shareChat
+  }));
   
-  const { theme, setTheme } = useStore((state) => state.ui);
+  const {
+    theme,
+    setTheme
+  } = useStoreSelector((state) => ({
+    theme: state.theme,
+    setTheme: state.setTheme
+  }));
 
   useEffect(() => {
     const down = (e) => {

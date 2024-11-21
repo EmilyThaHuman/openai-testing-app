@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useStore } from "@/store/useStore";
+import { useStoreSelector } from "@/store/useStore";
 import { Card } from "@/components/ui/card";
 import {
   LineChart,
@@ -20,7 +20,7 @@ export const PerformanceMonitor = () => {
     apiLatency, 
     endpointStats, 
     apiErrors 
-  } = useStore(
+  } = useStoreSelector(
     (state) => ({
       apiLatency: state.metrics.apiLatency,
       endpointStats: state.metrics.endpointStats,

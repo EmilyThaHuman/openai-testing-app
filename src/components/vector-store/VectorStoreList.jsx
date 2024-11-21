@@ -5,23 +5,33 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2, Trash2 } from "lucide-react";
+import { useCallback } from 'react';
 
 export const VectorStoreList = () => {
   const {
     vectorStores,
+    selectedStore,
     loading,
     error,
-    selectedVectorStore,
-    deleteVectorStore,
-    selectVectorStore
+    selectStore,
+    deleteStore
   } = useStoreSelector(state => ({
     vectorStores: state.vectorStores,
-    loading: state.vectorStoreLoading,
-    error: state.vectorStoreError,
-    selectedVectorStore: state.selectedVectorStore,
-    deleteVectorStore: state.deleteVectorStore,
-    selectVectorStore: state.selectVectorStore
+    selectedStore: state.selectedVectorStore,
+    loading: state.loading,
+    error: state.error,
+    selectStore: state.selectVectorStore,
+    deleteStore: state.deleteVectorStore
   }));
+
+  // Memoize handlers
+  const handleStoreSelect = useCallback((store) => {
+    selectStore(store);
+  }, [selectStore]);
+
+  const handleStoreDelete = useCallback(async (storeId) => {
+    await deleteStore(storeId);
+  }, [deleteStore]);
 
   if (loading) {
     return (
@@ -46,9 +56,9 @@ export const VectorStoreList = () => {
           <Card
             key={store.id}
             className={`p-4 hover:bg-accent cursor-pointer ${
-              selectedVectorStore?.id === store.id ? 'border-primary' : ''
+              selectedStore?.id === store.id ? 'border-primary' : ''
             }`}
-            onClick={() => selectVectorStore(store)}
+            onClick={() => handleStoreSelect(store)}
           >
             <div className="flex justify-between items-center">
               <div>
@@ -60,7 +70,7 @@ export const VectorStoreList = () => {
                 size="icon"
                 onClick={(e) => {
                   e.stopPropagation();
-                  deleteVectorStore(store.id);
+                  handleStoreDelete(store.id);
                 }}
               >
                 <Trash2 className="h-4 w-4" />

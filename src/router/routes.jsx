@@ -1,36 +1,32 @@
 // src/router/routes.jsx
+import { SidebarProvider } from '@/components/ui/sidebar';
+import { Toaster } from '@/components/ui/toaster';
+import { AuthProvider } from '@/context/AuthContext';
+import { OpenAIProvider } from '@/context/OpenAIContext';
+import { ThemeProvider } from '@/context/ThemeContext';
 import { Layout } from '@/layout/Layout';
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
 import { AuthGuard } from './AuthGuard';
-import { AuthProvider } from '@/context/AuthContext';
-import { ThemeProvider } from '@/context/ThemeContext';
-import { OpenAIProvider } from '@/context/OpenAIContext';
-import { SidebarProvider } from '@/components/ui/sidebar';
-import { Toaster } from '@/components/ui/toaster';
 
 // Auth Pages
 import {
+  AuthCallback,
   HomePage,
   LoginPage,
-  RegisterPage,
   OnboardingPage,
-  AuthCallback,
+  RegisterPage,
 } from '@/pages/auth';
 
 // Dashboard Pages
-import {
-  ApiDashboard,
-  ProfilePage,
-  SettingsPage,
-} from '@/pages/dashboard';
+import { ApiDashboard } from '@/pages/dashboard';
 
 // API Pages
 import {
-  OpenAiTestPage,
   AssistantsPage,
+  AudioPage,
   ChatPage,
   ImagePage,
-  AudioPage,
+  OpenAiTestPage,
 } from '@/pages/api';
 
 // Canvas Pages
@@ -39,8 +35,17 @@ import { OpenCanvasPage } from '@/pages/canvas';
 // Docs Pages
 import { DocsPage } from '@/pages/docs';
 
-// Billing Pages
-import { BillingPage } from '@/pages/billing';
+// Account Pages
+import {
+  AccountBillingPage,
+  AccountNotificationsPage,
+  AccountProfilePage,
+  AccountSettingsPage,
+  AccountSubscriptionPage,
+} from '@/pages/account';
+
+// Help Pages
+import { HelpPage } from '@/pages/help';
 
 export const router = createBrowserRouter(
   [
@@ -97,17 +102,23 @@ export const router = createBrowserRouter(
             </AuthGuard>
           ),
           children: [
+            // Dashboard
             {
               path: '/dashboard',
               element: <ApiDashboard />,
             },
+            // API Features
             {
-              path: '/chat',
-              element: <ChatPage />,
+              path: '/openai-test',
+              element: <OpenAiTestPage />,
             },
             {
               path: '/assistants',
               element: <AssistantsPage />,
+            },
+            {
+              path: '/chat',
+              element: <ChatPage />,
             },
             {
               path: '/images',
@@ -118,28 +129,43 @@ export const router = createBrowserRouter(
               element: <AudioPage />,
             },
             {
-              path: '/openai-test',
-              element: <OpenAiTestPage />,
-            },
-            {
               path: '/open-canvas',
               element: <OpenCanvasPage />,
             },
+            // Account
             {
-              path: '/settings',
-              element: <SettingsPage />,
+              path: '/account',
+              children: [
+                {
+                  path: 'profile',
+                  element: <AccountProfilePage />,
+                },
+                {
+                  path: 'billing',
+                  element: <AccountBillingPage />,
+                },
+                {
+                  path: 'settings',
+                  element: <AccountSettingsPage />,
+                },
+                {
+                  path: 'notifications',
+                  element: <AccountNotificationsPage />,
+                },
+                {
+                  path: 'subscription',
+                  element: <AccountSubscriptionPage />,
+                },
+              ],
             },
+            // Help & Docs
             {
-              path: '/profile',
-              element: <ProfilePage />,
+              path: '/help',
+              element: <HelpPage />,
             },
             {
               path: '/docs',
               element: <DocsPage />,
-            },
-            {
-              path: '/billing',
-              element: <BillingPage />,
             },
           ],
         },

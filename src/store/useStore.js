@@ -1,172 +1,234 @@
-import { create } from 'zustand';
-import { createOpenCanvasChatSlice } from './slices/openCanvasChatSlice';
-import { createWithEqualityFn } from "zustand/traditional";
-import { shallow } from "zustand/shallow";
-import { persist, devtools } from "zustand/middleware";
-import { immer } from "zustand/middleware/immer";
-import { createChatSlice } from "./slices/chatSlice";
-import { createAssistantSlice } from "./slices/assistantSlice";
-import { createFileSlice } from "./slices/fileSlice";
-import { createUserSlice } from "./slices/userSlice";
-import { createVectorStoreSlice } from "./slices/vectorStoreSlice";
-import { createToolsSlice } from "./slices/toolsSlice";
-import { createOpenAISlice } from "./slices/openaiSlice";
-import { createUISlice } from "./slices/uiSlice";
-import { createSettingsSlice } from "./slices/settingsSlice";
-import { createBillingSlice } from "./slices/billingSlice";
-import { createMetricsSlice } from "./slices/metricsSlice";
-import { createNotificationsSlice } from "./slices/notificationsSlice";
-import { createOpenCanvasSlice } from "./slices/openCanvasSlice";
-import { performanceMiddleware } from "./middleware/performanceMiddleware";
+import { createWithEqualityFn } from 'zustand/traditional';
+import { shallow } from 'zustand/shallow';
+import { devtools, subscribeWithSelector, persist } from 'zustand/middleware';
+import { immer } from 'zustand/middleware/immer';
+import { useCallback, useMemo } from 'react';
+import { createJSONStorage } from 'zustand/middleware';
+import { createBillingSlice } from './slices/billingSlice';
+import { createOpenAISlice } from './slices/openaiSlice';
+import { createVectorStoreSlice } from './slices/vectorStoreSlice';
+import { createMetricsSlice } from './slices/metricsSlice';
+import { createWorkspaceSlice } from './slices/workspaceSlice';
+import { createChatSlice } from './slices/chatSlice';
+import { createUISlice } from './slices/uiSlice';
+import { createAISettingsSlice } from './slices/aiSettingsSlice';
+import { createOpenCanvasSlice } from './slices/openCanvasSlice';
+import { createAssistantSlice } from './slices/assistantSlice';
+import { createAssistantTestingSlice } from './slices/assistantTestingSlice';
+import { performanceMiddleware } from './middleware/performanceMiddleware';
+import { createUserSlice } from './slices/userSlice';
+import { createToolsSlice } from './slices/toolsSlice';
 
-// Store version for migrations
-const STORE_VERSION = 1;
-
-// Store configuration
-const STORE_CONFIG = {
-  name: "app-storage",
-  version: STORE_VERSION,
-  migrate: (persistedState, version) => {
-    if (version === 0) {
-      // Add migration logic here
-      return {
-        ...persistedState,
-        // Add new state properties or transform existing ones
-      };
-    }
-    return persistedState;
-  },
-};
-
-// Create base store
-const createStore = (...args) => ({
-  // Core functionality
-  ...createOpenAISlice(...args),
-  ...createChatSlice(...args),
-  ...createAssistantSlice(...args),
-  
-  // File and canvas management
-  ...createFileSlice(...args),
-  ...createOpenCanvasSlice(...args),
-  
-  // User and settings
-  ...createUserSlice(...args),
-  ...createSettingsSlice(...args),
-  ...createUISlice(...args),
-  
-  // Features
-  ...createVectorStoreSlice(...args),
-  ...createToolsSlice(...args),
-  ...createBillingSlice(...args),
-  ...createMetricsSlice(...args),
-  ...createNotificationsSlice(...args),
-
-  // Computed selectors
-  getAllChats: () => {
-    const state = args[1]();
-    return [...state.chats, ...state.assistantChats]
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  },
-
-  getActiveChat: () => {
-    const state = args[1]();
-    return state.activeChat || state.activeAssistantChat;
-  },
-
-  // Utility functions
-  resetStore: () => {
-    args[0]((state) => {
-      Object.keys(state).forEach(key => {
-        if (typeof state[key] === 'object') {
-          state[key] = {};
-        }
-      });
-    });
-  },
-
-  // Debug helpers
-  getStoreState: () => args[1](),
-  
-  logStoreAction: (action, data) => {
-    console.debug('[Store Action]', action, data);
-  }
-});
-
-// Create store with middleware
-export const useStore = create((set, get) => ({
-  ...createOpenCanvasChatSlice(set, get),
-  ...createWithEqualityFn(
+// Create the root store with all slices and middleware
+const store = createWithEqualityFn(
+  subscribeWithSelector(
     persist(
       devtools(
         immer(
-          performanceMiddleware(createStore)
+          performanceMiddleware((set, get) => ({
+            // Combine all slices
+            ...createBillingSlice(set, get),
+            ...createOpenAISlice(set, get),
+            ...createVectorStoreSlice(set, get),
+            ...createMetricsSlice(set, get),
+            ...createWorkspaceSlice(set, get),
+            ...createChatSlice(set, get),
+            ...createUISlice(set, get),
+            ...createAISettingsSlice(set, get),
+            ...createOpenCanvasSlice(set, get),
+            ...createAssistantSlice(set, get),
+            ...createAssistantTestingSlice(set, get),
+            ...createUserSlice(set, get),
+            ...createToolsSlice(set, get),
+
+            // Reset all state
+            resetStore: () => {
+              set({}, true); // Deep reset of all state
+              get().resetBillingState();
+              get().resetOpenAIState();
+              get().resetVectorStoreState();
+              get().resetMetricsState();
+              get().resetWorkspaceState();
+              get().resetChatState();
+              get().resetUIState();
+              get().resetAISettingsState();
+              get().resetOpenCanvasState();
+              get().resetAssistantState();
+              get().resetAssistantTestingState();
+              get().resetUserState();
+              get().resetToolsState();
+            },
+          }))
         )
       ),
       {
-        name: STORE_CONFIG.name,
-        version: STORE_CONFIG.version,
-        migrate: STORE_CONFIG.migrate,
-        partialize: (state) => ({
-          user: state.user,
-          accessToken: state.accessToken,
-          settings: state.settings,
+        name: 'app-storage',
+        storage: createJSONStorage(() => localStorage),
+        partialize: state => ({
+          // Only persist necessary state
           theme: state.theme,
-          chats: state.chats,
-          files: state.files,
-          notifications: state.notifications,
+          settings: state.settings,
+          aiSettings: state.aiSettings,
+          apiKey: state.apiKey,
+          // chat
+          activeChat: state.activeChat,
+          // assistants
           assistants: state.assistants,
-          vectorStores: state.vectorStores,
-          billing: {
-            usage: state.usage,
-            currentPlan: state.currentPlan
-          }
-        })
+          // open canvas
+          currentFile: state.currentFile,
+          // workspace
+          files: state.files,
+          // user
+          user: state.user,
+        }),
       }
-    ),
-    shallow
+    )
   )
-}));
+);
 
-// Create selector hooks
-export const createSelector = (selector) => (state) => selector(state);
+export const useStore = store;
 
-// Export selector hooks
-export const useStoreSelector = useStore;
+// Optimized selector hook
+export const useStoreSelector = (selectorFn, equalityFn = shallow) => {
+  // Wrap selector in useCallback instead of useMemo for function stability
+  const stableSelector = useCallback(selectorFn, []);
 
-// Export typed selectors
-export const useUserState = () => useStoreSelector(state => ({
-  user: state.user,
-  isAuthenticated: !!state.user,
-  updateProfile: state.updateUserProfile
-}));
+  // Use stable selector with equality function
+  return useStore(stableSelector, equalityFn);
+};
 
-export const useUIState = () => useStoreSelector(state => ({
-  theme: state.theme,
-  sidebarOpen: state.sidebarOpen,
-  toggleSidebar: state.toggleSidebar
-}));
+export const useStoreShallow = selector => useStore(selector, shallow);
 
-export const useFileState = () => useStoreSelector(state => ({
-  currentFile: state.currentFile,
-  files: state.files,
-  createFile: state.createNewFile,
-  saveFile: state.saveCurrentFile,
-  deleteFile: state.deleteFile
-}));
-
-export const useChatState = () => useStoreSelector(state => ({
-  chats: state.chats,
-  activeChat: state.getActiveChat(),
-  sendMessage: state.sendChatMessage
-}));
-
-// Export store instance
-export const store = useStore;
-
-// Subscribe to store changes in development
-if (process.env.NODE_ENV === 'development') {
-  useStore.subscribe(
-    state => state,
-    (state) => console.debug('[Store Updated]', state)
+// Create stable selector hooks
+const createSelector = selectorFn => state => {
+  const selectedState = selectorFn(state);
+  // Return a stable reference if the values haven't changed
+  return useMemo(
+    () => selectedState,
+    [
+      // Spread all values from selectedState as dependencies
+      ...Object.values(selectedState),
+    ]
   );
-}
+};
+
+// Example of a stable selector
+export const useBillingState = createSelector(state => ({
+  usage: state.usage,
+  currentPlan: state.currentPlan,
+  timeRange: state.timeRange,
+  isLoadingBilling: state.isLoadingBilling,
+  billingError: state.billingError,
+  setTimeRange: state.setTimeRange,
+  fetchBillingDetails: state.fetchBillingDetails,
+  resetBillingState: state.resetBillingState,
+}));
+
+export const useOpenAIState = createSelector(state => ({
+  apiKey: state.apiKey,
+  isInitialized: state.isInitialized,
+  error: state.error,
+  initialize: state.initialize,
+  setApiKey: state.setApiKey,
+  resetOpenAIState: state.resetOpenAIState,
+}));
+
+export const useVectorStoreState = createSelector(state => ({
+  vectorStores: state.vectorStores,
+  selectedVectorStore: state.selectedVectorStore,
+  loading: state.loading,
+  error: state.error,
+  createVectorStore: state.createVectorStore,
+  selectVectorStore: state.selectVectorStore,
+  deleteVectorStore: state.deleteVectorStore,
+  resetVectorStoreState: state.resetVectorStoreState,
+}));
+
+export const useMetricsState = createSelector(state => ({
+  metrics: state.metrics,
+  isLoadingMetrics: state.isLoadingMetrics,
+  metricsError: state.metricsError,
+  fetchMetrics: state.fetchMetrics,
+  resetMetricsState: state.resetMetricsState,
+}));
+
+export const useWorkspaceState = createSelector(state => ({
+  files: state.files,
+  currentFile: state.currentFile,
+  isFileExplorerOpen: state.isFileExplorerOpen,
+  loading: state.loading,
+  error: state.error,
+  initializeWorkspace: state.initializeWorkspace,
+  setCurrentFile: state.setCurrentFile,
+  toggleFileExplorer: state.toggleFileExplorer,
+  resetWorkspaceState: state.resetWorkspaceState,
+}));
+
+export const useChatState = createSelector(state => ({
+  chats: state.chats,
+  activeChat: state.activeChat,
+  messages: state.messages,
+  isStreaming: state.isStreaming,
+  createChat: state.createChat,
+  setActiveChat: state.setActiveChat,
+  sendMessage: state.sendMessage,
+  resetChatState: state.resetChatState,
+}));
+
+export const useUIState = createSelector(state => ({
+  theme: state.theme,
+  settings: state.settings,
+  isSettingsOpen: state.isSettingsOpen,
+  setTheme: state.setTheme,
+  updateSettings: state.updateSettings,
+  toggleSettings: state.toggleSettings,
+  resetUIState: state.resetUIState,
+}));
+
+// Export a hook for global loading state
+export const useGlobalLoading = createSelector(state => ({
+  isLoading:
+    state.isLoadingBilling ||
+    state.loading ||
+    state.isLoadingMetrics ||
+    state.isStreaming,
+}));
+
+// Export a hook for global error state
+export const useGlobalError = createSelector(state => ({
+  hasError: state.billingError || state.error || state.metricsError,
+  errors: {
+    billing: state.billingError,
+    openai: state.error,
+    metrics: state.metricsError,
+  },
+}));
+
+// Add AssistantTesting selector
+export const useAssistantTestingState = createSelector(state => ({
+  activeTab: state.activeTab,
+  assistantFormMode: state.assistantFormMode,
+  isEditing: state.isEditing,
+  newAssistant: state.newAssistant,
+  newMessage: state.newMessage,
+  chatOpen: state.chatOpen,
+  isFileDialogOpen: state.isFileDialogOpen,
+  uploadingFiles: state.uploadingFiles,
+  uploading: state.uploading,
+  error: state.error,
+  setActiveTab: state.setActiveTab,
+  setAssistantFormMode: state.setAssistantFormMode,
+  setIsEditing: state.setIsEditing,
+  setNewAssistant: state.setNewAssistant,
+  setNewMessage: state.setNewMessage,
+  setChatOpen: state.setChatOpen,
+  setIsFileDialogOpen: state.setIsFileDialogOpen,
+  setUploadingFiles: state.setUploadingFiles,
+  setUploading: state.setUploading,
+  setError: state.setError,
+  handleStartEdit: state.handleStartEdit,
+  handleStartRun: state.handleStartRun,
+  handleChatMessage: state.handleChatMessage,
+  handleFileUpload: state.handleFileUpload,
+  resetAssistantTestingState: state.resetAssistantTestingState,
+}));

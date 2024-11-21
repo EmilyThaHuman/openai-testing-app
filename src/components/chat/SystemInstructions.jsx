@@ -1,164 +1,261 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { useStoreSelector } from '@/store/useStore';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/components/ui/use-toast';
-import { Wand2, Loader2, ChevronDown } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
+import React, { useState, useCallback, useEffect } from 'react'
+import { useStore } from '@/store/useStore'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
+import { useToast } from '@/components/ui/use-toast'
+import { Wand2, Loader2, Save, X, Edit, AlertCircle } from 'lucide-react'
+import { UnifiedOpenAIService } from '@/services/openai/unifiedOpenAIService'
+import { cn } from '@/lib/utils'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
-export function SystemInstructions({ value, onChange }) {
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [description, setDescription] = useState('');
-  const [isExpanded, setIsExpanded] = useState(false);
-  const textareaRef = useRef(null);
-  const { toast } = useToast();
+const containerVariants = {
+  hidden: { opacity: 0, y: -20 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: {
+      duration: 0.3,
+      ease: 'easeOut',
+      staggerChildren: 0.1
+    }
+  }
+}
 
+const itemVariants = {
+  hidden: { opacity: 0, x: -10 },
+  visible: { 
+    opacity: 1, 
+    x: 0,
+    transition: { duration: 0.2 }
+  }
+}
+
+const PROMPT_TEMPLATES = {
+  'gpt-4-turbo-preview': `You are an AI assistant. Your role is to help users with their tasks in a clear, concise, and helpful manner. Please:
+- Provide accurate and relevant information
+- Break down complex problems into manageable steps
+- Use examples when helpful
+- Maintain a professional and friendly tone
+- Ask for clarification when needed`,
+  'gpt-4': `You are a highly capable AI assistant powered by GPT-4. Your purpose is to:
+- Provide in-depth analysis and explanations
+- Help with complex problem-solving
+- Offer creative solutions and perspectives
+- Maintain accuracy and clarity in communication
+- Engage in detailed technical discussions when appropriate`,
+  'gpt-3.5-turbo': `You are a helpful AI assistant. Your goals are to:
+- Provide quick and accurate responses
+- Help users with their questions and tasks
+- Maintain a conversational and friendly tone
+- Be clear and concise in your explanations
+- Ask for clarification when needed`
+};
+
+export function SystemInstructions() {
+  // State selectors
+  const systemPrompt = useStore(state => state.aiSettings.systemPrompt)
+  const setSystemPrompt = useStore(state => state.setSystemPrompt)
+  const model = useStore(state => state.aiSettings.model)
+  const isLoading = useStore(state => state.isLoading)
+  const apiKey = useStore(state => state.apiKey)
+
+  // Local state
+  const [isEditing, setIsEditing] = useState(false)
+  const [tempPrompt, setTempPrompt] = useState(systemPrompt)
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [error, setError] = useState(null)
+  const { toast } = useToast()
+
+  // Sync with store changes
   useEffect(() => {
-    if (value && value.trim() !== '') {
-      setIsExpanded(true);
-    }
-  }, [value]);
+    setTempPrompt(systemPrompt)
+  }, [systemPrompt])
 
-  const handleGenerate = async () => {
-    if (!description.trim()) return;
-    setIsGenerating(true);
+  // Clear error on mode change
+  useEffect(() => {
+    setError(null)
+  }, [isEditing])
 
+  const handleSave = useCallback(() => {
     try {
-      const response = await fetch('/api/generate-instructions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ description }),
-      });
-
-      if (!response.ok) throw new Error('Failed to generate instructions');
-
-      const data = await response.json();
-      onChange(data.instructions);
-      setDialogOpen(false);
-      setIsExpanded(true);
+      setSystemPrompt(tempPrompt)
+      setIsEditing(false)
       toast({
-        title: 'Instructions generated',
-        description:
-          'New system instructions have been generated successfully.',
-      });
-    } catch (error) {
-      toast({
-        title: 'Generation failed',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setIsGenerating(false);
+        title: 'Instructions saved',
+        description: 'System instructions have been updated successfully',
+      })
+    } catch (err) {
+      setError(err.message)
     }
-  };
+  }, [tempPrompt, setSystemPrompt, toast])
+
+  const handleGenerate = useCallback(async () => {
+    if (!apiKey) {
+      setError('API Key Required. Please set your OpenAI API key in settings')
+      return
+    }
+
+    setIsGenerating(true)
+    setError(null)
+    
+    try {
+      const openai = new UnifiedOpenAIService(apiKey)
+      const basePrompt = PROMPT_TEMPLATES[model] || PROMPT_TEMPLATES['gpt-4-turbo-preview']
+      
+      const response = await openai.createChatCompletion({
+        model: 'gpt-4-turbo-preview',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a helpful AI assistant that specializes in creating system prompts for other AI models.'
+          },
+          {
+            role: 'user',
+            content: `Generate a detailed system prompt for the ${model} model. Use this as a base: ${basePrompt}`
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 500
+      })
+
+      if (response?.choices?.[0]?.message?.content) {
+        const generatedPrompt = response.choices[0].message.content
+        setTempPrompt(generatedPrompt)
+        toast({
+          title: 'Instructions generated',
+          description: 'New system instructions have been generated. Review and save to apply.',
+        })
+      } else {
+        throw new Error('Invalid response format from OpenAI')
+      }
+    } catch (err) {
+      setError(err.message || 'An unexpected error occurred')
+      toast({
+        title: 'Error generating instructions',
+        description: err.message,
+        variant: 'destructive'
+      })
+    } finally {
+      setIsGenerating(false)
+    }
+  }, [model, toast, apiKey])
+
+  const handleCancel = useCallback(() => {
+    setTempPrompt(systemPrompt)
+    setIsEditing(false)
+    setError(null)
+  }, [systemPrompt])
 
   return (
-    <div className="relative rounded-xl bg-black hover:bg-gray-900 transition-colors">
-      <div
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="flex items-center justify-between p-3 cursor-pointer group"
-      >
-        <div className="flex items-center gap-2">
-          <h2 className="text-sm font-medium text-white">
-            System instructions
-          </h2>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={e => {
-              e.stopPropagation();
-              setDialogOpen(true);
-            }}
-            className="h-7 px-3 text-xs font-medium text-white hover:text-gray-300"
-          >
-            <Wand2 className="h-3.5 w-3.5 mr-1.5" />
-            Generate
-          </Button>
-          <motion.div
-            animate={{ rotate: isExpanded ? 180 : 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <ChevronDown className="h-4 w-4 text-white" />
-          </motion.div>
-        </div>
-      </div>
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-4 p-4 bg-background/95 backdrop-blur border-b"
+    >
+      {error && (
+        <motion.div
+          variants={itemVariants}
+          className="mb-4"
+        >
+          <Alert variant="destructive" className="text-sm">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        </motion.div>
+      )}
 
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
-          >
-            <div className="px-3 pb-3">
-              <Textarea
-                ref={textareaRef}
-                value={value}
-                onChange={e => onChange(e.target.value)}
-                placeholder="You are a helpful assistant..."
-                className="resize-none text-sm bg-black border-gray-700 text-white placeholder:text-gray-400 focus:ring-1 focus:ring-white focus:border-white hover:border-white transition-colors"
-              />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-[500px] bg-black border-gray-700">
-          <DialogHeader>
-            <DialogTitle className="text-base text-white">
-              Generate System Instructions
-            </DialogTitle>
-          </DialogHeader>
-          <div className="py-3">
-            <Textarea
-              value={description}
-              onChange={e => setDescription(e.target.value)}
-              placeholder="Describe what kind of AI assistant you want to create..."
-              className="h-[150px] text-sm bg-black/50 border-gray-700 text-white focus:ring-1 focus:ring-white focus:border-white"
-              disabled={isGenerating}
-            />
-          </div>
-          <DialogFooter>
+      {isEditing ? (
+        <>
+          <Textarea
+            value={tempPrompt}
+            onChange={(e) => setTempPrompt(e.target.value)}
+            placeholder="Enter system instructions..."
+            className={cn(
+              "min-h-[100px] w-full p-3",
+              "bg-background/50 backdrop-blur",
+              "border border-border/50 rounded-md",
+              "text-sm font-mono leading-relaxed",
+              "resize-none focus:ring-1 focus:ring-primary",
+              "placeholder:text-muted-foreground",
+              (isLoading || isGenerating) && "opacity-50 cursor-not-allowed"
+            )}
+            disabled={isLoading || isGenerating}
+          />
+          <div className="flex items-center justify-end gap-2">
             <Button
-              variant="ghost"
-              onClick={() => setDialogOpen(false)}
-              disabled={isGenerating}
-              className="text-sm text-white hover:text-gray-300 hover:bg-gray-800"
+              variant="outline"
+              size="sm"
+              onClick={handleCancel}
+              disabled={isLoading || isGenerating}
+              className="h-8"
             >
+              <X className="w-4 h-4 mr-1" />
               Cancel
             </Button>
             <Button
+              size="sm"
               onClick={handleGenerate}
-              disabled={isGenerating || !description.trim()}
-              className="text-sm bg-gray-800 hover:bg-gray-700 text-white"
+              disabled={isLoading || isGenerating || !apiKey}
+              className={cn(
+                "h-8",
+                "bg-primary/90 hover:bg-primary",
+                "text-primary-foreground"
+              )}
             >
               {isGenerating ? (
-                <>
-                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                  Generating...
-                </>
+                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
               ) : (
-                'Create'
+                <Wand2 className="w-4 h-4 mr-1" />
               )}
+              Generate
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
+            <Button
+              size="sm"
+              onClick={handleSave}
+              disabled={isLoading || isGenerating}
+              className="h-8"
+            >
+              <Save className="w-4 h-4 mr-1" />
+              Save
+            </Button>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="relative">
+            <pre className={cn(
+              "p-4 rounded-md",
+              "bg-muted/50 backdrop-blur",
+              "border border-border/50",
+              "text-sm font-mono leading-relaxed",
+              "whitespace-pre-wrap",
+              "max-h-[200px] overflow-y-auto",
+              "scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
+            )}>
+              {systemPrompt || PROMPT_TEMPLATES[model]}
+            </pre>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsEditing(true)}
+              disabled={isLoading}
+              className={cn(
+                "absolute top-2 right-2",
+                "h-7 px-2",
+                "bg-background/95 backdrop-blur",
+                "hover:bg-accent"
+              )}
+            >
+              <Edit className="w-3 h-3 mr-1" />
+              Edit
+            </Button>
+          </div>
+        </>
+      )}
+    </motion.div>
+  )
 }
 
-export default SystemInstructions;
+export default React.memo(SystemInstructions)

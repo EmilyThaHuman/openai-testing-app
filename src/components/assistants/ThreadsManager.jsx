@@ -29,12 +29,16 @@ export function ThreadsManager({ onThreadSelect, selectedThread }) {
     selectedAssistant,
     threads,
     setThreads,
-    fetchThreadsForAssistant
+    fetchThreadsForAssistant,
+    isLoading: storeLoading,
+    storeError
   } = useStoreSelector(state => ({
     selectedAssistant: state.selectedAssistant,
     threads: state.threads[state.selectedAssistant?.id] || [],
     setThreads: state.setThreads,
-    fetchThreadsForAssistant: state.fetchThreadsForAssistant
+    fetchThreadsForAssistant: state.fetchThreadsForAssistant,
+    isLoading: state.loading,
+    storeError: state.error
   }));
 
   const [loading, setLoading] = useState(false);
@@ -98,18 +102,18 @@ export function ThreadsManager({ onThreadSelect, selectedThread }) {
           JSON.stringify(threadsWithMetadata)
         );
       }
-    } catch (error) {
-      console.error("Error fetching threads:", error);
-      setError(error);
+    } catch (err) {
+      console.error("Error fetching threads:", err);
+      setError(err);
       toast({
         title: "Error fetching threads",
-        description: error.message || "Failed to load threads",
+        description: err.message || "Failed to load threads",
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, setThreads]);
 
   useEffect(() => {
     fetchThreads();
@@ -121,7 +125,7 @@ export function ThreadsManager({ onThreadSelect, selectedThread }) {
     }
   }, [selectedAssistant, fetchThreadsForAssistant]);
 
-  const handleCreateThread = async () => {
+  const handleCreateThread = useCallback(async () => {
     try {
       setLoading(true);
       const thread = await UnifiedOpenAIService.threads.create();
@@ -146,9 +150,9 @@ export function ThreadsManager({ onThreadSelect, selectedThread }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [setThreads]);
 
-  const handleDeleteThread = async (threadId) => {
+  const handleDeleteThread = useCallback(async (threadId) => {
     try {
       setLoading(true);
       await UnifiedOpenAIService.threads.delete(threadId);
@@ -170,7 +174,7 @@ export function ThreadsManager({ onThreadSelect, selectedThread }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [setThreads]);
 
   // Format relative time
   const formatRelativeTime = (dateString) => {
@@ -322,11 +326,13 @@ export function ThreadsManager({ onThreadSelect, selectedThread }) {
         </AnimatePresence>
       </ScrollArea>
 
-      {/* {error && (
-        <div className="p-4 text-sm text-destructive bg-destructive/10 rounded-md">
-          {error.message || "An error occurred while loading threads"}
+      {(error || storeError) && (
+        <div className="text-destructive p-4 bg-destructive/10 rounded-md">
+          {error?.message || storeError?.message || "An error occurred"}
         </div>
-      )} */}
+      )}
     </div>
   );
 }
+
+export default React.memo(ThreadsManager);

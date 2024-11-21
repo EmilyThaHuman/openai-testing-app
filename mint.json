@@ -2,10 +2,10 @@
   "$schema": "https://mintlify.com/schema.json",
   "name": "ReedAI API Platform",
   "logo": {
-    "light": "/images/logo-light.png",
-    "dark": "/images/logo-dark.png"
+    "light": "/public/images/logo/light.png",
+    "dark": "/public/images/logo/dark.png"
   },
-  "favicon": "/images/favicon.png",
+  "favicon": "/public/favicon-32x32.png",
   "colors": {
     "primary": "#0099ff",
     "light": "#66c2ff",
@@ -29,33 +29,6 @@
     "name": "Try API Playground",
     "url": "https://app.reed-ai.dev/open-canvas"
   },
-  "tabs": [
-    {
-      "name": "API Reference",
-      "url": "api-reference"
-    },
-    {
-      "name": "Examples",
-      "url": "examples"
-    }
-  ],
-  "anchors": [
-    {
-      "name": "API Reference",
-      "icon": "code",
-      "url": "api-reference"
-    },
-    {
-      "name": "Examples",
-      "icon": "file-code",
-      "url": "examples"
-    },
-    {
-      "name": "SDKs",
-      "icon": "box",
-      "url": "sdks"
-    }
-  ],
   "navigation": [
     {
       "group": "Getting Started",
@@ -63,16 +36,26 @@
         "introduction",
         "quickstart",
         "authentication",
-        "development"
+        "architecture"
       ]
     },
     {
-      "group": "API Reference",
+      "group": "Components",
+      "pages": [
+        "components/overview",
+        "components/chat",
+        "components/assistants",
+        "components/ui"
+      ]
+    },
+    {
+      "group": "API Integration",
       "pages": [
         "api-reference/overview",
         {
-          "group": "Chat",
+          "group": "OpenAI",
           "pages": [
+            "api-reference/openai",
             "api-reference/chat/overview",
             "api-reference/chat/create",
             "api-reference/chat/stream",
@@ -80,29 +63,15 @@
           ]
         },
         {
-          "group": "Assistants",
+          "group": "Perplexity",
           "pages": [
-            "api-reference/assistants/overview",
-            "api-reference/assistants/create",
-            "api-reference/assistants/threads",
-            "api-reference/assistants/messages"
+            "api-reference/perplexity"
           ]
         },
         {
-          "group": "Images",
+          "group": "Database",
           "pages": [
-            "api-reference/images/overview",
-            "api-reference/images/generate",
-            "api-reference/images/edit",
-            "api-reference/images/variations"
-          ]
-        },
-        {
-          "group": "Audio",
-          "pages": [
-            "api-reference/audio/overview",
-            "api-reference/audio/speech",
-            "api-reference/audio/transcription"
+            "api-reference/database"
           ]
         }
       ]

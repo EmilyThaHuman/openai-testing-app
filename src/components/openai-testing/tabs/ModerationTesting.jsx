@@ -1,31 +1,51 @@
 import React, { useState } from 'react';
+import { useOpenAI } from '@/hooks/use-openai';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { UnifiedOpenAIService } from '@/services/openai/unifiedOpenAIService';
-import { Card } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { useOpenAI } from '@/context/openaiContext';
+import { useToast } from '@/components/ui/use-toast';
+import { Loader2 } from 'lucide-react';
 
 export default function ModerationTesting() {
-  const { apiKey } = useOpenAI();
+  const { isInitialized } = useOpenAI();
+  const { toast } = useToast();
   const [input, setInput] = useState('');
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
 
   const handleModeration = async () => {
+    if (!isInitialized) {
+      toast({
+        title: 'Error',
+        description: 'OpenAI is not initialized',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     if (!input.trim()) return;
+    
     setLoading(true);
-    setError('');
+    setError(null);
 
     try {
       const response = await UnifiedOpenAIService.moderation.create({
         input: input
       });
       setResult(response.results[0]);
-    } catch (error) {
-      console.error('Moderation error:', error);
-      setError(error.message);
+      toast({
+        title: 'Success',
+        description: 'Content moderated successfully'
+      });
+    } catch (err) {
+      setError(err.message);
+      toast({
+        title: 'Error',
+        description: err.message,
+        variant: 'destructive'
+      });
     } finally {
       setLoading(false);
     }
