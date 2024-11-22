@@ -1,40 +1,40 @@
 // GenerateDialog.js
-import React, { useState, useEffect, useCallback } from "react";
-import PropTypes from "prop-types";
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
-import { Loader2 } from "lucide-react";
-import { Editor } from "@monaco-editor/react"; // Ensure you have this package installed
-import { Textarea } from "@/components/ui/textarea";
-import { tryJsonParse } from "@/lib/openai/tryJsonParse";
-import { useContentPart } from "@/hooks/useContentPart";
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/components/ui/use-toast';
+import { useContentPart } from '@/hooks/useContentPart';
+import { tryJsonParse } from '@/lib/utils/tryJsonParse';
+import { Editor } from '@monaco-editor/react'; // Ensure you have this package installed
+import { Loader2 } from 'lucide-react';
+import PropTypes from 'prop-types';
+import { useCallback, useEffect, useState } from 'react';
 
 const monacoOptions = {
   minimap: { enabled: false },
   scrollBeyondLastLine: false,
-  lineNumbers: "off",
+  lineNumbers: 'off',
   glyphMargin: false,
   folding: false,
   lineDecorationsWidth: 0,
   lineNumbersMinChars: 0,
-  renderValidationDecorations: "on",
+  renderValidationDecorations: 'on',
   automaticLayout: true,
   padding: { top: 8, bottom: 8 },
-  wordWrap: "on",
+  wordWrap: 'on',
 };
 
 const MonacoEditorWrapper = ({
   value,
   onChange,
-  language = "json",
-  height = "120px",
+  language = 'json',
+  height = '120px',
 }) => (
   <Editor
     height={height}
@@ -43,16 +43,16 @@ const MonacoEditorWrapper = ({
     onChange={onChange}
     options={monacoOptions}
     className="border rounded-md bg-background"
-    beforeMount={(monaco) => {
-      monaco.editor.defineTheme("customTheme", {
-        base: "vs-dark",
+    beforeMount={monaco => {
+      monaco.editor.defineTheme('customTheme', {
+        base: 'vs-dark',
         inherit: true,
         rules: [],
         colors: {
-          "editor.background": "#1e1e1e",
+          'editor.background': '#1e1e1e',
         },
       });
-      monaco.editor.setTheme("customTheme");
+      monaco.editor.setTheme('customTheme');
     }}
   />
 );
@@ -65,81 +65,84 @@ MonacoEditorWrapper.propTypes = {
 };
 
 export const GenerateFunctionDialog = ({ open, onOpenChange, onGenerate }) => {
-  const [description, setDescription] = useState("");
+  const [description, setDescription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const part = useContentPart(); // Ensure this hook is defined and provides 'argsText', 'args', and 'result'
-  const [argsValue, setArgsValue] = useState("");
-  const [resultValue, setResultValue] = useState("");
+  const [argsValue, setArgsValue] = useState('');
+  const [resultValue, setResultValue] = useState('');
 
   // Initialize argsValue and resultValue based on 'part'
   useEffect(() => {
     setArgsValue(part.argsText ?? JSON.stringify(part.args, null, 2));
     setResultValue(
       !part.result
-        ? ""
-        : typeof part.result === "string"
-        ? part.result
-        : JSON.stringify(part.result, null, 2)
+        ? ''
+        : typeof part.result === 'string'
+          ? part.result
+          : JSON.stringify(part.result, null, 2)
     );
   }, [part]);
 
   const handleGenerate = useCallback(async () => {
-    const apiKey = localStorage.getItem("openai_api_key");
+    const apiKey = localStorage.getItem('openai_api_key');
 
     if (!apiKey) {
       toast({
-        title: "API Key Required",
-        description: "Please add your OpenAI API key in the header first.",
-        variant: "destructive",
+        title: 'API Key Required',
+        description: 'Please add your OpenAI API key in the header first.',
+        variant: 'destructive',
       });
       return;
     }
 
     try {
       setIsLoading(true);
-      const response = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: "gpt-4",
-          messages: [
-            {
-              role: "system",
-              content:
-                "You are a helpful assistant that generates OpenAI function schemas based on user descriptions. Always return valid JSON.",
-            },
-            {
-              role: "user",
-              content: `Generate an OpenAI function schema for the following description: ${description}`,
-            },
-          ],
-        }),
-      });
+      const response = await fetch(
+        'https://api.openai.com/v1/chat/completions',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: 'gpt-4',
+            messages: [
+              {
+                role: 'system',
+                content:
+                  'You are a helpful assistant that generates OpenAI function schemas based on user descriptions. Always return valid JSON.',
+              },
+              {
+                role: 'user',
+                content: `Generate an OpenAI function schema for the following description: ${description}`,
+              },
+            ],
+          }),
+        }
+      );
 
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error?.message || "Failed to generate schema");
+        throw new Error(data.error?.message || 'Failed to generate schema');
       }
 
       const schema = data.choices[0]?.message?.content;
       if (!schema) {
-        throw new Error("No schema returned from OpenAI.");
+        throw new Error('No schema returned from OpenAI.');
       }
 
       onGenerate(schema);
       onOpenChange(false);
     } catch (error) {
       toast({
-        title: "Error Generating Schema",
+        title: 'Error Generating Schema',
         description:
           error instanceof Error
             ? error.message
-            : "An unexpected error occurred.",
-        variant: "destructive",
+            : 'An unexpected error occurred.',
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -147,7 +150,7 @@ export const GenerateFunctionDialog = ({ open, onOpenChange, onGenerate }) => {
   }, [description, onGenerate, onOpenChange, toast]);
 
   const handleArgsChange = useCallback(
-    (value) => {
+    value => {
       setArgsValue(value);
       part.argsText = value;
       part.args = tryJsonParse(value);
@@ -156,14 +159,14 @@ export const GenerateFunctionDialog = ({ open, onOpenChange, onGenerate }) => {
   );
 
   const handleResultChange = useCallback(
-    (value) => {
+    value => {
       setResultValue(value);
       part.result = value;
     },
     [part]
   );
 
-  const handleDescriptionChange = useCallback((e) => {
+  const handleDescriptionChange = useCallback(e => {
     setDescription(e.target.value);
   }, []);
 
@@ -230,7 +233,7 @@ export const GenerateFunctionDialog = ({ open, onOpenChange, onGenerate }) => {
                 Generating...
               </>
             ) : (
-              "Create"
+              'Create'
             )}
           </Button>
         </DialogFooter>

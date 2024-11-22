@@ -3,7 +3,7 @@ import { Breadcrumbs } from '@/components/ui/breadcrumbs';
 import { Button } from '@/components/ui/button';
 import { SettingsDialog } from '@/components/ui/settings-dialog';
 import { Toaster } from '@/components/ui/toaster';
-import { useOpenAI } from '@/context/OpenAIContext';
+import { useOpenAI } from '@/hooks/use-openai';
 import { AppSidebar } from '@/layout/app-sidebar';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';

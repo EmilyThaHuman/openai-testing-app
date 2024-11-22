@@ -10,7 +10,7 @@ export const useMessages = () => {
   const [isInitializing, setIsInitializing] = useState(true);
   const threadId = import.meta.env.VITE_OPENAI_THREAD_ID;
   const assistantId = import.meta.env.VITE_OPENAI_ASSISTANT_ID;
-  const [status, setStatus] = useState('pending');
+  const [status, setStatus] = useState('idle');
   const messagesEndRef = useRef(null);
   const [currentToolCall, setCurrentToolCall] = useState(null);
   const [messages, setMessages] = useState([]);

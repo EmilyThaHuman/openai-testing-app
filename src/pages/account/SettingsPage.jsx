@@ -1,14 +1,5 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/context/ThemeContext';
-import { useOpenAI } from '@/context/OpenAIContext';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { useToast } from '@/components/ui/use-toast';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Card,
   CardContent,
@@ -16,9 +7,18 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
-import { Settings, User, Key, Palette, Code } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
+import { useOpenAI } from 'archive/OpenAIContext';
+import { motion } from 'framer-motion';
+import { Code, Key, Palette, Settings, User } from 'lucide-react';
+import { useState } from 'react';
 
 const containerVariants = {
   hidden: { opacity: 0, y: 20 },

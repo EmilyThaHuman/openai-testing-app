@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { databaseUtils } from '@/lib/supabase/client';
-import { Card } from '../ui/card';
-import { Step, Stepper } from '../ui/stepper';
+import { Card } from '../../../src/components/ui/card';
+import { Step, Stepper } from '../../../src/components/ui/stepper';
 import StepLabel from './StepLabel';
-import { FormControl, FormLabel } from '../ui/form';
-import { Input } from '../ui/input';
-import { Textarea } from '../ui/textarea';
-import { Select } from '../ui/select';
-import { Button } from '../ui/button';
+import { FormControl, FormLabel } from '../../../src/components/ui/form';
+import { Input } from '../../../src/components/ui/input';
+import { Textarea } from '../../../src/components/ui/textarea';
+import { Select } from '../../../src/components/ui/select';
+import { Button } from '../../../src/components/ui/button';
 import { Header } from '@radix-ui/react-accordion';
 
 const OnboardingWizard = () => {

@@ -1,10 +1,10 @@
-import { useState } from 'react';
-import { useStore, useStoreSelector } from '@/store/useStore';
 import { UnifiedOpenAIService } from '@/services/openai/unifiedOpenAIService';
-import { useForm, Controller } from 'react-hook-form';
+import { useStore } from '@/store/useStore';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FileUp, AlertCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { AlertCircle, FileUp } from 'lucide-react';
+import { useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 // UI Components
@@ -13,16 +13,9 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Slider } from '@/components/ui/slider';
 import { useToast } from '@/components/ui/use-toast';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 
 // Custom Components
 import { FileList } from '../shared/FileList';
@@ -36,7 +29,7 @@ import {
   MODELS,
   TOOLS,
 } from '@/constants/assistantConstants';
-import { GENERATOR_TYPES } from '@/utils/instructionsGenerator';
+import { GENERATOR_TYPES } from '@/lib/utils/instructionsGenerator';
 
 // Form Schema
 const assistantSchema = z.object({
@@ -85,12 +78,13 @@ export function AssistantForm({ mode = 'create', assistant, onSubmit }) {
   const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
 
   // Store selectors
-  const { selectedVectorStore, updateAssistant, createAssistant } =
-    useStore(state => ({
+  const { selectedVectorStore, updateAssistant, createAssistant } = useStore(
+    state => ({
       selectedVectorStore: state.selectedVectorStore,
       updateAssistant: state.updateAssistant,
       createAssistant: state.createAssistant,
-    }));
+    })
+  );
 
   const isEdit = mode === 'edit';
 

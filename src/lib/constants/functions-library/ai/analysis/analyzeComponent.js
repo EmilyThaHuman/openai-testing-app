@@ -1,4 +1,4 @@
-import { getWindow } from '@/utils/browser';
+import { getWindow } from '@/lib/utils/browser';
 
 export async function analyzeComponent({
   componentPath,

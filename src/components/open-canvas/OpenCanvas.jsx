@@ -1,28 +1,28 @@
-import React, { useEffect, useCallback, memo, useState } from 'react';
-import { useStore } from '@/store/useStore';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from '@/components/ui/resizable';
+import { useToast } from '@/components/ui/use-toast';
+import { cn } from '@/lib/utils';
+import { UnifiedOpenAIService } from '@/services/openai/unifiedOpenAIService';
+import { useStore } from '@/store/useStore';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   AlertCircle,
+  Key,
   Loader2,
   PanelLeftClose,
   PanelLeftOpen,
-  Key,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import {
-  ResizablePanelGroup,
-  ResizablePanel,
-  ResizableHandle,
-} from '@/components/ui/resizable';
+import { memo, useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ChatInterface } from './ChatInterface';
 import { CodeEditor } from './CodeEditor';
 import { FileExplorer } from './FileExplorer';
-import { cn } from '@/lib/utils';
-import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/components/ui/use-toast';
-import { UnifiedOpenAIService } from '@/services/openai/unifiedOpenAIService';
-import { useOpenAI } from '@/context/OpenAIContext';
+import { useOpenAI } from '@/hooks/use-openai';
 
 const containerVariants = {
   hidden: { opacity: 0 },

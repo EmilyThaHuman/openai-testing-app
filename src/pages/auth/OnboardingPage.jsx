@@ -1,45 +1,46 @@
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Switch } from '@/components/ui/switch'
-import { Textarea } from '@/components/ui/textarea'
-import { useToast } from '@/components/ui/use-toast'
-import { AppIcon } from '@/components/ui/AppIcon'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { motion, AnimatePresence } from 'framer-motion'
-import { useState } from 'react'
-import { useDropzone } from 'react-dropzone'
-import { Controller, useForm } from 'react-hook-form'
-import { useNavigate } from 'react-router-dom'
-import * as z from 'zod'
-import { 
-  RocketIcon, 
-  WrenchIcon, 
-  CreditCardIcon, 
-  ChevronRightIcon, 
-  ChevronLeftIcon, 
-  UploadIcon, 
-  CheckIcon, 
-  Loader2Icon,
-  SettingsIcon,
-  CodeIcon,
-  ZapIcon,
-  PaletteIcon,
+import { AppIcon } from '@/components/ui/AppIcon';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/context/AuthContext';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useSupabaseClient } from '@supabase/auth-helpers-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import {
   BoxIcon,
-  CpuIcon,
+  CheckIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
   CloudIcon,
-  LockIcon,
-  ShieldIcon
-} from 'lucide-react'
-import { useAuth } from '@/context/AuthContext'
-import { useOpenAI } from '@/context/OpenAIContext'
-import { useSupabaseClient } from '@supabase/auth-helpers-react'
-
+  CpuIcon,
+  CreditCardIcon,
+  Loader2Icon,
+  PaletteIcon,
+  RocketIcon,
+  SettingsIcon,
+  UploadIcon,
+  WrenchIcon,
+  ZapIcon,
+} from 'lucide-react';
+import { useState } from 'react';
+import { useDropzone } from 'react-dropzone';
+import { Controller, useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
+import * as z from 'zod';
 
 // Constants and Schemas
-const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 const stepSchema = z.discriminatedUnion('step', [
   z.object({
@@ -48,7 +49,7 @@ const stepSchema = z.discriminatedUnion('step', [
     workspaceContext: z.string(),
     workspaceAvatar: z.string(),
     theme: z.string(),
-    defaultModel: z.string()
+    defaultModel: z.string(),
   }),
   z.object({
     step: z.literal(2),
@@ -56,100 +57,104 @@ const stepSchema = z.discriminatedUnion('step', [
     toolDefinitions: z.string(),
     actionPlugins: z.array(z.any()).optional(),
     apiKey: z.string().optional(),
-    enableAdvancedFeatures: z.boolean().optional()
+    enableAdvancedFeatures: z.boolean().optional(),
   }),
   z.object({
     step: z.literal(3),
     isPro: z.boolean(),
     enableNotifications: z.boolean().optional(),
     dataCollection: z.boolean().optional(),
-    newsletter: z.boolean().optional()
-  })
-])
+    newsletter: z.boolean().optional(),
+  }),
+]);
 
 const steps = [
-  { 
+  {
     title: 'Workspace Setup',
     description: 'Configure your development environment',
     icon: RocketIcon,
-    color: 'text-blue-500'
+    color: 'text-blue-500',
   },
-  { 
+  {
     title: 'API Configuration',
     description: 'Set up your OpenAI integration',
     icon: WrenchIcon,
-    color: 'text-green-500'
+    color: 'text-green-500',
   },
-  { 
+  {
     title: 'Finalize Setup',
     description: 'Choose your preferences',
     icon: CreditCardIcon,
-    color: 'text-purple-500'
-  }
-]
+    color: 'text-purple-500',
+  },
+];
 
 const themes = [
   { value: 'system', label: 'System', icon: SettingsIcon },
   { value: 'light', label: 'Light', icon: PaletteIcon },
-  { value: 'dark', label: 'Dark', icon: BoxIcon }
-]
+  { value: 'dark', label: 'Dark', icon: BoxIcon },
+];
 
 const models = [
   { value: 'gpt-4', label: 'GPT-4', icon: CpuIcon },
   { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo', icon: ZapIcon },
-  { value: 'claude-3', label: 'Claude 3', icon: CloudIcon }
-]
+  { value: 'claude-3', label: 'Claude 3', icon: CloudIcon },
+];
 
 // Animation variants
 const containerVariants = {
   hidden: { opacity: 0, y: 20 },
-  visible: { 
-    opacity: 1, 
+  visible: {
+    opacity: 1,
     y: 0,
     transition: {
       duration: 0.5,
-      staggerChildren: 0.1
-    }
-  }
-}
+      staggerChildren: 0.1,
+    },
+  },
+};
 
 const itemVariants = {
   hidden: { opacity: 0, x: -20 },
-  visible: { 
-    opacity: 1, 
+  visible: {
+    opacity: 1,
     x: 0,
-    transition: { duration: 0.3 }
-  }
-}
+    transition: { duration: 0.3 },
+  },
+};
 
 const slideVariants = {
-  enter: (direction) => ({
+  enter: direction => ({
     x: direction > 0 ? 1000 : -1000,
-    opacity: 0
+    opacity: 0,
   }),
   center: {
     zIndex: 1,
     x: 0,
-    opacity: 1
+    opacity: 1,
   },
-  exit: (direction) => ({
+  exit: direction => ({
     zIndex: 0,
     x: direction < 0 ? 1000 : -1000,
-    opacity: 0
-  })
-}
+    opacity: 0,
+  }),
+};
 
 // Continue in next part...
 
 export function OnboardingPage() {
-  const [currentStep, setCurrentStep] = useState(1)
-  const navigate = useNavigate()
-  const { toast } = useToast()
-  const { checkAuth } = useAuth()
-  const { updateApiKey } = useOpenAI()
-  const supabase = useSupabaseClient()
+  const [currentStep, setCurrentStep] = useState(1);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { checkAuth } = useAuth();
+  const supabase = useSupabaseClient();
 
-  const { control, handleSubmit, formState: { errors, isSubmitting }, watch } = useForm({
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    watch,
+  } = useForm({
     resolver: zodResolver(stepSchema),
     defaultValues: {
       step: currentStep,
@@ -166,21 +171,21 @@ export function OnboardingPage() {
       isPro: false,
       enableNotifications: true,
       dataCollection: false,
-      newsletter: false
-    }
-  })
+      newsletter: false,
+    },
+  });
 
   const { getRootProps, getInputProps } = useDropzone({
     accept: {
       'application/json': ['.json'],
-      'text/javascript': ['.js', '.ts']
+      'text/javascript': ['.js', '.ts'],
     },
     maxSize: MAX_FILE_SIZE,
-    onDrop: (acceptedFiles) => {
+    onDrop: acceptedFiles => {
       // Handle file upload logic
-      console.log('Accepted files:', acceptedFiles)
-    }
-  })
+      console.log('Accepted files:', acceptedFiles);
+    },
+  });
 
   const stepContent = {
     1: (
@@ -192,11 +197,16 @@ export function OnboardingPage() {
         className="space-y-6"
       >
         <div className="space-y-4">
-          <motion.div variants={itemVariants} className="flex items-center space-x-4">
+          <motion.div
+            variants={itemVariants}
+            className="flex items-center space-x-4"
+          >
             <RocketIcon className="w-8 h-8 text-primary" />
             <div>
               <h2 className="text-xl font-semibold">Workspace Setup</h2>
-              <p className="text-muted-foreground">Configure your development environment</p>
+              <p className="text-muted-foreground">
+                Configure your development environment
+              </p>
             </div>
           </motion.div>
 
@@ -207,7 +217,7 @@ export function OnboardingPage() {
                 name="workspaceName"
                 control={control}
                 render={({ field }) => (
-                  <Input 
+                  <Input
                     {...field}
                     className="transition-all focus:scale-[1.01]"
                     placeholder="My Workspace"
@@ -215,7 +225,9 @@ export function OnboardingPage() {
                 )}
               />
               {errors.workspaceName && (
-                <p className="text-sm text-destructive">{errors.workspaceName.message}</p>
+                <p className="text-sm text-destructive">
+                  {errors.workspaceName.message}
+                </p>
               )}
             </div>
 
@@ -240,7 +252,10 @@ export function OnboardingPage() {
                 name="theme"
                 control={control}
                 render={({ field }) => (
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select theme" />
                     </SelectTrigger>
@@ -265,7 +280,10 @@ export function OnboardingPage() {
                 name="defaultModel"
                 control={control}
                 render={({ field }) => (
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select model" />
                     </SelectTrigger>
@@ -297,11 +315,16 @@ export function OnboardingPage() {
         className="space-y-6"
       >
         <div className="space-y-4">
-          <motion.div variants={itemVariants} className="flex items-center space-x-4">
+          <motion.div
+            variants={itemVariants}
+            className="flex items-center space-x-4"
+          >
             <WrenchIcon className="w-8 h-8 text-primary" />
             <div>
               <h2 className="text-xl font-semibold">API Configuration</h2>
-              <p className="text-muted-foreground">Set up your API integrations</p>
+              <p className="text-muted-foreground">
+                Set up your API integrations
+              </p>
             </div>
           </motion.div>
 
@@ -371,7 +394,10 @@ export function OnboardingPage() {
         className="space-y-6"
       >
         <div className="space-y-4">
-          <motion.div variants={itemVariants} className="flex items-center space-x-4">
+          <motion.div
+            variants={itemVariants}
+            className="flex items-center space-x-4"
+          >
             <CreditCardIcon className="w-8 h-8 text-primary" />
             <div>
               <h2 className="text-xl font-semibold">Finalize Setup</h2>
@@ -441,18 +467,20 @@ export function OnboardingPage() {
           </motion.div>
         </div>
       </motion.div>
-    )
-  }
+    ),
+  };
 
-  const onSubmit = async (data) => {
+  const onSubmit = async data => {
     try {
       if (currentStep < 3) {
-        setCurrentStep(prev => prev + 1)
-        return
+        setCurrentStep(prev => prev + 1);
+        return;
       }
 
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.user?.id) throw new Error('No authenticated user found')
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.user?.id) throw new Error('No authenticated user found');
 
       // Update profile
       const { error: profileError } = await supabase
@@ -464,12 +492,12 @@ export function OnboardingPage() {
             defaultModel: data.defaultModel,
             isPro: data.isPro,
             enableNotifications: data.enableNotifications,
-            dataCollection: data.dataCollection
-          }
+            dataCollection: data.dataCollection,
+          },
         })
-        .eq('id', session.user.id)
+        .eq('id', session.user.id);
 
-      if (profileError) throw profileError
+      if (profileError) throw profileError;
 
       // Create workspace
       const { error: workspaceError } = await supabase
@@ -477,10 +505,10 @@ export function OnboardingPage() {
         .insert({
           user_id: session.user.id,
           name: data.workspaceName,
-          context: data.workspaceContext
-        })
+          context: data.workspaceContext,
+        });
 
-      if (workspaceError) throw workspaceError
+      if (workspaceError) throw workspaceError;
 
       // Save API key if provided
       if (data.apiKey) {
@@ -490,29 +518,28 @@ export function OnboardingPage() {
 
       toast({
         title: 'Setup complete!',
-        description: 'Your workspace is ready to use.'
-      })
+        description: 'Your workspace is ready to use.',
+      });
 
       // Force auth context to refresh
-      await checkAuth()
+      await checkAuth();
 
-      navigate('/open-canvas', { 
+      navigate('/open-canvas', {
         replace: true,
-        state: { 
+        state: {
           from: '/auth/onboarding',
-          isNewUser: true 
-        }
-      })
-
+          isNewUser: true,
+        },
+      });
     } catch (error) {
-      console.error('Setup failed:', error)
+      console.error('Setup failed:', error);
       toast({
         variant: 'destructive',
         title: 'Setup failed',
-        description: error.message
-      })
+        description: error.message,
+      });
     }
-  }
+  };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-background to-secondary/20">
@@ -527,11 +554,11 @@ export function OnboardingPage() {
               <motion.div
                 initial={{ scale: 0.9 }}
                 animate={{ scale: 1 }}
-                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
               >
                 <AppIcon size="xl" className="animate-float" />
               </motion.div>
-              
+
               <div className="text-center space-y-2">
                 <h1 className="text-3xl font-bold text-primary">
                   {steps[currentStep - 1].title}
@@ -547,8 +574,11 @@ export function OnboardingPage() {
                     <motion.div
                       initial={false}
                       animate={{
-                        backgroundColor: index + 1 <= currentStep ? 'var(--primary)' : 'var(--secondary)',
-                        scale: index + 1 === currentStep ? 1.1 : 1
+                        backgroundColor:
+                          index + 1 <= currentStep
+                            ? 'var(--primary)'
+                            : 'var(--secondary)',
+                        scale: index + 1 === currentStep ? 1.1 : 1,
                       }}
                       className="w-10 h-10 rounded-full flex items-center justify-center text-white"
                     >
@@ -561,7 +591,9 @@ export function OnboardingPage() {
                     {index < steps.length - 1 && (
                       <div
                         className={`h-1 w-full mx-2 ${
-                          index + 1 < currentStep ? 'bg-primary' : 'bg-secondary'
+                          index + 1 < currentStep
+                            ? 'bg-primary'
+                            : 'bg-secondary'
                         }`}
                       />
                     )}
@@ -588,7 +620,7 @@ export function OnboardingPage() {
                   <ChevronLeftIcon className="w-4 h-4 mr-2" />
                   Previous
                 </Button>
-                
+
                 <Button
                   type="submit"
                   disabled={isSubmitting}
@@ -597,7 +629,11 @@ export function OnboardingPage() {
                   {isSubmitting ? (
                     <motion.div
                       animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      transition={{
+                        duration: 1,
+                        repeat: Infinity,
+                        ease: 'linear',
+                      }}
                     >
                       <Loader2Icon className="w-4 h-4 mr-2" />
                     </motion.div>
@@ -614,7 +650,7 @@ export function OnboardingPage() {
         </Card>
       </motion.div>
     </div>
-  )
+  );
 }
 
 export default OnboardingPage;
