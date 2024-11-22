@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Editor } from '@monaco-editor/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { useLocalStorage } from '@/hooks/common/useLocalStorage';
 import { ChatMessage } from '@/components/chat/ChatMessage';
 import { ChatInput } from '@/components/chat/ChatInput';
 import { EmptyChat } from '@/components/chat/EmptyChat';
