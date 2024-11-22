@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { UnifiedOpenAIService } from '@/services/openai/unifiedOpenAIService';
 import { FileUpload } from '@/components/shared/FileUpload';
 import { Loader2, Trash2, Download, RefreshCw } from 'lucide-react';

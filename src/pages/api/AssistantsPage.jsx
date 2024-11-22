@@ -1,8 +1,6 @@
 import React from 'react';
 import { useStoreSelector } from '@/store/useStore';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, MessageSquare, Settings2, Database } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';

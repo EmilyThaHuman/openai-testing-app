@@ -43,7 +43,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '@/store/useStore';
-import { NotificationsCenter } from '@/components/notifications/NotificationsCenter';
+import { NotificationsCenter } from '@/layout/notifications/NotificationsCenter';
 import {
   Popover,
   PopoverContent,

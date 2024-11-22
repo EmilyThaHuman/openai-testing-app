@@ -1,4 +1,3 @@
-import { Button } from '@/components/ui/button';
 import { DotPattern } from '@/components/ui/DotPattern';
 import { PromptsMarquee } from '@/components/ui/PromptsMarquee';
 import { Navigation } from '@/layout/Navigation';

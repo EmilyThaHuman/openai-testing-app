@@ -12,7 +12,7 @@ import { FaGithub, FaGoogle } from 'react-icons/fa'
 import { motion } from 'framer-motion'
 
 export default function LoginPage() {
-  const { signIn, signInWithEmail } = useAuth()
+  const { signInWithOAuth, signInWithEmail } = useAuth();
   const navigate = useNavigate()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
@@ -24,7 +24,7 @@ export default function LoginPage() {
   const handleSocialLogin = async (provider) => {
     try {
       setIsLoading(true)
-      await signIn(provider)
+      await signInWithOAuth(provider);
     } catch (error) {
       toast({
         variant: 'destructive',

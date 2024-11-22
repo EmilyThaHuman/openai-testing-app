@@ -32,6 +32,7 @@ import {
   UploadIcon,
   WrenchIcon,
   ZapIcon,
+  UserIcon,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
@@ -45,6 +46,15 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const stepSchema = z.discriminatedUnion('step', [
   z.object({
     step: z.literal(1),
+    displayName: z.string().min(2, 'Display name is required'),
+    bio: z.string().optional(),
+    location: z.string().optional(),
+    website: z.string().url().optional().or(z.literal('')),
+    company: z.string().optional(),
+    githubUsername: z.string().optional(),
+  }),
+  z.object({
+    step: z.literal(2),
     workspaceName: z.string().min(2, 'Workspace name is required'),
     workspaceContext: z.string(),
     workspaceAvatar: z.string(),
@@ -52,7 +62,7 @@ const stepSchema = z.discriminatedUnion('step', [
     defaultModel: z.string(),
   }),
   z.object({
-    step: z.literal(2),
+    step: z.literal(3),
     modelPresets: z.array(z.any()).optional(),
     toolDefinitions: z.string(),
     actionPlugins: z.array(z.any()).optional(),
@@ -60,7 +70,7 @@ const stepSchema = z.discriminatedUnion('step', [
     enableAdvancedFeatures: z.boolean().optional(),
   }),
   z.object({
-    step: z.literal(3),
+    step: z.literal(4),
     isPro: z.boolean(),
     enableNotifications: z.boolean().optional(),
     dataCollection: z.boolean().optional(),
@@ -69,6 +79,12 @@ const stepSchema = z.discriminatedUnion('step', [
 ]);
 
 const steps = [
+  {
+    title: 'Profile Setup',
+    description: 'Tell us about yourself',
+    icon: UserIcon,
+    color: 'text-purple-500',
+  },
   {
     title: 'Workspace Setup',
     description: 'Configure your development environment',
@@ -201,6 +217,127 @@ export function OnboardingPage() {
             variants={itemVariants}
             className="flex items-center space-x-4"
           >
+            <UserIcon className="w-8 h-8 text-primary" />
+            <div>
+              <h2 className="text-xl font-semibold">Profile Setup</h2>
+              <p className="text-muted-foreground">Tell us about yourself</p>
+            </div>
+          </motion.div>
+
+          <motion.div variants={itemVariants} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="displayName">Display Name</Label>
+              <Controller
+                name="displayName"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    {...field}
+                    className="transition-all focus:scale-[1.01]"
+                    placeholder="Your name"
+                  />
+                )}
+              />
+              {errors.displayName && (
+                <p className="text-sm text-destructive">
+                  {errors.displayName.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="bio">Bio</Label>
+              <Controller
+                name="bio"
+                control={control}
+                render={({ field }) => (
+                  <Textarea
+                    {...field}
+                    className="min-h-[100px] transition-all focus:scale-[1.01]"
+                    placeholder="Tell us about yourself..."
+                  />
+                )}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="location">Location</Label>
+              <Controller
+                name="location"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    {...field}
+                    className="transition-all focus:scale-[1.01]"
+                    placeholder="City, Country"
+                  />
+                )}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="website">Website</Label>
+              <Controller
+                name="website"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    {...field}
+                    type="url"
+                    className="transition-all focus:scale-[1.01]"
+                    placeholder="https://your-website.com"
+                  />
+                )}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="company">Company</Label>
+              <Controller
+                name="company"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    {...field}
+                    className="transition-all focus:scale-[1.01]"
+                    placeholder="Company name"
+                  />
+                )}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="githubUsername">GitHub Username</Label>
+              <Controller
+                name="githubUsername"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    {...field}
+                    className="transition-all focus:scale-[1.01]"
+                    placeholder="username"
+                  />
+                )}
+              />
+            </div>
+          </motion.div>
+        </div>
+      </motion.div>
+    ),
+
+    2: (
+      <motion.div
+        key="step2"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="space-y-6"
+      >
+        <div className="space-y-4">
+          <motion.div
+            variants={itemVariants}
+            className="flex items-center space-x-4"
+          >
             <RocketIcon className="w-8 h-8 text-primary" />
             <div>
               <h2 className="text-xl font-semibold">Workspace Setup</h2>
@@ -306,9 +443,9 @@ export function OnboardingPage() {
       </motion.div>
     ),
 
-    2: (
+    3: (
       <motion.div
-        key="step2"
+        key="step3"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
@@ -385,9 +522,9 @@ export function OnboardingPage() {
       </motion.div>
     ),
 
-    3: (
+    4: (
       <motion.div
-        key="step3"
+        key="step4"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
@@ -472,7 +609,7 @@ export function OnboardingPage() {
 
   const onSubmit = async data => {
     try {
-      if (currentStep < 3) {
+      if (currentStep < 4) {
         setCurrentStep(prev => prev + 1);
         return;
       }
@@ -481,6 +618,20 @@ export function OnboardingPage() {
         data: { session },
       } = await supabase.auth.getSession();
       if (!session?.user?.id) throw new Error('No authenticated user found');
+
+      // Update user metadata with profile info
+      const { error: userError } = await supabase.auth.updateUser({
+        data: {
+          full_name: data.displayName,
+          bio: data.bio,
+          location: data.location,
+          website: data.website,
+          company: data.company,
+          github_username: data.githubUsername,
+        },
+      });
+
+      if (userError) throw userError;
 
       // Update profile
       const { error: profileError } = await supabase
@@ -564,7 +715,7 @@ export function OnboardingPage() {
                   {steps[currentStep - 1].title}
                 </h1>
                 <p className="text-muted-foreground">
-                  Step {currentStep} of 3 - {steps[currentStep - 1].description}
+                  Step {currentStep} of 4 - {steps[currentStep - 1].description}
                 </p>
               </div>
 
@@ -639,7 +790,7 @@ export function OnboardingPage() {
                     </motion.div>
                   ) : (
                     <>
-                      {currentStep === 3 ? 'Complete Setup' : 'Next'}
+                      {currentStep === 4 ? 'Complete Setup' : 'Next'}
                       <ChevronRightIcon className="w-4 h-4 ml-2" />
                     </>
                   )}

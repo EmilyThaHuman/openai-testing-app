@@ -24,8 +24,6 @@ import { cn } from '@/lib/utils';
 // Components
 import AssistantForm from '../../assistants/AssistantForm';
 import AssistantList from '../../assistants/AssistantList';
-import ThreadList from '../../assistants/ThreadList';
-import ThreadMessages from '../../assistants/ThreadMessages';
 import ChatDialog from '@/components/chat/ChatDialog';
 import { FileUploadDialog } from '@/components/shared/FileUploadDialog';
 import { ErrorDisplay } from '@/components/shared/ErrorDisplay';

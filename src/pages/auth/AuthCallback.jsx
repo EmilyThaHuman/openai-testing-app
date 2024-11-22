@@ -8,9 +8,9 @@ import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
 import { useStore } from '@/store/useStore';
+import { supabase } from '@/lib/supabase/client';
 
 export default function AuthCallback() {
-  const supabase = useSupabaseClient();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, isAuthenticated } = useAuth();

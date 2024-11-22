@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { UnifiedOpenAIService } from '@/services/openai/unifiedOpenAIService';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Label } from '@radix-ui/react-label';
 
 export default function ModerationTesting() {
   const { isInitialized } = useOpenAI();
