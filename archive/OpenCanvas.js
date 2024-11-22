@@ -53,7 +53,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useRef } from 'react';
 import { Terminal, Database, Loader2, Badge } from 'lucide-react';
-import { sendAssistantMessage } from '@/utils/openAIUtils';
+import { sendAssistantMessage } from '@/lib/utils/openAIUtils';
 
 if (window.MonacoEnvironment) {
   window.MonacoEnvironment = {

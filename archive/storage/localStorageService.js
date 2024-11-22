@@ -1,3 +1,5 @@
+import React from "react";
+
 let storageInstance = null;
 let storagePrefix = "app_";
 

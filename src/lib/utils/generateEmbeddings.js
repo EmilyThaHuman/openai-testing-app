@@ -1,4 +1,4 @@
-import StorageService from "@/services/storage/localStorageService";
+import StorageService from "archive/storage/localStorageService";
 import OpenAI from "openai";
 
 const EMBEDDING_MODEL = "text-embedding-3-small";
