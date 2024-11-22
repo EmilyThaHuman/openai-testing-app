@@ -13,6 +13,7 @@ node_modules
 dist
 dist-ssr
 *.local
+supabase/.env.local
 
 # Editor directories and files
 .cursor/*

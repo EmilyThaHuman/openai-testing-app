@@ -50,7 +50,7 @@ export function ChatInput() {
         variant: "destructive",
       });
     }
-  }, [input, files, isLoading, uploadFile, sendMessage, clearUploadProgress, toast]);
+  }, [input, files, isLoading, sendMessage, setFiles, clearUploadProgress, uploadFile, toast]);
 
   const handleFileInput = useCallback(
     (e) => {

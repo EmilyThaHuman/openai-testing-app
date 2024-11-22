@@ -2,50 +2,34 @@
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/context/AuthContext';
-import { OpenAIProvider } from '@/context/OpenAIContext';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { Layout } from '@/layout/Layout';
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
 import { AuthGuard } from './AuthGuard';
 
 // Auth Pages
-import {
-  AuthCallback,
-  HomePage,
-  LoginPage,
-  OnboardingPage,
-  RegisterPage,
-} from '@/pages/auth';
-
-// Dashboard Pages
-import { ApiDashboard } from '@/pages/dashboard';
-
-// API Pages
-import {
-  AssistantsPage,
-  AudioPage,
-  ChatPage,
-  ImagePage,
-  OpenAiTestPage,
-} from '@/pages/api';
-
-// Canvas Pages
-import { OpenCanvasPage } from '@/pages/canvas';
-
-// Docs Pages
-import { DocsPage } from '@/pages/docs';
-
-// Account Pages
+import { ChatProvider } from '@/context/ChatContext';
 import {
   AccountBillingPage,
   AccountNotificationsPage,
   AccountProfilePage,
   AccountSettingsPage,
   AccountSubscriptionPage,
-} from '@/pages/account';
-
-// Help Pages
-import { HelpPage } from '@/pages/help';
+  AssistantsPage,
+  AudioPage,
+  AuthCallback,
+  ChatPage,
+  DocsPage,
+  HelpPage,
+  HomePage,
+  ImagePage,
+  LoginPage,
+  OnboardingPage,
+  OpenAiTestPage,
+  OpenCanvasPage,
+  RegisterPage,
+} from '@/pages';
+import ApiDashboard from '@/pages/api/ApiDashboard';
 
 export const router = createBrowserRouter(
   [
@@ -53,12 +37,12 @@ export const router = createBrowserRouter(
       element: (
         <ThemeProvider defaultTheme="system" storageKey="ui-theme">
           <AuthProvider>
-            <OpenAIProvider>
+            <ChatProvider>
               <SidebarProvider>
                 <Outlet />
                 <Toaster />
               </SidebarProvider>
-            </OpenAIProvider>
+            </ChatProvider>
           </AuthProvider>
         </ThemeProvider>
       ),

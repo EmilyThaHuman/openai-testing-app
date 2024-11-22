@@ -11,7 +11,7 @@ import { FaGithub, FaGoogle } from 'react-icons/fa'
 import { motion } from 'framer-motion'
 
 export function RegisterPage() {
-  const { signUp, signIn } = useAuth()
+  const { signUp, signInWithOAuth } = useAuth();
   const navigate = useNavigate()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
@@ -24,7 +24,7 @@ export function RegisterPage() {
   const handleSocialSignUp = async (provider) => {
     try {
       setIsLoading(true)
-      await signIn(provider)
+      await signInWithOAuth(provider);
     } catch (error) {
       toast({
         variant: 'destructive',

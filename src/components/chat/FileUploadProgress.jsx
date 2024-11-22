@@ -1,5 +1,5 @@
-import { Paperclip } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
+import { Paperclip } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 
 export function FileUploadProgress({ file, progress }) {
   return (
@@ -10,4 +10,4 @@ export function FileUploadProgress({ file, progress }) {
       <span>{progress}%</span>
     </div>
   );
-} 
+}

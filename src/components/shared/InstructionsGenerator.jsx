@@ -1,39 +1,42 @@
-import React, { useState } from "react";
-import PropTypes from "prop-types";
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useToast } from "@/components/ui/use-toast";
-import { Wand2, Loader2 } from "lucide-react";
-import { generateInstructions, GENERATOR_TYPES } from "../../utils/instructionsGenerator";
+} from '@/components/ui/dialog';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/components/ui/use-toast';
+import { Loader2, Wand2 } from 'lucide-react';
+import PropTypes from 'prop-types';
+import { useState } from 'react';
+import {
+  generateInstructions,
+  GENERATOR_TYPES,
+} from '../../lib/utils/instructionsGenerator';
 
 export const InstructionsGenerator = ({
   type = GENERATOR_TYPES.SYSTEM,
   value,
   onChange,
-  title = "Instructions",
-  placeholder = "Describe what kind of instructions you want to generate...",
+  title = 'Instructions',
+  placeholder = 'Describe what kind of instructions you want to generate...',
 }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [description, setDescription] = useState("");
+  const [description, setDescription] = useState('');
   const { toast } = useToast();
 
   const handleGenerate = async () => {
-    const apiKey = localStorage.getItem("openai_api_key");
+    const apiKey = localStorage.getItem('openai_api_key');
 
     if (!apiKey) {
       toast({
-        title: "API Key Required",
-        description: "Please add your OpenAI API key in the header first.",
-        variant: "destructive",
+        title: 'API Key Required',
+        description: 'Please add your OpenAI API key in the header first.',
+        variant: 'destructive',
       });
       return;
     }
@@ -44,19 +47,19 @@ export const InstructionsGenerator = ({
         description,
         apiKey,
         onStart: () => setIsGenerating(true),
-        onSuccess: (result) => {
+        onSuccess: result => {
           onChange(result);
           setDialogOpen(false);
           toast({
-            title: "Generation successful",
+            title: 'Generation successful',
             description: `New ${type} instructions have been generated.`,
           });
         },
-        onError: (error) => {
+        onError: error => {
           toast({
-            title: "Generation failed",
+            title: 'Generation failed',
             description: error,
-            variant: "destructive",
+            variant: 'destructive',
           });
         },
         onComplete: () => setIsGenerating(false),
@@ -87,14 +90,14 @@ export const InstructionsGenerator = ({
           {[...Array(9)].map((_, i) => (
             <Skeleton
               key={i}
-              className={`h-4 w-${["3/4", "1/2", "5/6", "2/3", "4/5"][i % 5]}`}
+              className={`h-4 w-${['3/4', '1/2', '5/6', '2/3', '4/5'][i % 5]}`}
             />
           ))}
         </div>
       ) : (
         <Textarea
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={e => onChange(e.target.value)}
           placeholder="Enter or generate instructions..."
           className="min-h-[200px] resize-y"
         />
@@ -108,7 +111,7 @@ export const InstructionsGenerator = ({
           <div className="py-4">
             <Textarea
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={e => setDescription(e.target.value)}
               placeholder={placeholder}
               className="h-[200px]"
               disabled={isGenerating}
@@ -132,7 +135,7 @@ export const InstructionsGenerator = ({
                   Generating...
                 </>
               ) : (
-                "Create"
+                'Create'
               )}
             </Button>
           </DialogFooter>

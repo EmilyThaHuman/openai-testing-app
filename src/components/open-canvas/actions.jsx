@@ -3,21 +3,25 @@ import OpenAI from 'openai';
 
 import { REACT_AGENT_CONFIG } from '@/config/ai/agent';
 
+import { lookupTool } from '../../lib/constants/mentionTools';
+import {
+  getImages,
+  getSearchResults,
+  getVideos,
+} from '../../lib/constants/searchProvider';
 import {
   get10BlueLinksContents,
   processAndVectorizeContent,
-} from './contentProcessing';
-import { functionCalling } from './functionCalling';
-import relevantQuestions from './generateRelevantQuestions';
-import { lookupTool } from './mentionTools';
-import { checkRateLimit } from './rateLimit';
-import { getImages, getSearchResults, getVideos } from './searchProvider';
+} from './archive/contentProcessing';
+import { functionCalling } from './archive/functionCalling';
+import relevantQuestions from './archive/generateRelevantQuestions';
+import { checkRateLimit } from './archive/rateLimit';
 import {
   clearSemanticCache,
   getFromSemanticCache,
   initializeSemanticCache,
   setInSemanticCache,
-} from './semanticCache';
+} from './archive/semanticCache';
 
 ('use server');
 // streamingChatCompletion.js

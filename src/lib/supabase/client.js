@@ -93,6 +93,38 @@ export const sessionUtils = {
 };
 
 export const databaseUtils = {
+  async batchInsert(table, records, batchSize = 100) {
+    const batches = [];
+    for (let i = 0; i < records.length; i += batchSize) {
+      batches.push(records.slice(i, i + batchSize));
+    }
+
+    return Promise.all(
+      batches.map(batch => supabase.from(table).insert(batch).select())
+    );
+  },
+
+  async upsertWithRelations(table, data, relations) {
+    const { data: mainRecord } = await supabase
+      .from(table)
+      .upsert(data)
+      .select()
+      .single();
+
+    if (relations && mainRecord) {
+      await Promise.all(
+        Object.entries(relations).map(([relationTable, relationData]) =>
+          supabase.from(relationTable).upsert({
+            ...relationData,
+            parent_id: mainRecord.id,
+          })
+        )
+      );
+    }
+
+    return mainRecord;
+  },
+
   async getProfile(userId) {
     try {
       const { data, error } = await supabase

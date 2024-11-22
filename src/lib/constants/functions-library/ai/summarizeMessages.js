@@ -1,5 +1,9 @@
-import { SystemMessage, HumanMessage } from 'langchain/schema';
-import { ChatOpenAI } from 'langchain/chat_models/openai';
+import OpenAI from 'openai'
+
+const openai = new OpenAI({
+  apiKey: import.meta.env.VITE_OPENAI_API_PROJECT_KEY,
+  dangerouslyAllowBrowser: true
+})
 
 export async function summarizeMessages(messages, sessionId) {
   const summarizeFunction = {
@@ -26,42 +30,42 @@ export async function summarizeMessages(messages, sessionId) {
       },
       required: ['overallSummary', 'individualSummaries'],
     },
-  };
-
-  const chatOpenAI = new ChatOpenAI({
-    modelName: import.meta.env.VITE_OPENAI_API_CHAT_COMPLETION_MODEL || 'gpt-3.5-turbo',
-    openAIApiKey: import.meta.env.VITE_OPENAI_API_PROJECT_KEY,
-  });
+  }
 
   try {
-    const response = await chatOpenAI.call(
-      [
-        new SystemMessage('You are a helpful assistant that summarizes chat messages.'),
-        new HumanMessage(`Summarize these messages. Provide an overall summary and a summary for each message with its corresponding ID: ${JSON.stringify(messages.slice(-5))}`)
+    const response = await openai.chat.completions.create({
+      model: import.meta.env.VITE_OPENAI_API_CHAT_COMPLETION_MODEL || 'gpt-3.5-turbo',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a helpful assistant that summarizes chat messages.'
+        },
+        {
+          role: 'user',
+          content: `Summarize these messages. Provide an overall summary and a summary for each message with its corresponding ID: ${JSON.stringify(messages.slice(-5))}`
+        }
       ],
-      {
-        functions: [summarizeFunction],
-        function_call: { name: 'summarize_messages' }
-      }
-    );
+      functions: [summarizeFunction],
+      function_call: { name: 'summarize_messages' }
+    })
 
-    const functionCall = response.additional_kwargs.function_call;
+    const functionCall = response.choices[0]?.message?.function_call
     if (functionCall && functionCall.name === 'summarize_messages') {
-      const { overallSummary, individualSummaries } = JSON.parse(functionCall.arguments);
+      const { overallSummary, individualSummaries } = JSON.parse(functionCall.arguments)
       return {
         overallSummary,
         individualSummaries: individualSummaries.map(summary => ({
           id: summary.id,
           summary: summary.summary,
         })),
-      };
+      }
     }
     return {
       overallSummary: 'Unable to generate summary',
       individualSummaries: [],
-    };
+    }
   } catch (error) {
-    console.error('Error in summarizeMessages:', error);
-    throw error;
+    console.error('Error in summarizeMessages:', error)
+    throw error
   }
 }

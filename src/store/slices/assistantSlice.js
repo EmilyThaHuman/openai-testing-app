@@ -56,7 +56,7 @@ export const createAssistantSlice = (set, get) => ({
   // Computed values
   activeThread: () => {
     const state = get();
-    return state.threads[state.selectedAssistant?.id]?.[0];
+    return state.threads[state.selectedThread?.id]?.[0];
   },
 
   // Setters

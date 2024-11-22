@@ -118,13 +118,179 @@
     --color-4: 195 100% 63%;
     --color-5: 90 100% 63%;
   }
-}
- 
-@layer base {
+
+  /* Modern Scrollbar Styles */
+  ::-webkit-scrollbar {
+    @apply w-2 h-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-background/50 backdrop-blur;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-border hover:bg-muted-foreground/50 rounded-full transition-colors duration-200 
+           border border-background/50 backdrop-blur;
+  }
+
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+
+  /* Hide scrollbar but maintain functionality */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Custom scrollbar styles for different contexts */
+  .custom-scrollbar {
+    @apply scrollbar-thin scrollbar-track-background/50 
+           scrollbar-thumb-border hover:scrollbar-thumb-muted-foreground/50
+           scrollbar-track-rounded-full scrollbar-thumb-rounded-full;
+  }
+
+  /* Scrollbar for dark mode */
+  .dark ::-webkit-scrollbar-track {
+    @apply bg-background/30;
+  }
+
+  .dark ::-webkit-scrollbar-thumb {
+    @apply bg-muted hover:bg-muted-foreground/30
+           border-background/30;
+  }
+
+  /* Scrollbar for cards and contained elements */
+  .card-scrollbar::-webkit-scrollbar {
+    @apply w-1.5 h-1.5;
+  }
+
+  .card-scrollbar::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  .card-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-border/50 hover:bg-border
+           rounded-full;
+  }
+
+  /* Horizontal scrollbar */
+  ::-webkit-scrollbar:horizontal {
+    @apply h-2;
+  }
+
+  /* Scrollbar corner */
+  ::-webkit-scrollbar-corner {
+    @apply bg-transparent;
+  }
+
+  /* Scrollbar for overlay elements */
+  .overlay-scrollbar {
+    @apply scrollbar-thin scrollbar-track-transparent 
+           scrollbar-thumb-white/10 hover:scrollbar-thumb-white/20
+           scrollbar-track-rounded-full scrollbar-thumb-rounded-full;
+  }
+
+  /* Animated scrollbar */
+  .animated-scrollbar::-webkit-scrollbar-thumb {
+    @apply transition-all duration-200 ease-in-out
+           hover:scale-105 active:scale-95;
+  }
+
+  /* Glass effect scrollbar */
+  .glass-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-background/50 backdrop-blur-sm
+           border border-border/50
+           hover:bg-border/50 hover:backdrop-blur-md;
+  }
+
+  /* Gradient scrollbar */
+  .gradient-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-gradient-to-b from-border/50 to-border
+           hover:from-border hover:to-border/50;
+  }
+
+  /* Base styles */
   * {
     @apply border-border;
   }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
   }
+
+  /* Smooth scrolling */
+  html {
+    @apply scroll-smooth;
+  }
+
+  /* Focus styles */
+  :focus-visible {
+    @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-background;
+  }
+
+  /* Selection styles */
+  ::selection {
+    @apply bg-primary/20 text-foreground;
+  }
+
+  /* Improved tap highlight on mobile */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Optional: Add smooth scrolling to the whole document */
+@layer utilities {
+  .smooth-scroll {
+    scroll-behavior: smooth;
+  }
+
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Custom scrollbar width variants */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+
+  .scrollbar-medium {
+    scrollbar-width: auto;
+  }
+
+  .scrollbar-thick {
+    scrollbar-width: thick;
+  }
+}
+
+/* Custom animations */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes pulse-border {
+  0% { border-color: theme('colors.primary.DEFAULT / 0.2'); }
+  50% { border-color: theme('colors.primary.DEFAULT / 0.4'); }
+  100% { border-color: theme('colors.primary.DEFAULT / 0.2'); }
+}
+
+.animate-pulse-border {
+  animation: pulse-border 2s ease-in-out infinite;
 }

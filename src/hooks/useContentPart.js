@@ -1,28 +1,28 @@
-import { useState, useCallback, useEffect } from 'react';
-import { tryJsonParse } from "@/lib/openai/tryJsonParse";
+import { tryJsonParse } from '@/lib/utils/tryJsonParse';
+import { useCallback, useState } from 'react';
 
 export const useContentPart = (initialArgs = {}, initialResult = '') => {
   // State for managing the content part
   const [part, setPart] = useState({
     args: initialArgs,
     argsText: JSON.stringify(initialArgs, null, 2),
-    result: initialResult
+    result: initialResult,
   });
 
   // Update args and argsText together
-  const updateArgs = useCallback((newArgsText) => {
+  const updateArgs = useCallback(newArgsText => {
     setPart(prev => ({
       ...prev,
       argsText: newArgsText,
-      args: tryJsonParse(newArgsText)
+      args: tryJsonParse(newArgsText),
     }));
   }, []);
 
   // Update result
-  const updateResult = useCallback((newResult) => {
+  const updateResult = useCallback(newResult => {
     setPart(prev => ({
       ...prev,
-      result: newResult
+      result: newResult,
     }));
   }, []);
 
@@ -31,7 +31,7 @@ export const useContentPart = (initialArgs = {}, initialResult = '') => {
     setPart({
       args: initialArgs,
       argsText: JSON.stringify(initialArgs, null, 2),
-      result: initialResult
+      result: initialResult,
     });
   }, [initialArgs, initialResult]);
 
@@ -39,6 +39,6 @@ export const useContentPart = (initialArgs = {}, initialResult = '') => {
     part,
     updateArgs,
     updateResult,
-    reset
+    reset,
   };
-}; 
+};

@@ -53,6 +53,6 @@ export const AuthGuard = ({ children }) => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">{children}</div>
+    <div className="min-h-screen flex flex-col bg-background w-full">{children}</div>
   );
 };
